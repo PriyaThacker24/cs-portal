@@ -23,7 +23,17 @@
         </div>
         <div class="row _buttons tw-mb-2">
             <div class="col-md-8">
-                <?php if (staff_can('create', 'tasks')) { ?>
+                <?php 
+                // Check permission with priority logic (staff-level first, then project-level)
+                $can_create_tasks = false;
+                if ($this->input->get('project_id')) {
+                    // Viewing a specific project: check permission for that project
+                    $can_create_tasks = can_user_task_action('create', $this->input->get('project_id'));
+                } else {
+                    // General tasks view: check if user can create in any project
+                    $can_create_tasks = can_user_task_action_any_project('create');
+                }
+                if ($can_create_tasks) { ?>
                 <a href="#" onclick="new_task(<?php if ($this->input->get('project_id')) {
                     echo "'" . admin_url('tasks/task?rel_id=' . $this->input->get('project_id') . '&rel_type=project') . "'";
                 } ?>); return false;" class="btn btn-primary pull-left new">

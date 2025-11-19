@@ -4,6 +4,57 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 hooks()->add_action('app_admin_assets', '_maybe_init_admin_project_assets', 5);
 
+/**
+ * Check if user can perform a project action (edit, delete) with priority logic
+ * Priority: Staff-level permission first, then project-level permission
+ * 
+ * @param string $action Action to check ('edit' or 'delete')
+ * @param int $project_id Project ID
+ * @param int $user_id User ID (optional, defaults to current user)
+ * @return bool True if user has permission, false otherwise
+ */
+function can_user_project_action($action, $project_id, $user_id = null)
+{
+    if (is_null($user_id)) {
+        $user_id = get_staff_user_id();
+    }
+
+    if (!in_array($action, ['edit', 'delete'])) {
+        return false;
+    }
+
+    $staff_permission_map = [
+        'edit' => 'edit',
+        'delete' => 'delete',
+    ];
+
+    $project_permission_map = [
+        'edit' => 'project_edit',
+        'delete' => 'project_delete', // Note: project_delete might not exist, but keeping for consistency
+    ];
+
+    $staff_permission = $staff_permission_map[$action];
+    $project_permission = $project_permission_map[$action];
+
+    // Step 1: Check staff-level permission first
+    if (staff_can($staff_permission, 'projects')) {
+        return true; // Staff-level permission exists, use it
+    }
+
+    // Step 2: If staff-level permission does NOT exist, fallback to project-level
+    if ($project_id) {
+        $CI = &get_instance();
+        if (!class_exists('projects_model', false)) {
+            $CI->load->model('projects_model');
+        }
+        
+        return $CI->projects_model->hasProjectPermission($user_id, $project_id, $project_permission);
+    }
+
+    // No project ID provided and no staff-level permission
+    return false;
+}
+
 function _maybe_init_admin_project_assets()
 {
     $CI = &get_instance();

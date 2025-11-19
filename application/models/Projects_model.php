@@ -2808,8 +2808,21 @@ class Projects_model extends App_Model
         $member = $this->db->get(db_prefix() . 'project_members')->row();
         
         if ($member && !empty($member->permissions)) {
-            $permissions = is_string($member->permissions) ? json_decode($member->permissions, true) : $member->permissions;
+            // Handle JSON field - MySQL JSON type returns as string or already decoded as array
+            $permissions = $member->permissions;
             
+            // If it's already an array, use it directly
+            if (!is_array($permissions)) {
+                // If it's a string, decode it
+                if (is_string($permissions)) {
+                    $permissions = json_decode($permissions, true);
+                } else {
+                    // If it's null, false, or other non-array type, skip
+                    return false;
+                }
+            }
+            
+            // Check if decoded successfully and is an array with the permission key
             if (is_array($permissions) && in_array($permission_key, $permissions)) {
                 return true;
             }

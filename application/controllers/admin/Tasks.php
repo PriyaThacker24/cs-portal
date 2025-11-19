@@ -291,7 +291,21 @@ class Tasks extends AdminController
     /* Add new task or update existing */
     public function task($id = '')
     {
-        if (staff_cant('edit', 'tasks') && staff_cant('create', 'tasks')) {
+        // Check if user has ANY permission (staff-level OR project-level)
+        // This allows users with project-level permissions to access the form
+        $has_any_permission = false;
+        
+        // Check staff-level permissions
+        if (staff_can('edit', 'tasks') || staff_can('create', 'tasks')) {
+            $has_any_permission = true;
+        } else {
+            // Check project-level permissions in any project
+            if (can_user_task_action_any_project('create') || can_user_task_action_any_project('edit')) {
+                $has_any_permission = true;
+            }
+        }
+        
+        if (!$has_any_permission) {
             ajax_access_denied();
         }
 
@@ -314,7 +328,33 @@ class Tasks extends AdminController
             $data                = $this->input->post();
             $data['description'] = html_purify($this->input->post('description', false));
             if ($id == '') {
-                if (staff_cant('create', 'tasks')) {
+                // Check permission with priority logic (staff-level first, then project-level)
+                $can_create = false;
+                // Get project_id from POST data, fallback to GET if not in POST
+                $project_id = null;
+                if (isset($data['rel_id']) && isset($data['rel_type']) && $data['rel_type'] == 'project') {
+                    $project_id = $data['rel_id'];
+                } elseif ($this->input->get('rel_id') && $this->input->get('rel_type') == 'project') {
+                    $project_id = $this->input->get('rel_id');
+                    // Also set it in data so it's saved with the task
+                    $data['rel_id'] = $project_id;
+                    $data['rel_type'] = 'project';
+                }
+                
+                if ($project_id) {
+                    // Project task: use priority logic
+                    $can_create = can_user_task_action('create', $project_id);
+                } else {
+                    // Non-project task: check staff-level permission OR project-level in any project
+                    if (staff_can('create', 'tasks')) {
+                        $can_create = true;
+                    } else {
+                        // Check if user has create permission in any project
+                        $can_create = can_user_task_action_any_project('create');
+                    }
+                }
+                
+                if (!$can_create) {
                     header('HTTP/1.0 400 Bad error');
                     echo json_encode([
                         'success' => false,
@@ -343,7 +383,24 @@ class Tasks extends AdminController
                     'message' => $message,
                 ]);
             } else {
-                if (staff_cant('edit', 'tasks')) {
+                // Check permission with priority logic (staff-level first, then project-level)
+                // Also verify task belongs to project (scope control)
+                $task = $this->tasks_model->get($id);
+                $can_edit = false;
+                $project_id = isset($task->rel_id) && $task->rel_type == 'project' ? $task->rel_id : null;
+                
+                if ($project_id) {
+                    // Project task: use priority logic and scope control
+                    // Verify task belongs to the project being checked
+                    if ($task->rel_type == 'project' && $task->rel_id == $project_id) {
+                        $can_edit = can_user_task_action('edit', $project_id);
+                    }
+                } else {
+                    // Non-project task: check staff-level permission (existing behavior)
+                    $can_edit = staff_can('edit', 'tasks');
+                }
+                
+                if (!$can_edit) {
                     header('HTTP/1.0 400 Bad error');
                     echo json_encode([
                         'success' => false,
@@ -371,6 +428,23 @@ class Tasks extends AdminController
             $title = _l('add_new', _l('task'));
         } else {
             $data['task'] = $this->tasks_model->get($id);
+            
+            // Check if user has permission to edit this specific task
+            $can_edit_task = false;
+            $task_project_id = isset($data['task']->rel_id) && $data['task']->rel_type == 'project' ? $data['task']->rel_id : null;
+            
+            if ($task_project_id) {
+                // Project task: use priority logic
+                $can_edit_task = can_user_task_action('edit', $task_project_id);
+            } else {
+                // Non-project task: check staff-level permission
+                $can_edit_task = staff_can('edit', 'tasks');
+            }
+            
+            if (!$can_edit_task) {
+                ajax_access_denied();
+            }
+            
             if ($data['task']->rel_type == 'project') {
                 $data['milestones'] = $this->projects_model->get_milestones($data['task']->rel_id);
             }
@@ -943,7 +1017,24 @@ class Tasks extends AdminController
     /* Delete task from database */
     public function delete_task($id)
     {
-        if (staff_cant('delete', 'tasks')) {
+        // Check permission with priority logic (staff-level first, then project-level)
+        // Also verify task belongs to project (scope control)
+        $task = $this->tasks_model->get($id);
+        $can_delete = false;
+        $project_id = isset($task->rel_id) && $task->rel_type == 'project' ? $task->rel_id : null;
+        
+        if ($project_id) {
+            // Project task: use priority logic and scope control
+            // Verify task belongs to the project being checked
+            if ($task->rel_type == 'project' && $task->rel_id == $project_id) {
+                $can_delete = can_user_task_action('delete', $project_id);
+            }
+        } else {
+            // Non-project task: check staff-level permission (existing behavior)
+            $can_delete = staff_can('delete', 'tasks');
+        }
+        
+        if (!$can_delete) {
             access_denied('tasks');
         }
         $success = $this->tasks_model->delete_task($id);

@@ -102,7 +102,7 @@
                             </div>
                         </div>
                         <div class="col-md-5 text-right tw-space-x-1">
-                            <?php if (staff_can('create', 'tasks')) { ?>
+                            <?php if (can_user_task_action('create', $project->id)) { ?>
                             <a href="#"
                                 onclick="new_task_from_relation(undefined,'project',<?= e($project->id); ?>); return false;"
                                 class="btn btn-primary">
@@ -136,7 +136,15 @@
                                             <?= e($project_pin_tooltip); ?>
                                         </a>
                                     </li>
-                                    <?php if (staff_can('edit', 'projects')) { ?>
+                                    <?php 
+                                    // Check edit permission with priority logic (staff-level first, then project-level)
+                                    $can_edit_project = false;
+                                    if (staff_can('edit', 'projects')) {
+                                        $can_edit_project = true;
+                                    } else {
+                                        $can_edit_project = can_user_project_action('edit', $project->id);
+                                    }
+                                    if ($can_edit_project) { ?>
                                     <li>
                                         <a
                                             href="<?= admin_url('projects/project/' . $project->id); ?>">

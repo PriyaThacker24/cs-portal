@@ -5,8 +5,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 return App_table::find('tasks')
     ->outputUsing(function ($params) {
         extract($params);
-        $hasPermissionEdit   = staff_can('edit',  'tasks');
-        $hasPermissionDelete = staff_can('delete',  'tasks');
+        // Global permissions for non-project tasks (backward compatibility)
+        $hasPermissionEditGlobal   = staff_can('edit',  'tasks');
+        $hasPermissionDeleteGlobal = staff_can('delete',  'tasks');
         $tasksPriorities     = get_tasks_priorities();
         $task_statuses = $this->ci->tasks_model->get_statuses();
 
@@ -134,6 +135,21 @@ return App_table::find('tasks')
         </span>';
             }
 
+            // Check permissions per row (for project tasks, use priority logic)
+            // For non-project tasks, use staff-level permissions (backward compatibility)
+            $hasPermissionEdit = false;
+            $hasPermissionDelete = false;
+            
+            if (isset($aRow['rel_type']) && $aRow['rel_type'] == 'project' && isset($aRow['rel_id'])) {
+                // Project task: use priority logic (staff-level first, then project-level)
+                $hasPermissionEdit = can_user_task_action('edit', $aRow['rel_id']);
+                $hasPermissionDelete = can_user_task_action('delete', $aRow['rel_id']);
+            } else {
+                // Non-project task: use staff-level permissions (existing behavior)
+                $hasPermissionEdit = $hasPermissionEditGlobal;
+                $hasPermissionDelete = $hasPermissionDeleteGlobal;
+            }
+
             if ($hasPermissionEdit) {
                 $outputName .= '<span class="tw-text-neutral-300"> | </span><a href="#" onclick="edit_task(' . $aRow['id'] . '); return false">' . _l('edit') . '</a>';
             }
@@ -145,7 +161,14 @@ return App_table::find('tasks')
 
             $row[] = $outputName;
 
-            $canChangeStatus = ($aRow['current_user_is_creator'] != '0' || $aRow['current_user_is_assigned'] || staff_can('edit',  'tasks'));
+            // Check if user can change status - use project-wise permission for project tasks
+            $canChangeStatusEdit = false;
+            if (isset($aRow['rel_type']) && $aRow['rel_type'] == 'project' && isset($aRow['rel_id'])) {
+                $canChangeStatusEdit = can_user_task_action('edit', $aRow['rel_id']);
+            } else {
+                $canChangeStatusEdit = staff_can('edit', 'tasks');
+            }
+            $canChangeStatus = ($aRow['current_user_is_creator'] != '0' || $aRow['current_user_is_assigned'] || $canChangeStatusEdit);
             $status          = get_task_status_by_id($aRow['status']);
 
             $outputStatus    = '';
@@ -183,7 +206,15 @@ return App_table::find('tasks')
 
             $row[] = render_tags($aRow['tags']);
 
-            if (staff_can('edit',  'tasks') && $aRow['status'] != Tasks_model::STATUS_COMPLETE) {
+            // Check if user can change priority - use project-wise permission for project tasks
+            $canChangePriority = false;
+            if (isset($aRow['rel_type']) && $aRow['rel_type'] == 'project' && isset($aRow['rel_id'])) {
+                $canChangePriority = can_user_task_action('edit', $aRow['rel_id']);
+            } else {
+                $canChangePriority = staff_can('edit', 'tasks');
+            }
+            
+            if ($canChangePriority && $aRow['status'] != Tasks_model::STATUS_COMPLETE) {
                 $outputPriority = '<div class="dropdown inline-block">';
                 $outputPriority .= '<a href="#" style="color:'.e(task_priority_color($aRow['priority'])).'" class="dropdown-toggle tw-flex tw-items-center tw-gap-1 tw-flex-nowrap hover:tw-opacity-80 tw-align-middle" id="tableTaskPriority-' . $aRow['id'] . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
                 $outputPriority .= e(task_priority($aRow['priority']));

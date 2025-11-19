@@ -339,7 +339,17 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
         'detached'=>$filtersDetached,
     ]);
 
-    if (staff_can('create',  'tasks')) {
+    // Check permission with priority logic (staff-level first, then project-level)
+    $canCreateTask = false;
+    if ($table_attributes['data-new-rel-type'] == 'project' && isset($table_attributes['data-new-rel-id'])) {
+        // Project tasks: use priority logic
+        $canCreateTask = can_user_task_action('create', $table_attributes['data-new-rel-id']);
+    } else {
+        // Non-project tasks: use staff-level permissions (existing behavior)
+        $canCreateTask = staff_can('create', 'tasks');
+    }
+    
+    if ($canCreateTask) {
         $disabled   = '';
         $table_name = addslashes($table_name);
         if ($table_attributes['data-new-rel-type'] == 'customer' && is_numeric($table_attributes['data-new-rel-id'])) {
@@ -358,6 +368,10 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
 
     if ($table_attributes['data-new-rel-type'] == 'project') {
         echo "<div class='tw-mb-4 tw-space-x-1 rtl:tw-space-x-reverse'>";
+        // Add "Add Task" button if user has permission (for project tasks tab)
+        if ($canCreateTask) {
+            echo "<a href='#' class='btn btn-primary new-task-relation' onclick=\"new_task_from_relation(undefined,'project'," . $table_attributes['data-new-rel-id'] . "); return false;\"><i class=\"fa-regular fa-plus tw-mr-1\"></i>" . _l('new_task') . '</a>';
+        }
         echo "<a href='" . admin_url('tasks/detailed_overview?project_id=' . $table_attributes['data-new-rel-id']) . "' class='btn btn-primary'>" . _l('detailed_overview') . '</a>';
         echo "<a href='" . admin_url('tasks/list_tasks?project_id=' . $table_attributes['data-new-rel-id'] . '&kanban=true') . "' class='btn btn-default hidden-xs !tw-px-3' data-toggle='tooltip' data-title='" . _l('view_kanban') . "' data-placement='top'><i class='fa-solid fa-grip-vertical'></i></a>";
         echo '</div>';
@@ -628,4 +642,149 @@ function is_task_created_by_staff($taskId, $staffId = null)
         ->where('id', $taskId);
 
     return $CI->db->count_all_results(db_prefix() . 'tasks') > 0 ? true : false;
+}
+
+/**
+ * Check if user can perform task action with priority logic
+ * 
+ * Priority: Staff-level permissions override project-level permissions
+ * If staff-level permission exists, use it. Otherwise, fallback to project-level.
+ * 
+ * @param string $action Action to check: 'create', 'edit', or 'delete'
+ * @param int|null $project_id Project ID (required for project-level permission check)
+ * @param int|null $user_id User ID (defaults to current logged in user)
+ * @return bool True if user can perform action, false otherwise
+ */
+function can_user_task_action($action, $project_id = null, $user_id = null)
+{
+    if (is_null($user_id)) {
+        $user_id = get_staff_user_id();
+    }
+
+    if (!in_array($action, ['create', 'edit', 'delete'])) {
+        return false;
+    }
+
+    $staff_permission_map = [
+        'create' => 'create',
+        'edit' => 'edit',
+        'delete' => 'delete',
+    ];
+
+    $project_permission_map = [
+        'create' => 'task_create',
+        'edit' => 'task_edit',
+        'delete' => 'task_delete',
+    ];
+
+    $staff_permission = $staff_permission_map[$action];
+    $project_permission = $project_permission_map[$action];
+
+    // Step 1: Check staff-level permission first
+    if (staff_can($staff_permission, 'tasks')) {
+        return true; // Staff-level permission exists, use it
+    }
+
+    // Step 2: If staff-level permission does NOT exist, fallback to project-level
+    if ($project_id) {
+        $CI = &get_instance();
+        if (!class_exists('projects_model', false)) {
+            $CI->load->model('projects_model');
+        }
+        
+        return $CI->projects_model->hasProjectPermission($user_id, $project_id, $project_permission);
+    }
+
+    // No project ID provided and no staff-level permission
+    return false;
+}
+
+/**
+ * Check if user can perform task action in ANY project (for button visibility)
+ * 
+ * Priority: Staff-level permissions override project-level permissions
+ * If staff-level permission exists, return true.
+ * Otherwise, check if user has project-level permission in ANY project.
+ * 
+ * @param string $action Action to check: 'create', 'edit', or 'delete'
+ * @param int|null $user_id User ID (defaults to current logged in user)
+ * @return bool True if user can perform action, false otherwise
+ */
+function can_user_task_action_any_project($action, $user_id = null)
+{
+    if (is_null($user_id)) {
+        $user_id = get_staff_user_id();
+    }
+
+    if (!in_array($action, ['create', 'edit', 'delete'])) {
+        return false;
+    }
+
+    $staff_permission_map = [
+        'create' => 'create',
+        'edit' => 'edit',
+        'delete' => 'delete',
+    ];
+
+    $project_permission_map = [
+        'create' => 'task_create',
+        'edit' => 'task_edit',
+        'delete' => 'task_delete',
+    ];
+
+    $staff_permission = $staff_permission_map[$action];
+    $project_permission = $project_permission_map[$action];
+
+    // Step 1: Check staff-level permission first
+    if (staff_can($staff_permission, 'tasks')) {
+        return true; // Staff-level permission exists, use it
+    }
+
+    // Step 2: If staff-level permission does NOT exist, check if user has project-level permission in ANY project
+    $CI = &get_instance();
+    if (!class_exists('projects_model', false)) {
+        $CI->load->model('projects_model');
+    }
+
+    // Check if user has this permission in any project
+    $CI->db->select('project_id, permissions');
+    $CI->db->where('staff_id', $user_id);
+    $CI->db->where('permissions IS NOT NULL');
+    $CI->db->where('permissions !=', '');
+    $CI->db->where('permissions !=', 'null');
+    $members = $CI->db->get(db_prefix() . 'project_members')->result_array();
+
+    foreach ($members as $member) {
+        if (empty($member['permissions'])) {
+            continue;
+        }
+        // Handle JSON field - MySQL JSON type returns as string or already decoded as array
+        $permissions = $member['permissions'];
+        
+        // If it's already an array, use it directly
+        if (!is_array($permissions)) {
+            // If it's a string, decode it
+            if (is_string($permissions)) {
+                $permissions = json_decode($permissions, true);
+            } else {
+                // If it's null, false, or other non-array type, skip
+                continue;
+            }
+        }
+        
+        // Check if decoded successfully and is an array with the permission key
+        if (is_array($permissions) && in_array($project_permission, $permissions)) {
+            return true; // User has this permission in at least one project
+        }
+    }
+
+    // Also check if user is project admin in any project (project admin has full access)
+    $CI->db->select('id');
+    $CI->db->where('addedfrom', $user_id);
+    $projects = $CI->db->get(db_prefix() . 'projects')->result_array();
+    if (!empty($projects)) {
+        return true; // User is admin of at least one project
+    }
+
+    return false;
 }

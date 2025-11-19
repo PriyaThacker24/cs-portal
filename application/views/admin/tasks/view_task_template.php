@@ -116,7 +116,15 @@ echo '<span class="tw-ml-5">' . format_task_status($task->status) . '</span>';
 
 
             <div class="clearfix"></div>
-            <?php if ($task->status != Tasks_model::STATUS_COMPLETE && ($task->current_user_is_assigned || staff_can('edit', 'tasks') || $task->current_user_is_creator)) { ?>
+            <?php 
+            // Check edit permission with priority logic for status change
+            $can_edit_task_status = false;
+            if (isset($task->rel_type) && $task->rel_type == 'project' && isset($task->rel_id)) {
+                $can_edit_task_status = can_user_task_action('edit', $task->rel_id);
+            } else {
+                $can_edit_task_status = staff_can('edit', 'tasks');
+            }
+            if ($task->status != Tasks_model::STATUS_COMPLETE && ($task->current_user_is_assigned || $can_edit_task_status || $task->current_user_is_creator)) { ?>
             <p class="no-margin pull-left"
                 style="<?= 'margin-' . (is_rtl() ? 'left' : 'right') . ':5px !important'; ?>">
                 <a href="#" class="btn btn-primary" id="task-single-mark-complete-btn" autocomplete="off"
@@ -127,7 +135,7 @@ echo '<span class="tw-ml-5">' . format_task_status($task->status) . '</span>';
                     <i class="fa fa-check"></i>
                 </a>
             </p>
-            <?php } elseif ($task->status == Tasks_model::STATUS_COMPLETE && ($task->current_user_is_assigned || staff_can('edit', 'tasks') || $task->current_user_is_creator)) { ?>
+            <?php } elseif ($task->status == Tasks_model::STATUS_COMPLETE && ($task->current_user_is_assigned || $can_edit_task_status || $task->current_user_is_creator)) { ?>
             <p class="no-margin pull-left"
                 style="<?= 'margin-' . (is_rtl() ? 'left' : 'right') . ':5px !important'; ?>">
                 <a href="#" class="btn btn-default" id="task-single-unmark-complete-btn" autocomplete="off"
@@ -426,7 +434,15 @@ foreach ($task->timesheets as $timesheet) { ?>
         <h4 class="th tw-font-semibold tw-text-base tw-mb-1 pull-left">
             <?= _l('task_view_description'); ?>
         </h4>
-        <?php if (staff_can('edit', 'tasks')) { ?>
+        <?php 
+        // Check edit permission with priority logic (staff-level first, then project-level)
+        $can_edit_task = false;
+        if (isset($task->rel_type) && $task->rel_type == 'project' && isset($task->rel_id)) {
+            $can_edit_task = can_user_task_action('edit', $task->rel_id);
+        } else {
+            $can_edit_task = staff_can('edit', 'tasks');
+        }
+        if ($can_edit_task) { ?>
         <a href="#"
             onclick="edit_task_inline_description(this,<?= e($task->id); ?>); return false;"
             class="pull-left tw-mt-2.5 tw-text-sm tw-ml-2 text-muted">
@@ -756,7 +772,15 @@ echo $comments;
         <div class="pull-right mbot10 task-single-menu task-menu-options">
             <div class="content-menu hide">
                 <ul>
-                    <?php if (staff_can('edit', 'tasks')) { ?>
+                    <?php 
+                    // Check edit permission with priority logic (staff-level first, then project-level)
+                    $can_edit_task = false;
+                    if (isset($task->rel_type) && $task->rel_type == 'project' && isset($task->rel_id)) {
+                        $can_edit_task = can_user_task_action('edit', $task->rel_id);
+                    } else {
+                        $can_edit_task = staff_can('edit', 'tasks');
+                    }
+                    if ($can_edit_task) { ?>
                     <li>
                         <a href="#"
                             onclick="edit_task(<?= e($task->id); ?>); return false;">
@@ -1025,7 +1049,18 @@ echo $comments;
             </h5>
         </div>
         <?php } ?>
-        <?php if (staff_can('create', 'tasks') || staff_can('edit', 'tasks')) { ?>
+        <?php 
+        // Check edit/create permission with priority logic (staff-level first, then project-level)
+        $can_edit_task_tags = false;
+        $can_create_task_tags = false;
+        if (isset($task->rel_type) && $task->rel_type == 'project' && isset($task->rel_id)) {
+            $can_edit_task_tags = can_user_task_action('edit', $task->rel_id);
+            $can_create_task_tags = can_user_task_action('create', $task->rel_id);
+        } else {
+            $can_edit_task_tags = staff_can('edit', 'tasks');
+            $can_create_task_tags = staff_can('create', 'tasks');
+        }
+        if ($can_create_task_tags || $can_edit_task_tags) { ?>
         <div id="inputTagsWrapper" class="taskSingleTasks task-info-tags-edit tw-ml-0.5 tw-mt-2">
             <input type="text" class="tagsinput" id="taskTags"
                 data-taskid="<?= e($task->id); ?>"

@@ -365,9 +365,38 @@ function init_relation_options($data, $type, $rel_id = '')
     foreach ($data as $relation) {
         $relation_values = get_relation_values($relation, $type);
         if ($type == 'project') {
-            if (!$has_permission_projects_view) {
-                if (!$CI->projects_model->is_member($relation_values['id']) && $rel_id != $relation_values['id']) {
-                    continue;
+            // Special handling for task add form project dropdown
+            // Check if this is being called from task form (when adding/editing a task)
+            $is_task_form_context = (
+                $CI->uri->segment(1) == 'admin' && $CI->uri->segment(2) == 'tasks' && $CI->uri->segment(3) == 'task'
+                || $CI->input->post('rel_type') == 'project'
+                || ($CI->input->get('rel_type') == 'project' && $CI->uri->segment(2) == 'tasks')
+                || (isset($extra['task_form']) && $extra['task_form'] === true)
+            );
+            
+            if ($is_task_form_context) {
+                // Task Add Form: Project Dropdown Logic (Requirement D)
+                // If user has staff-level task create permission → show all projects
+                // Otherwise → show only projects where user has project-level task_create permission
+                $has_staff_task_create = staff_can('create', 'tasks');
+                
+                if (!$has_staff_task_create) {
+                    // No staff-level permission: filter by project-level task_create permission
+                    if (!$CI->projects_model->hasProjectPermission(get_staff_user_id(), $relation_values['id'], 'task_create')) {
+                        // Also check if user is project admin (who has full access)
+                        $project = $CI->projects_model->get($relation_values['id']);
+                        if (!$project || $project->addedfrom != get_staff_user_id()) {
+                            continue; // Skip this project - user doesn't have task_create permission
+                        }
+                    }
+                }
+                // If has staff-level permission, show all projects (don't skip)
+            } else {
+                // Regular project visibility check (for other contexts)
+                if (!$has_permission_projects_view) {
+                    if (!$CI->projects_model->is_member($relation_values['id']) && $rel_id != $relation_values['id']) {
+                        continue;
+                    }
                 }
             }
         } elseif ($type == 'lead') {

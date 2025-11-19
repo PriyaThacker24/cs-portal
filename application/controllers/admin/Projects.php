@@ -73,7 +73,23 @@ class Projects extends AdminController
 
     public function project($id = '')
     {
-        if (staff_cant('edit', 'projects') && staff_cant('create', 'projects')) {
+        // Check if user has ANY permission (staff-level OR project-level)
+        // This allows users with project-level permissions to access the form
+        $has_any_permission = false;
+        
+        // Check staff-level permissions
+        if (staff_can('edit', 'projects') || staff_can('create', 'projects')) {
+            $has_any_permission = true;
+        } else {
+            // For edit, check if user has project-level edit permission for this project
+            if ($id != '') {
+                if (can_user_project_action('edit', $id)) {
+                    $has_any_permission = true;
+                }
+            }
+        }
+        
+        if (!$has_any_permission) {
             access_denied('Projects');
         }
 
@@ -90,9 +106,21 @@ class Projects extends AdminController
                     redirect(admin_url('projects/view/' . $id));
                 }
             } else {
-                if (staff_cant('edit', 'projects')) {
+                // Check permission with priority logic (staff-level first, then project-level)
+                $can_edit = false;
+                
+                // Check staff-level permission first
+                if (staff_can('edit', 'projects')) {
+                    $can_edit = true;
+                } else {
+                    // Fallback to project-level permission
+                    $can_edit = can_user_project_action('edit', $id);
+                }
+                
+                if (!$can_edit) {
                     access_denied('Projects');
                 }
+                
                 $success = $this->projects_model->update($data, $id);
                 if ($success) {
                     set_alert('success', _l('updated_successfully', _l('project')));

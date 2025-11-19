@@ -51,7 +51,15 @@
                 </div>
                 <ul class="nav navbar-nav visible-md visible-lg">
                     <?php $quickActions = collect($this->app->get_quick_actions_links())->reject(function ($action) {
-                        return isset($action['permission']) && staff_cant('create', $action['permission']);
+                        if (!isset($action['permission'])) {
+                            return false;
+                        }
+                        // Special handling for 'tasks' permission: check staff-level OR project-level
+                        if ($action['permission'] == 'tasks') {
+                            return !can_user_task_action_any_project('create');
+                        }
+                        // Other permissions: use staff-level check
+                        return staff_cant('create', $action['permission']);
                     }); ?>
                     <?php if ($quickActions->isNotEmpty()) { ?>
                     <li class="icon tw-relative ltr:tw-mr-1.5 rtl:tw-ml-1.5 -tw-mt-1"
@@ -70,8 +78,16 @@
                             <?php foreach ($quickActions as $key => $item) {
                                 $url = '';
                                 if (isset($item['permission'])) {
-                                    if (staff_cant('create', $item['permission'])) {
-                                        continue;
+                                    // Special handling for 'tasks' permission: check staff-level OR project-level
+                                    if ($item['permission'] == 'tasks') {
+                                        if (!can_user_task_action_any_project('create')) {
+                                            continue;
+                                        }
+                                    } else {
+                                        // Other permissions: use staff-level check
+                                        if (staff_cant('create', $item['permission'])) {
+                                            continue;
+                                        }
                                     }
                                 }
                                 if (isset($item['custom_url'])) {

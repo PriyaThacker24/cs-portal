@@ -6,8 +6,9 @@ return App_table::find('projects')
     ->outputUsing(function ($params) {
         extract($params);
 
-        $hasPermissionEdit   = staff_can('edit',  'projects');
-        $hasPermissionDelete = staff_can('delete',  'projects');
+        // Global permissions for backward compatibility (non-project-specific)
+        $hasPermissionEditGlobal   = staff_can('edit',  'projects');
+        $hasPermissionDeleteGlobal = staff_can('delete',  'projects');
         $hasPermissionCreate = staff_can('create',  'projects');
 
         $aColumns = [
@@ -84,6 +85,11 @@ return App_table::find('projects')
             if ($hasPermissionCreate && !$clientid) {
                 $name .= ' | <a href="#" data-name="' . e($aRow['name']) . '" onclick="copy_project(' . $aRow['id'] . ', this);return false;">' . _l('copy_project') . '</a>';
             }
+
+            // Check permissions per row (for project edit/delete, use priority logic)
+            // Priority: Staff-level permission first, then project-level permission
+            $hasPermissionEdit = can_user_project_action('edit', $aRow['id']);
+            $hasPermissionDelete = can_user_project_action('delete', $aRow['id']);
 
             if ($hasPermissionEdit) {
                 $name .= ' | <a href="' . admin_url('projects/project/' . $aRow['id']) . '">' . _l('edit') . '</a>';

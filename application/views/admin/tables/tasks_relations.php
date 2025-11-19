@@ -6,8 +6,9 @@ return App_table::find('related_tasks')
     ->outputUsing(function ($params) {
         extract($params);
 
-        $hasPermissionEdit   = staff_can('edit', 'tasks');
-        $hasPermissionDelete = staff_can('delete', 'tasks');
+        // Global staff-level permissions (used as fallback for non-project tasks)
+        $hasPermissionEditGlobal   = staff_can('edit', 'tasks');
+        $hasPermissionDeleteGlobal = staff_can('delete', 'tasks');
         $tasksPriorities     = get_tasks_priorities();
         $task_statuses       = $this->ci->tasks_model->get_statuses();
 
@@ -21,6 +22,8 @@ return App_table::find('related_tasks')
             get_sql_select_task_asignees_full_names() . ' as assignees',
             '(SELECT GROUP_CONCAT(name SEPARATOR ",") FROM ' . db_prefix() . 'taggables JOIN ' . db_prefix() . 'tags ON ' . db_prefix() . 'taggables.tag_id = ' . db_prefix() . 'tags.id WHERE rel_id = ' . db_prefix() . 'tasks.id and rel_type="task" ORDER by tag_order ASC) as tags',
             'priority',
+            'rel_id', // For permission checking (scope control)
+            'rel_type', // For permission checking (scope control)
         ];
 
         $sIndexColumn = 'id';
@@ -150,6 +153,22 @@ return App_table::find('related_tasks')
         </span>';
             }
 
+            // Check permissions per row (for project tasks, use priority logic)
+            // For non-project tasks, use staff-level permissions (backward compatibility)
+            $hasPermissionEdit = false;
+            $hasPermissionDelete = false;
+            
+            if (isset($aRow['rel_type']) && $aRow['rel_type'] == 'project' && isset($aRow['rel_id'])) {
+                // Project tasks: use priority logic (staff-level first, then project-level)
+                // Scope control: verify task belongs to the project
+                $hasPermissionEdit = can_user_task_action('edit', $aRow['rel_id']);
+                $hasPermissionDelete = can_user_task_action('delete', $aRow['rel_id']);
+            } else {
+                // Non-project tasks: use staff-level permissions (existing behavior)
+                $hasPermissionEdit = $hasPermissionEditGlobal;
+                $hasPermissionDelete = $hasPermissionDeleteGlobal;
+            }
+
             if ($hasPermissionEdit) {
                 $outputName .= '<span class="tw-text-neutral-300"> | </span><a href="#" onclick="edit_task(' . $aRow['id'] . '); return false">' . _l('edit') . '</a>';
             }
@@ -160,7 +179,16 @@ return App_table::find('related_tasks')
             $outputName .= '</div>';
 
             $row[]           = $outputName;
-            $canChangeStatus = ($aRow['current_user_is_creator'] != '0' || $aRow['current_user_is_assigned'] || staff_can('edit', 'tasks'));
+            
+            // Check edit permission for status change (use same logic as edit button)
+            $canEditTask = false;
+            if (isset($aRow['rel_type']) && $aRow['rel_type'] == 'project' && isset($aRow['rel_id'])) {
+                $canEditTask = can_user_task_action('edit', $aRow['rel_id']);
+            } else {
+                $canEditTask = $hasPermissionEditGlobal;
+            }
+            
+            $canChangeStatus = ($aRow['current_user_is_creator'] != '0' || $aRow['current_user_is_assigned'] || $canEditTask);
             $status          = get_task_status_by_id($aRow['status']);
             $outputStatus    = '';
 
@@ -197,7 +225,15 @@ return App_table::find('related_tasks')
 
             $row[] = render_tags($aRow['tags']);
 
-            if (staff_can('edit', 'tasks') && $aRow['status'] != Tasks_model::STATUS_COMPLETE) {
+            // Check edit permission for priority change (use same logic as edit button)
+            $canEditTaskForPriority = false;
+            if (isset($aRow['rel_type']) && $aRow['rel_type'] == 'project' && isset($aRow['rel_id'])) {
+                $canEditTaskForPriority = can_user_task_action('edit', $aRow['rel_id']);
+            } else {
+                $canEditTaskForPriority = $hasPermissionEditGlobal;
+            }
+
+            if ($canEditTaskForPriority && $aRow['status'] != Tasks_model::STATUS_COMPLETE) {
                 $outputPriority = '<div class="dropdown inline-block">';
                 $outputPriority .= '<a href="#" style="color:' . e(task_priority_color($aRow['priority'])) . '" class="dropdown-toggle tw-flex tw-items-center tw-gap-1 tw-flex-nowrap hover:tw-opacity-80 tw-align-middle" id="tableTaskPriority-' . $aRow['id'] . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
                 $outputPriority .= e(task_priority($aRow['priority']));
