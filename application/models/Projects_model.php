@@ -1365,14 +1365,28 @@ class Projects_model extends App_Model
     public function get_project_members($id, $with_name = false)
     {
         if ($with_name) {
-            $this->db->select('firstname,lastname,email,project_id,staff_id');
+            $this->db->select('firstname,lastname,email,project_id,staff_id,permissions');
         } else {
-            $this->db->select('email,project_id,staff_id');
+            $this->db->select('email,project_id,staff_id,permissions');
         }
         $this->db->join(db_prefix() . 'staff', db_prefix() . 'staff.staffid=' . db_prefix() . 'project_members.staff_id');
         $this->db->where('project_id', $id);
 
-        return $this->db->get(db_prefix() . 'project_members')->result_array();
+        $members = $this->db->get(db_prefix() . 'project_members')->result_array();
+        
+        // Decode JSON permissions for each member
+        foreach ($members as &$member) {
+            if (isset($member['permissions']) && !empty($member['permissions'])) {
+                $member['permissions'] = is_string($member['permissions']) ? json_decode($member['permissions'], true) : $member['permissions'];
+                if (!is_array($member['permissions'])) {
+                    $member['permissions'] = [];
+                }
+            } else {
+                $member['permissions'] = [];
+            }
+        }
+        
+        return $members;
     }
 
     public function remove_team_member($project_id, $staff_id)
@@ -2697,5 +2711,338 @@ class Projects_model extends App_Model
         return (new Gantt($project_id, $type))->forTaskStatus($taskStatus)
             ->excludeMilestonesFromCustomer(isset($type_where['hide_from_customer']) && $type_where['hide_from_customer'] == 1)
             ->get();
+    }
+
+    /**
+     * Add a project member
+     * 
+     * @param int $project_id Project ID
+     * @param int $staff_id Staff ID
+     * @param array $permissions Optional permissions array
+     * @return bool Success status
+     */
+    public function add_project_member($project_id, $staff_id, $permissions = [])
+    {
+        // Check if member already exists
+        $this->db->where('project_id', $project_id);
+        $this->db->where('staff_id', $staff_id);
+        $exists = $this->db->get(db_prefix() . 'project_members')->row();
+        
+        if ($exists) {
+            return false; // Member already exists
+        }
+        
+        // Prepare permissions JSON
+        $permissions_json = !empty($permissions) && is_array($permissions) ? json_encode($permissions) : null;
+        
+        // Insert new member
+        $this->db->insert(db_prefix() . 'project_members', [
+            'project_id'  => $project_id,
+            'staff_id'    => $staff_id,
+            'permissions' => $permissions_json,
+        ]);
+        
+        if ($this->db->affected_rows() > 0) {
+            $this->log_activity($project_id, 'project_activity_added_team_member', get_staff_full_name($staff_id));
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Update member permissions
+     * 
+     * @param int $project_id Project ID
+     * @param int $staff_id Staff ID
+     * @param array $permissions Permissions array
+     * @return bool Success status
+     */
+    public function update_member_permissions($project_id, $staff_id, $permissions = [])
+    {
+        // Check if member exists
+        $this->db->where('project_id', $project_id);
+        $this->db->where('staff_id', $staff_id);
+        $exists = $this->db->get(db_prefix() . 'project_members')->row();
+        
+        if (!$exists) {
+            return false; // Member doesn't exist
+        }
+        
+        // Prepare permissions JSON
+        $permissions_json = !empty($permissions) && is_array($permissions) ? json_encode($permissions) : null;
+        
+        // Update permissions
+        $this->db->where('project_id', $project_id);
+        $this->db->where('staff_id', $staff_id);
+        $this->db->update(db_prefix() . 'project_members', [
+            'permissions' => $permissions_json,
+        ]);
+        
+        return $this->db->affected_rows() > 0;
+    }
+
+    /**
+     * Check if user has a specific permission for a project
+     * 
+     * @param int $user_id User ID
+     * @param int $project_id Project ID
+     * @param string $permission_key Permission key to check
+     * @return bool True if user has permission, false otherwise
+     */
+    public function hasProjectPermission($user_id, $project_id, $permission_key)
+    {
+        // Check if user is project admin (creator)
+        $this->db->select('addedfrom');
+        $this->db->where('id', $project_id);
+        $project = $this->db->get(db_prefix() . 'projects')->row();
+        
+        if ($project && $project->addedfrom == $user_id) {
+            return true; // Project admin has full access
+        }
+        
+        // Check member permissions
+        $this->db->select('permissions');
+        $this->db->where('project_id', $project_id);
+        $this->db->where('staff_id', $user_id);
+        $member = $this->db->get(db_prefix() . 'project_members')->row();
+        
+        if ($member && !empty($member->permissions)) {
+            $permissions = is_string($member->permissions) ? json_decode($member->permissions, true) : $member->permissions;
+            
+            if (is_array($permissions) && in_array($permission_key, $permissions)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Update add_edit_members to handle permissions
+     */
+    public function add_edit_members_with_permissions($data, $id)
+    {
+        $affectedRows = 0;
+        
+        if (isset($data['project_members'])) {
+            $project_members = $data['project_members'];
+            // Ensure all staff_ids are integers
+            $project_members = array_map('intval', $project_members);
+            $project_members = array_filter($project_members);
+        }
+        
+        // Handle permissions data
+        $members_permissions = [];
+        if (isset($data['project_members_permissions']) && is_array($data['project_members_permissions'])) {
+            $members_permissions = $data['project_members_permissions'];
+            // Clean up empty string values from arrays (when empty array is sent as [""])
+            foreach ($members_permissions as $staff_id_key => $perms) {
+                if (is_array($perms)) {
+                    $members_permissions[$staff_id_key] = array_filter($perms, function($val) {
+                        return $val !== '' && $val !== null;
+                    });
+                    // Re-index array
+                    $members_permissions[$staff_id_key] = array_values($members_permissions[$staff_id_key]);
+                }
+            }
+        }
+        
+        $new_project_members_to_receive_email = [];
+        $this->db->select('name,clientid');
+        $this->db->where('id', $id);
+        $project = $this->db->get(db_prefix() . 'projects')->row();
+        $project_name = $project->name;
+        $client_id = $project->clientid;
+        
+        $project_members_in = $this->get_project_members($id);
+        
+        if (sizeof($project_members_in) > 0) {
+            foreach ($project_members_in as $project_member) {
+                if (isset($project_members)) {
+                    $existing_staff_id = (int)$project_member['staff_id'];
+                    if (!in_array($existing_staff_id, $project_members, true)) {
+                        // Remove member
+                        $this->db->where('project_id', $id);
+                        $this->db->where('staff_id', $project_member['staff_id']);
+                        $this->db->delete(db_prefix() . 'project_members');
+                        if ($this->db->affected_rows() > 0) {
+                            $this->db->where('staff_id', $project_member['staff_id']);
+                            $this->db->where('project_id', $id);
+                            $this->db->delete(db_prefix() . 'pinned_projects');
+                            $this->log_activity($id, 'project_activity_removed_team_member', get_staff_full_name($project_member['staff_id']));
+                            $affectedRows++;
+                        }
+                    } else {
+                        // Update existing member's permissions
+                        // If member is in project_members array, they are in the form
+                        // Always update their permissions based on form data
+                        $staff_id = $project_member['staff_id'];
+                        $permissions = [];
+                        
+                        // Check if permissions were provided for this member
+                        // Empty array means all checkboxes were unchecked
+                        if (isset($members_permissions[$staff_id])) {
+                            $permissions = is_array($members_permissions[$staff_id]) ? $members_permissions[$staff_id] : [];
+                        } elseif (isset($members_permissions[(string)$staff_id])) {
+                            $permissions = is_array($members_permissions[(string)$staff_id]) ? $members_permissions[(string)$staff_id] : [];
+                        } elseif (isset($members_permissions[(int)$staff_id])) {
+                            $permissions = is_array($members_permissions[(int)$staff_id]) ? $members_permissions[(int)$staff_id] : [];
+                        }
+                        // If permissions array not found, it means member is in form but permissions weren't sent
+                        // In this case, preserve existing permissions by not updating
+                        
+                        // Only update if permissions array was found (even if empty)
+                        // This means the form explicitly set permissions for this member
+                        if (isset($members_permissions[$staff_id]) || 
+                            isset($members_permissions[(string)$staff_id]) || 
+                            isset($members_permissions[(int)$staff_id])) {
+                            
+                            // Remove duplicates from permissions array
+                            $permissions = array_unique($permissions);
+                            $permissions_json = !empty($permissions) ? json_encode(array_values($permissions)) : null;
+                            
+                            $this->db->where('project_id', $id);
+                            $this->db->where('staff_id', $staff_id);
+                            $this->db->update(db_prefix() . 'project_members', [
+                                'permissions' => $permissions_json,
+                            ]);
+                            if ($this->db->affected_rows() > 0) {
+                                $affectedRows++;
+                            }
+                        }
+                        // If permissions array not found, member is in form but permissions weren't provided
+                        // Preserve existing permissions by not updating
+                    }
+                } else {
+                    $this->db->where('project_id', $id);
+                    $this->db->delete(db_prefix() . 'project_members');
+                    if ($this->db->affected_rows() > 0) {
+                        $affectedRows++;
+                    }
+                }
+            }
+            
+            if (isset($project_members)) {
+                $notifiedUsers = [];
+                
+                foreach ($project_members as $staff_id) {
+                    $staff_id = (int)$staff_id;
+                    if (empty($staff_id)) {
+                        continue;
+                    }
+                    
+                    $this->db->where('project_id', $id);
+                    $this->db->where('staff_id', $staff_id);
+                    $_exists = $this->db->get(db_prefix() . 'project_members')->row();
+                    
+                    if (!$_exists) {
+                        // Get permissions for new member
+                        $permissions = [];
+                        if (isset($members_permissions[$staff_id]) && is_array($members_permissions[$staff_id])) {
+                            $permissions = $members_permissions[$staff_id];
+                        } elseif (isset($members_permissions[(string)$staff_id]) && is_array($members_permissions[(string)$staff_id])) {
+                            $permissions = $members_permissions[(string)$staff_id];
+                        } elseif (isset($members_permissions[(int)$staff_id]) && is_array($members_permissions[(int)$staff_id])) {
+                            $permissions = $members_permissions[(int)$staff_id];
+                        }
+                        
+                        // Remove duplicates from permissions array
+                        $permissions = array_unique($permissions);
+                        $permissions_json = !empty($permissions) ? json_encode(array_values($permissions)) : null;
+                        
+                        $this->db->insert(db_prefix() . 'project_members', [
+                            'project_id'  => $id,
+                            'staff_id'    => $staff_id,
+                            'permissions' => $permissions_json,
+                        ]);
+                        
+                        if ($this->db->affected_rows() > 0) {
+                            if ($staff_id != get_staff_user_id()) {
+                                $notified = add_notification([
+                                    'fromuserid'      => get_staff_user_id(),
+                                    'description'     => 'not_staff_added_as_project_member',
+                                    'link'            => 'projects/view/' . $id,
+                                    'touserid'        => $staff_id,
+                                    'additional_data' => serialize([$project_name]),
+                                ]);
+                                array_push($new_project_members_to_receive_email, $staff_id);
+                                if ($notified) {
+                                    array_push($notifiedUsers, $staff_id);
+                                }
+                            }
+                            $this->log_activity($id, 'project_activity_added_team_member', get_staff_full_name($staff_id));
+                            $affectedRows++;
+                        }
+                    }
+                }
+                pusher_trigger_notification($notifiedUsers);
+            }
+        } else {
+            if (isset($project_members)) {
+                $notifiedUsers = [];
+                
+                foreach ($project_members as $staff_id) {
+                    $staff_id = (int)$staff_id;
+                    if (empty($staff_id)) {
+                        continue;
+                    }
+                    
+                    $permissions = [];
+                    if (isset($members_permissions[$staff_id]) && is_array($members_permissions[$staff_id])) {
+                        $permissions = $members_permissions[$staff_id];
+                    } elseif (isset($members_permissions[(string)$staff_id]) && is_array($members_permissions[(string)$staff_id])) {
+                        $permissions = $members_permissions[(string)$staff_id];
+                    } elseif (isset($members_permissions[(int)$staff_id]) && is_array($members_permissions[(int)$staff_id])) {
+                        $permissions = $members_permissions[(int)$staff_id];
+                    }
+                    
+                    // Remove duplicates from permissions array
+                    $permissions = array_unique($permissions);
+                    $permissions_json = !empty($permissions) ? json_encode(array_values($permissions)) : null;
+                    
+                    $this->db->insert(db_prefix() . 'project_members', [
+                        'project_id'  => $id,
+                        'staff_id'    => $staff_id,
+                        'permissions' => $permissions_json,
+                    ]);
+                    
+                    if ($this->db->affected_rows() > 0) {
+                        if ($staff_id != get_staff_user_id()) {
+                            $notified = add_notification([
+                                'fromuserid'      => get_staff_user_id(),
+                                'description'     => 'not_staff_added_as_project_member',
+                                'link'            => 'projects/view/' . $id,
+                                'touserid'        => $staff_id,
+                                'additional_data' => serialize([$project_name]),
+                            ]);
+                            array_push($new_project_members_to_receive_email, $staff_id);
+                            if ($notifiedUsers) {
+                                array_push($notifiedUsers, $staff_id);
+                            }
+                        }
+                        $this->log_activity($id, 'project_activity_added_team_member', get_staff_full_name($staff_id));
+                        $affectedRows++;
+                    }
+                }
+                pusher_trigger_notification($notifiedUsers);
+            }
+        }
+        
+        if (count($new_project_members_to_receive_email) > 0) {
+            $all_members = $this->get_project_members($id);
+            foreach ($all_members as $data) {
+                if (in_array($data['staff_id'], $new_project_members_to_receive_email)) {
+                    send_mail_template('project_staff_added_as_member', $data, $id, $client_id);
+                }
+            }
+            
+            hooks()->do_action('after_project_staff_added_as_member', [
+                'project_id'                           => $id,
+                'new_project_members_to_receive_email' => $new_project_members_to_receive_email,
+            ]);
+        }
+        
+        return (bool)($affectedRows > 0);
     }
 }

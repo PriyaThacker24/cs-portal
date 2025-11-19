@@ -182,6 +182,14 @@ function app_init_project_tabs()
         'position'                  => 60,
         'linked_to_customer_option' => ['view_activity_log'],
     ]);
+
+    $CI->app_tabs->add_project_tab('project_permissions', [
+        'name'     => _l('permissions'),
+        'icon'     => 'fa-solid fa-shield-halved',
+        'view'     => 'admin/projects/project_permissions',
+        'position' => 65,
+        'visible'  => staff_can('edit', 'projects') || staff_can('create', 'projects'),
+    ]);
 }
 
 /**

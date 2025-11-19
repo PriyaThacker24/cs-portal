@@ -512,8 +512,95 @@ class Projects extends AdminController
     public function add_edit_members($project_id)
     {
         if (staff_can('edit', 'projects')) {
-            $this->projects_model->add_edit_members($this->input->post(), $project_id);
+            $result = $this->projects_model->add_edit_members_with_permissions($this->input->post(), $project_id);
+            
+            // Check if this is an AJAX request
+            if ($this->input->is_ajax_request() || $this->input->post('ajax_request')) {
+                $this->output->set_content_type('application/json');
+                if ($result) {
+                    $this->output->set_output(json_encode([
+                        'success' => true,
+                        'message' => _l('permissions_saved_successfully')
+                    ]));
+                } else {
+                    $this->output->set_output(json_encode([
+                        'success' => false,
+                        'message' => _l('failed_to_save_permissions')
+                    ]));
+                }
+                return;
+            }
+            
+            // Regular form submission
+            if ($result) {
+                set_alert('success', _l('permissions_saved_successfully'));
+            } else {
+                set_alert('warning', _l('no_changes_made'));
+            }
+            
             redirect(previous_url() ?: $_SERVER['HTTP_REFERER']);
+        }
+    }
+
+    /**
+     * Add a new project member via API
+     */
+    public function add_project_member($project_id)
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        if (!staff_can('edit', 'projects')) {
+            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            return;
+        }
+
+        $staff_id = $this->input->post('staff_id');
+        $permissions = $this->input->post('permissions');
+
+        if (empty($staff_id)) {
+            echo json_encode(['success' => false, 'message' => _l('staff_member_required')]);
+            return;
+        }
+
+        $result = $this->projects_model->add_project_member($project_id, $staff_id, $permissions ?: []);
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => _l('member_added_successfully')]);
+        } else {
+            echo json_encode(['success' => false, 'message' => _l('member_already_exists')]);
+        }
+    }
+
+    /**
+     * Update member permissions via API
+     */
+    public function update_member_permissions($project_id)
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        if (!staff_can('edit', 'projects')) {
+            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            return;
+        }
+
+        $staff_id = $this->input->post('staff_id');
+        $permissions = $this->input->post('permissions');
+
+        if (empty($staff_id)) {
+            echo json_encode(['success' => false, 'message' => _l('staff_member_required')]);
+            return;
+        }
+
+        $result = $this->projects_model->update_member_permissions($project_id, $staff_id, $permissions ?: []);
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => _l('permissions_updated_successfully')]);
+        } else {
+            echo json_encode(['success' => false, 'message' => _l('failed_to_update_permissions')]);
         }
     }
 

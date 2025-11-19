@@ -19,7 +19,8 @@ if ($this->ci->input->post('staff_id')) {
     array_push($where, ' AND status != 4 AND status != 5');
 }
 
-array_push($where, ' AND ' . db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . $this->ci->db->escape_str($staff_id) . ')');
+// Show projects where user is admin, member, or has permissions
+array_push($where, ' AND (' . db_prefix() . 'projects.addedfrom=' . $this->ci->db->escape_str($staff_id) . ' OR ' . db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . $this->ci->db->escape_str($staff_id) . '))');
 
 $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, $additionalSelect);
 

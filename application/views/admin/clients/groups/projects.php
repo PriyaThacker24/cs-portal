@@ -13,7 +13,8 @@
 <?php
     $_where = '';
     if (staff_cant('view', 'projects')) {
-        $_where = 'id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . get_staff_user_id() . ')';
+        // Show projects where user is admin, member, or has permissions
+        $_where = '(addedfrom=' . get_staff_user_id() . ' OR id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . get_staff_user_id() . '))';
     }
     ?>
 <dl class="tw-grid tw-gap-2 sm:tw-grid-flow-col sm:tw-auto-cols-max tw-mb-5 tw-overflow-x-auto">

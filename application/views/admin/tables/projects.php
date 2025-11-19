@@ -40,7 +40,8 @@ return App_table::find('projects')
         }
 
         if (staff_cant('view', 'projects')) {
-            array_push($where, ' AND ' . db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . get_staff_user_id() . ')');
+            // Show projects where user is admin, member, or has permissions
+            array_push($where, ' AND (' . db_prefix() . 'projects.addedfrom=' . get_staff_user_id() . ' OR ' . db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . get_staff_user_id() . '))');
         }
 
         $custom_fields = get_table_custom_fields('projects');
