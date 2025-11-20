@@ -90,14 +90,26 @@ class Misc extends AdminController
     {
         if ($this->input->post()) {
             $type = $this->input->post('type');
-            $data = get_relation_data($type, '', $this->input->post('extra'));
+            // Pass POST data as extra so init_relation_options can access task_form context
+            $extra = $this->input->post('extra');
+            if (!is_array($extra)) {
+                $extra = [];
+            }
+            // Add task_form context from POST data if present
+            if ($this->input->post('task_form')) {
+                $extra['task_form'] = $this->input->post('task_form') == '1';
+            }
+            if ($this->input->post('is_edit_task')) {
+                $extra['is_edit_task'] = $this->input->post('is_edit_task') == '1';
+            }
+            $data = get_relation_data($type, '', $extra);
             if ($this->input->post('rel_id')) {
                 $rel_id = $this->input->post('rel_id');
             } else {
                 $rel_id = '';
             }
 
-            $relOptions = init_relation_options($data, $type, $rel_id);
+            $relOptions = init_relation_options($data, $type, $rel_id, $extra);
             echo json_encode($relOptions);
 
             exit;

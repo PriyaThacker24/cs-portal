@@ -467,6 +467,10 @@
 
     var _milestone_selected_data;
     _milestone_selected_data = undefined;
+    
+    // Task form context for project dropdown filtering
+    var _is_task_form = true;
+    var _is_edit_task = <?php echo isset($task) && !empty($id) ? 'true' : 'false'; ?>;
 
     <?php if (get_option('new_task_auto_assign_current_member') == '1') { ?>
     _current_member = "<?php echo get_staff_user_id(); ?>";
@@ -600,6 +604,8 @@
     function task_rel_select() {
         var serverData = {};
         serverData.rel_id = _rel_id.val();
+        serverData.task_form = _is_task_form ? '1' : '0';
+        serverData.is_edit_task = _is_edit_task ? '1' : '0';
         data.type = _rel_type.val();
         init_ajax_search(_rel_type.val(), _rel_id, serverData);
     }

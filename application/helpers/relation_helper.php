@@ -347,7 +347,7 @@ function get_relation_values($relation, $type)
  * @param  string $rel_id rel_id
  * @return string
  */
-function init_relation_options($data, $type, $rel_id = '')
+function init_relation_options($data, $type, $rel_id = '', $extra = [])
 {
     $_data = [];
 
@@ -365,32 +365,85 @@ function init_relation_options($data, $type, $rel_id = '')
     foreach ($data as $relation) {
         $relation_values = get_relation_values($relation, $type);
         if ($type == 'project') {
-            // Special handling for task add form project dropdown
+            // Special handling for task form project dropdown (Add Task and Edit Task)
             // Check if this is being called from task form (when adding/editing a task)
-            $is_task_form_context = (
-                $CI->uri->segment(1) == 'admin' && $CI->uri->segment(2) == 'tasks' && $CI->uri->segment(3) == 'task'
-                || $CI->input->post('rel_type') == 'project'
-                || ($CI->input->get('rel_type') == 'project' && $CI->uri->segment(2) == 'tasks')
-                || (isset($extra['task_form']) && $extra['task_form'] === true)
-            );
+            $is_task_form_context = false;
+            $is_edit_task = false;
             
-            if ($is_task_form_context) {
-                // Task Add Form: Project Dropdown Logic (Requirement D)
-                // If user has staff-level task create permission → show all projects
-                // Otherwise → show only projects where user has project-level task_create permission
-                $has_staff_task_create = staff_can('create', 'tasks');
+            // Check $extra parameter first (most reliable for AJAX requests)
+            if ((isset($extra['task_form']) && $extra['task_form'] === true) || $CI->input->post('task_form') == '1') {
+                $is_task_form_context = true;
+                // Check if it's Edit Task form
+                if ((isset($extra['is_edit_task']) && $extra['is_edit_task'] === true) || $CI->input->post('is_edit_task') == '1') {
+                    $is_edit_task = true;
+                }
+            } else {
+                // Fallback: Check URI segments and HTTP_REFERER for non-AJAX contexts
+                $is_task_form_context = (
+                    $CI->uri->segment(1) == 'admin' && $CI->uri->segment(2) == 'tasks' && $CI->uri->segment(3) == 'task'
+                    || $CI->input->post('rel_type') == 'project'
+                    || ($CI->input->get('rel_type') == 'project' && $CI->uri->segment(2) == 'tasks')
+                );
                 
-                if (!$has_staff_task_create) {
-                    // No staff-level permission: filter by project-level task_create permission
-                    if (!$CI->projects_model->hasProjectPermission(get_staff_user_id(), $relation_values['id'], 'task_create')) {
-                        // Also check if user is project admin (who has full access)
-                        $project = $CI->projects_model->get($relation_values['id']);
-                        if (!$project || $project->addedfrom != get_staff_user_id()) {
-                            continue; // Skip this project - user doesn't have task_create permission
+                if ($is_task_form_context) {
+                    // Check HTTP_REFERER to see if it contains a task ID
+                    $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+                    
+                    // Check if referer contains /tasks/task/ followed by a number (Edit Task)
+                    if (preg_match('#/tasks/task/(\d+)#', $referer, $matches)) {
+                        $is_edit_task = true;
+                    } else {
+                        // Also check URI segment 4 as fallback
+                        $task_id_segment = $CI->uri->segment(4);
+                        if (!empty($task_id_segment) && is_numeric($task_id_segment)) {
+                            $is_edit_task = true;
                         }
                     }
                 }
-                // If has staff-level permission, show all projects (don't skip)
+            }
+            
+            if ($is_task_form_context) {
+                
+                // Check staff-level permissions first (priority logic)
+                $has_staff_task_create = staff_can('create', 'tasks');
+                $has_staff_task_edit = staff_can('edit', 'tasks');
+                
+                // If user has staff-level permission, show all projects (no filtering)
+                if ($is_edit_task && $has_staff_task_edit) {
+                    // User has staff-level edit permission - show all projects
+                    // Don't skip, continue to add this project
+                } elseif (!$is_edit_task && $has_staff_task_create) {
+                    // User has staff-level create permission - show all projects
+                    // Don't skip, continue to add this project
+                } else {
+                    // No staff-level permission: filter by project-level permission
+                    $project_id = $relation_values['id'];
+                    $user_id = get_staff_user_id();
+                    
+                    // Check if user is project admin (project creator has full access)
+                    $project = $CI->projects_model->get($project_id);
+                    $is_project_admin = $project && $project->addedfrom == $user_id;
+                    
+                    if ($is_project_admin) {
+                        // Project admin has full access - show this project
+                        // Don't skip, continue to add this project
+                    } else {
+                        // Check project-level permission
+                        if ($is_edit_task) {
+                            // Edit Task form: check task_edit permission
+                            $has_project_permission = $CI->projects_model->hasProjectPermission($user_id, $project_id, 'task_edit');
+                        } else {
+                            // Add Task form: check task_create permission
+                            $has_project_permission = $CI->projects_model->hasProjectPermission($user_id, $project_id, 'task_create');
+                        }
+                        
+                        if (!$has_project_permission) {
+                            // User doesn't have required project-level permission - skip this project
+                            continue;
+                        }
+                    }
+                }
+                // If we reach here, user has permission - add this project (don't skip)
             } else {
                 // Regular project visibility check (for other contexts)
                 if (!$has_permission_projects_view) {
