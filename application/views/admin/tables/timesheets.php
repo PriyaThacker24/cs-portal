@@ -2,16 +2,29 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+// Check if status column exists before adding it to columns
+$has_status_column = false;
+try {
+    $columns = $this->ci->db->list_fields(db_prefix() . 'taskstimers');
+    $has_status_column = in_array('status', $columns);
+} catch (Exception $e) {
+    // If check fails, assume column doesn't exist
+}
+
 $aColumns = [
     'CONCAT(firstname, \' \', lastname) as staff',
     'task_id',
-    '(SELECT GROUP_CONCAT(name SEPARATOR ",") FROM ' . db_prefix() . 'taggables JOIN ' . db_prefix() . 'tags ON ' . db_prefix() . 'taggables.tag_id = ' . db_prefix() . 'tags.id WHERE rel_id = ' . db_prefix() . 'taskstimers.id and rel_type="timesheet" ORDER by tag_order ASC) as tags',
     'start_time',
     'end_time',
     'note',
     'end_time - start_time',
     'end_time - start_time',
 ];
+
+// Add status column if it exists
+if ($has_status_column) {
+    array_splice($aColumns, 2, 0, [db_prefix() . 'taskstimers.status as timesheet_status']);
+}
 $sIndexColumn = 'id';
 $sTable       = db_prefix() . 'taskstimers';
 
@@ -26,7 +39,25 @@ $join = hooks()->apply_filters('projects_timesheets_table_sql_join', $join);
 
 $where = ['AND task_id IN (SELECT id FROM ' . db_prefix() . 'tasks WHERE rel_id="' . $this->ci->db->escape_str($project_id) . '" AND rel_type="project")'];
 
-if (staff_cant('create', 'projects')) {
+// Check if user can see all logs (has global permissions or project-level permissions)
+$can_see_all_logs = false;
+
+// Check staff-level global permissions
+if (staff_can('edit_timesheet', 'tasks') || staff_can('delete_timesheet', 'tasks') || staff_can('create', 'projects')) {
+    $can_see_all_logs = true;
+}
+
+// Check project-level permissions if staff-level permissions don't exist
+if (!$can_see_all_logs) {
+    $this->ci->load->model('projects_model');
+    if ($this->ci->projects_model->hasProjectPermission(get_staff_user_id(), $project_id, 'log_edit') || 
+        $this->ci->projects_model->hasProjectPermission(get_staff_user_id(), $project_id, 'log_delete')) {
+        $can_see_all_logs = true;
+    }
+}
+
+// Only filter by staff_id if user doesn't have permission to see all logs
+if (!$can_see_all_logs) {
     array_push($where, 'AND ' . db_prefix() . 'taskstimers.staff_id=' . get_staff_user_id());
 }
 
@@ -44,14 +75,29 @@ if (count($_staff_ids) > 0) {
     array_push($where, 'AND ' . db_prefix() . 'taskstimers.staff_id IN (' . implode(', ', $_staff_ids) . ')');
 }
 
-$result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, [
+$additionalSelect = [
     db_prefix() . 'taskstimers.id',
     db_prefix() . 'tasks.name',
     'billed',
     'billable',
     db_prefix() . 'taskstimers.staff_id',
-    'status',
-]);
+    db_prefix() . 'tasks.status',
+];
+
+// Add bill_type and status columns if they exist (for migration compatibility)
+try {
+    $columns = $this->ci->db->list_fields(db_prefix() . 'taskstimers');
+    if (in_array('bill_type', $columns)) {
+        $additionalSelect[] = db_prefix() . 'taskstimers.bill_type';
+    }
+    if (in_array('status', $columns)) {
+        $additionalSelect[] = db_prefix() . 'taskstimers.status as timesheet_status';
+    }
+} catch (Exception $e) {
+    // If columns don't exist, continue without them
+}
+
+$result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, $additionalSelect);
 
 $output  = $result['output'];
 $rResult = $result['rResult'];
@@ -87,35 +133,46 @@ foreach ($rResult as $aRow) {
             $_data .= '</div>';
         } elseif ($aColumns[$i] == 'task_id') {
             $_data = '<a href="' . admin_url('tasks/view/' . $aRow['task_id']) . '" class="mtop5 inline-block" onclick="init_task_modal(' . $aRow['task_id'] . '); return false;">' . e($aRow['name']) . '</a>';
-
-            $_data .= '<div>';
-            if ($aRow['billed'] == 1) {
-                // hidden is for export
-                $_data .= '<span class="hidden"> - </span><span class="label mtop5 label-success inline-block">' . _l('task_billed_yes') . '</span>';
-            } elseif ($aRow['billable'] == 1 && $aRow['billed'] == 0) {
-                $_data .= '<span class="hidden"> - </span> <span class="label mtop5 label-warning inline-block">' . _l('task_billed_no') . '</span>';
+        } elseif ($has_status_column && $i == 2) {
+            // Status column (after Task column)
+            $timesheet_status = isset($aRow['timesheet_status']) && $aRow['timesheet_status'] != '' ? $aRow['timesheet_status'] : 'pending';
+            $status_class = '';
+            $status_text = '';
+            
+            switch ($timesheet_status) {
+                case 'approved':
+                    $status_class = 'label-success';
+                    $status_text = _l('approved');
+                    break;
+                case 'rejected':
+                    $status_class = 'label-danger';
+                    $status_text = _l('rejected');
+                    break;
+                default:
+                    $status_class = 'label-default';
+                    $status_text = _l('pending');
+                    break;
             }
-
-            $status = get_task_status_by_id($aRow['status']);
-
-            $_data .= '<span class="hidden"> - </span><span class="inline-block mtop5 mleft5 label" style="border:1px solid ' . $status['color'] . ';color:' . $status['color'] . '" task-status-table="' . $aRow['status'] . '">' . e($status['name']) . '</span>';
-            $_data .= '</div>';
+            
+            $_data = '<span class="label ' . $status_class . '">' . $status_text . '</span>';
         } elseif ($aColumns[$i] == 'start_time' || $aColumns[$i] == 'end_time') {
             if ($aColumns[$i] == 'end_time' && $_data == null) {
                 $_data = '';
             } else {
                 $_data = e(_dt($_data, true));
             }
-        } elseif ($i == 2) {
-            $_data = render_tags($_data);
         } else {
-            if ($i == 6) {
+            // Time columns - adjust indices based on whether status column exists
+            $time_h_index = $has_status_column ? 6 : 5;
+            $time_d_index = $has_status_column ? 7 : 6;
+            
+            if ($i == $time_h_index) {
                 if ($_data == null) {
                     $_data = e(seconds_to_time_format(time() - $aRow['start_time']));
                 } else {
                     $_data = e(seconds_to_time_format($_data));
                 }
-            } elseif ($i == 7) {
+            } elseif ($i == $time_d_index) {
                 if ($_data == null) {
                     $_data = e(sec2qty(time() - $aRow['start_time']));
                 } else {
@@ -129,7 +186,8 @@ foreach ($rResult as $aRow) {
 
     $options = '<div class="tw-flex tw-items-center tw-space-x-2">';
 
-    if (staff_can('edit_timesheet', 'tasks') || (staff_can('edit_own_timesheet', 'tasks') && $aRow['staff_id'] == get_staff_user_id())) {
+    // Check edit permission with staff-level and project-level fallback
+    if (can_user_timesheet_action('edit', $aRow['staff_id'], $project_id)) {
         if ($aRow['end_time'] !== null) {
             $attrs = [
                 'class'                   => 'tw-text-neutral-500 hover:tw-text-neutral-700 focus:tw-text-neutral-700',
@@ -137,11 +195,13 @@ foreach ($rResult as $aRow) {
                 'data-start_time'         => e(_dt($aRow['start_time'], true)),
                 'data-timesheet_task_id'  => $aRow['task_id'],
                 'data-timesheet_staff_id' => $aRow['staff_id'],
-                'data-tags'               => $aRow['tags'],
                 'data-note'               => $aRow['note'] ? htmlspecialchars(clear_textarea_breaks($aRow['note']), ENT_COMPAT) : '',
+                'data-bill_type'          => isset($aRow['bill_type']) && $aRow['bill_type'] != '' ? $aRow['bill_type'] : 'billable',
+                'data-status'             => isset($aRow['timesheet_status']) && $aRow['timesheet_status'] != '' ? $aRow['timesheet_status'] : 'pending',
             ];
 
-            if ($aRow['status'] == Tasks_model::STATUS_COMPLETE || $user_removed_as_assignee == true) {
+            $task_status = isset($aRow['status']) ? $aRow['status'] : null;
+            if ($task_status == Tasks_model::STATUS_COMPLETE || $user_removed_as_assignee == true) {
                 $attrs['class'] .= ' tw-pointer-events-none tw-opacity-60';
             }
 
@@ -151,7 +211,7 @@ foreach ($rResult as $aRow) {
                 <i class="fa-regular fa-pen-to-square fa-lg"></i>
             </a>';
 
-            if ($aRow['status'] == Tasks_model::STATUS_COMPLETE) {
+            if ($task_status == Tasks_model::STATUS_COMPLETE) {
                 $editAction = '<span data-toggle="tooltip" data-title="' . _l('task_edit_delete_timesheet_notice', [($task_is_billed ? _l('task_billed') : _l('task_status_5')), _l('edit')]) . '">' . $editAction . '</span>';
             }
             $options .= $editAction;
@@ -183,7 +243,8 @@ foreach ($rResult as $aRow) {
         }
     }
 
-    if (staff_can('delete_timesheet', 'tasks') || staff_can('delete_own_timesheet', 'tasks') && $aRow['staff_id'] == get_staff_user_id()) {
+    // Check delete permission with staff-level and project-level fallback
+    if (can_user_timesheet_action('delete', $aRow['staff_id'], $project_id)) {
         $attrs = [
             'class' => 'tw-text-neutral-500 hover:tw-text-neutral-700 focus:tw-text-neutral-700 _delete',
             'href'  => admin_url('tasks/delete_timesheet/' . $aRow['id']),

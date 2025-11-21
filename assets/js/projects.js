@@ -383,6 +383,7 @@ $(function () {
     $t.find('select[name="timesheet_staff_id"]').empty();
     $t.find('select[name="timesheet_staff_id"]').selectpicker("refresh");
     $t.find('select[name="timesheet_task_id"]').selectpicker("val", "");
+    $t.find('select[name="bill_type"]').selectpicker("val", "billable");
     $t.find('textarea[name="note"]').val("");
     $t.find("#timesheet_duration").val("");
     $t.find("#tags").tagit("removeAll");
@@ -528,14 +529,26 @@ function edit_timesheet(invoker, id) {
   $('input[name="start_time"]').val($(invoker).attr("data-start_time"));
   $('input[name="end_time"]').val($(invoker).attr("data-end_time"));
   $('#timesheet textarea[name="note"]').val($(invoker).attr("data-note"));
+  
+  // Set bill_type
+  var billType = $(invoker).attr("data-bill_type");
+  if (billType) {
+    $('select[name="bill_type"]').selectpicker("val", billType);
+  }
+  
   $('select[name="timesheet_task_id"]').change();
 
   $("#timesheet").modal("show");
   // causing problems with ui dropdown goes to top left side when modal is shown
   setTimeout(function () {
-    var timesheetTags = $(invoker).attr("data-tags").split(",");
-    for (var i in timesheetTags) {
-      $("#timesheet #tags").tagit("createTag", timesheetTags[i]);
+    var timesheetTags = $(invoker).attr("data-tags");
+    if (timesheetTags && timesheetTags != '') {
+      var tagsArray = timesheetTags.split(",");
+      for (var i in tagsArray) {
+        if (tagsArray[i].trim() != '') {
+          $("#timesheet #tags").tagit("createTag", tagsArray[i].trim());
+        }
+      }
     }
   }, 500);
 }

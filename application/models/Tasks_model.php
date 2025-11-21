@@ -1984,6 +1984,8 @@ class Tasks_model extends App_Model
                 'task_id'     => $data['timesheet_task_id'],
                 'hourly_rate' => $hourly_rate,
                 'note'        => (isset($data['note']) && $data['note'] != '' ? nl2br($data['note']) : null),
+                'bill_type'   => (isset($data['bill_type']) && $data['bill_type'] != '' ? $data['bill_type'] : 'billable'),
+                'status'      => (isset($data['status']) && $data['status'] != '' ? $data['status'] : 'pending'),
             ]);
 
             $insert_id = $this->db->insert_id();
@@ -2021,6 +2023,8 @@ class Tasks_model extends App_Model
             'staff_id'   => $timesheet_staff_id,
             'task_id'    => $data['timesheet_task_id'],
             'note'       => (isset($data['note']) && $data['note'] != '' ? nl2br($data['note']) : null),
+            'bill_type'  => (isset($data['bill_type']) && $data['bill_type'] != '' ? $data['bill_type'] : 'billable'),
+            'status'     => (isset($data['status']) && $data['status'] != '' ? $data['status'] : 'pending'),
         ]);
 
         if ($this->db->affected_rows() > 0) {

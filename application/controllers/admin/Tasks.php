@@ -1129,7 +1129,17 @@ class Tasks extends AdminController
 
     public function delete_timesheet($id)
     {
-        if (staff_can('delete_timesheet', 'tasks') || staff_can('delete_own_timesheet', 'tasks') && total_rows(db_prefix() . 'taskstimers', ['staff_id' => get_staff_user_id(), 'id' => $id]) > 0) {
+        // Get timesheet info for permission check
+        $timesheet = $this->tasks_model->get_task_timer(['id' => $id]);
+        $project_id = null;
+        if ($timesheet && $timesheet->task_id) {
+            $task = $this->tasks_model->get($timesheet->task_id);
+            if ($task && $task->rel_type == 'project') {
+                $project_id = $task->rel_id;
+            }
+        }
+
+        if (can_user_timesheet_action('delete', $timesheet->staff_id, $project_id)) {
             $alert_type = 'warning';
             $success    = $this->tasks_model->delete_timesheet($id);
             if ($success) {
@@ -1140,13 +1150,26 @@ class Tasks extends AdminController
             if (!$this->input->is_ajax_request()) {
                 redirect(previous_url() ?: $_SERVER['HTTP_REFERER']);
             }
+        } else {
+            access_denied('timesheets');
         }
     }
 
     public function update_timesheet()
     {
         if ($this->input->is_ajax_request()) {
-            if (staff_can('edit_timesheet', 'tasks') || (staff_can('edit_own_timesheet', 'tasks') && total_rows(db_prefix() . 'taskstimers', ['staff_id' => get_staff_user_id(), 'id' => $this->input->post('timer_id')]) > 0)) {
+            $timer_id = $this->input->post('timer_id');
+            // Get timesheet info for permission check
+            $timesheet = $this->tasks_model->get_task_timer(['id' => $timer_id]);
+            $project_id = null;
+            if ($timesheet && $timesheet->task_id) {
+                $task = $this->tasks_model->get($timesheet->task_id);
+                if ($task && $task->rel_type == 'project') {
+                    $project_id = $task->rel_id;
+                }
+            }
+
+            if (can_user_timesheet_action('edit', $timesheet->staff_id, $project_id)) {
                 $success = $this->tasks_model->timesheet($this->input->post());
                 if ($success === true) {
                     $this->session->set_flashdata('task_single_timesheets_open', true);
@@ -1160,13 +1183,13 @@ class Tasks extends AdminController
                     'message' => $message,
                 ]);
                 die;
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('access_denied'),
+                ]);
+                die;
             }
-
-            echo json_encode([
-                'success' => false,
-                'message' => _l('access_denied'),
-            ]);
-            die;
         }
     }
 

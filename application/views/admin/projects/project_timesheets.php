@@ -36,7 +36,7 @@
         <?php $table_data = [
                 _l('project_timesheet_user'),
                 _l('project_timesheet_task'),
-                _l('timesheet_tags'),
+                _l('status'),
                 _l('project_timesheet_start_time'),
                 _l('project_timesheet_end_time'),
                 _l('note'),

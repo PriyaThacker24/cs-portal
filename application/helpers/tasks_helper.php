@@ -788,3 +788,73 @@ function can_user_task_action_any_project($action, $user_id = null)
 
     return false;
 }
+
+/**
+ * Check if user can perform timesheet action with priority logic
+ * 
+ * Priority: Staff-level permissions override project-level permissions
+ * If staff-level permission exists, use it. Otherwise, fallback to project-level.
+ * 
+ * @param string $action Action to check: 'edit' or 'delete'
+ * @param int $timesheet_staff_id Staff ID who created the timesheet
+ * @param int|null $project_id Project ID (required for project-level permission check)
+ * @param int|null $user_id User ID (defaults to current logged in user)
+ * @return bool True if user can perform action, false otherwise
+ */
+function can_user_timesheet_action($action, $timesheet_staff_id, $project_id = null, $user_id = null)
+{
+    if (is_null($user_id)) {
+        $user_id = get_staff_user_id();
+    }
+
+    if (!in_array($action, ['edit', 'delete'])) {
+        return false;
+    }
+
+    $staff_permission_map = [
+        'edit' => 'edit_timesheet',
+        'delete' => 'delete_timesheet',
+    ];
+
+    $staff_own_permission_map = [
+        'edit' => 'edit_own_timesheet',
+        'delete' => 'delete_own_timesheet',
+    ];
+
+    $project_permission_map = [
+        'edit' => 'log_edit',
+        'delete' => 'log_delete',
+    ];
+
+    $staff_permission = $staff_permission_map[$action];
+    $staff_own_permission = $staff_own_permission_map[$action];
+    $project_permission = $project_permission_map[$action];
+
+    // Step 1: Check staff-level global permission first
+    if (staff_can($staff_permission, 'tasks')) {
+        return true; // Staff-level global permission exists, can edit/delete all
+    }
+
+    // Step 2: Check staff-level own permission
+    if (staff_can($staff_own_permission, 'tasks')) {
+        // Can only edit/delete own timesheets
+        return ($timesheet_staff_id == $user_id);
+    }
+
+    // Step 3: If staff-level permission does NOT exist, fallback to project-level
+    // Project-level permissions allow editing/deleting ALL logs in the project, not just own
+    if ($project_id) {
+        $CI = &get_instance();
+        if (!class_exists('projects_model', false)) {
+            $CI->load->model('projects_model');
+        }
+
+        // If user has project-level permission, they can edit/delete ALL logs in that project
+        if ($CI->projects_model->hasProjectPermission($user_id, $project_id, $project_permission)) {
+            return true; // Can edit/delete all logs in the project
+        }
+    }
+
+    // No project ID provided and no staff-level permission
+    return false;
+}

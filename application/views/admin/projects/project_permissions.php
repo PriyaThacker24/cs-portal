@@ -22,7 +22,7 @@
             'task_create' => 'Create Tasks',
             'task_edit' => 'Edit Tasks',
             'task_delete' => 'Delete Tasks',
-            'log_create' => 'Create Logs',
+            // 'log_create' => 'Create Logs',
             'log_edit' => 'Edit Logs',
             'log_delete' => 'Delete Logs',
             'project_log_approve' => 'Approve Logs',
@@ -32,7 +32,7 @@
         // Group permissions by category
         $project_perms = ['project_edit', 'project_log_approve', 'project_log_reject'];
         $task_perms = ['task_create', 'task_edit', 'task_delete'];
-        $log_perms = ['log_create', 'log_edit', 'log_delete'];
+        $log_perms = ['log_edit', 'log_delete'];
         ?>
 
         <?php if ($can_manage_permissions): ?>

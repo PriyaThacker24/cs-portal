@@ -124,6 +124,23 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mtop15">
+                            <div class="col-md-12">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="bill_type"><?php echo _l('billing_type'); ?></label>
+                                    </div>
+                                    <div class="col-md-9">
+                                      <div class="form-group">
+                                            <select name="bill_type" id="bill_type" class="selectpicker" data-width="100%" data-none-selected-text="-">
+                                            <option value="billable" selected><?php echo _l('billable'); ?></option>
+                                            <option value="non_billable"><?php echo _l('non_billable'); ?></option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                           <div class="row mtop15">
                             <div class="col-md-12">
                                 <div class="row">
