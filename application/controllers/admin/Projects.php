@@ -881,6 +881,67 @@ class Projects extends AdminController
         }
     }
 
+    public function update_timesheet_status()
+    {
+        if ($this->input->post()) {
+            $timesheet_id = $this->input->post('timesheet_id');
+            $status = $this->input->post('status');
+            
+            if (!in_array($status, ['pending', 'approved', 'rejected'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('invalid_status')
+                ]);
+                exit;
+            }
+            
+            $this->db->select('id, task_id, staff_id');
+            $this->db->where('id', $timesheet_id);
+            $timesheet = $this->db->get(db_prefix() . 'taskstimers')->row();
+            
+            if (!$timesheet) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('timesheet_not_found')
+                ]);
+                exit;
+            }
+            
+            $this->db->where('id', $timesheet_id);
+            $update_result = $this->db->update(db_prefix() . 'taskstimers', ['status' => $status]);
+            
+            $status_label = '';
+            switch ($status) {
+                case 'approved':
+                    $status_label = _l('approved');
+                    break;
+                case 'rejected':
+                    $status_label = _l('rejected');
+                    break;
+                default:
+                    $status_label = _l('pending');
+                    break;
+            }
+            
+            if ($update_result) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => _l('timesheet_status_updated_to', $status_label)
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('something_went_wrong')
+                ]);
+            }
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('invalid_request')
+            ]);
+        }
+    }
+
     public function timesheet()
     {
         if ($this->input->post()) {

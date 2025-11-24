@@ -135,6 +135,8 @@ function get_available_staff_permissions($data = [])
                 'edit_own_timesheet'   => _l('permission_edit_own_timesheets'),
                 'delete_timesheet'     => _l('permission_delete_timesheets'),
                 'delete_own_timesheet' => _l('permission_delete_own_timesheets'),
+                'approve_timesheet'    => _l('permission_approve_timesheets'),
+                'reject_timesheet'     => _l('permission_reject_timesheets'),
             ]),
              'help' => [
                 'view'     => _l('help_tasks_permissions'),

@@ -102,6 +102,26 @@ $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, $ad
 $output  = $result['output'];
 $rResult = $result['rResult'];
 
+// Check permissions for status dropdown visibility
+$can_update_status = false;
+
+// Priority 1: Check staff-level permissions (Global)
+if (staff_can('approve_timesheet', 'tasks') || staff_can('reject_timesheet', 'tasks')) {
+    $can_update_status = true;
+} else {
+    // Priority 2: Check project-level permissions
+    if (isset($project_id) && !empty($project_id) && is_numeric($project_id)) {
+        if (!isset($this->ci->projects_model)) {
+            $this->ci->load->model('projects_model');
+        }
+        // Check project-level approve/reject permissions
+        if ($this->ci->projects_model->hasProjectPermission(get_staff_user_id(), $project_id, 'project_log_approve') || 
+            $this->ci->projects_model->hasProjectPermission(get_staff_user_id(), $project_id, 'project_log_reject')) {
+            $can_update_status = true;
+        }
+    }
+}
+
 foreach ($rResult as $aRow) {
     $row = [];
 
@@ -134,27 +154,40 @@ foreach ($rResult as $aRow) {
         } elseif ($aColumns[$i] == 'task_id') {
             $_data = '<a href="' . admin_url('tasks/view/' . $aRow['task_id']) . '" class="mtop5 inline-block" onclick="init_task_modal(' . $aRow['task_id'] . '); return false;">' . e($aRow['name']) . '</a>';
         } elseif ($has_status_column && $i == 2) {
-            // Status column (after Task column)
+            // Status column - Check permissions
             $timesheet_status = isset($aRow['timesheet_status']) && $aRow['timesheet_status'] != '' ? $aRow['timesheet_status'] : 'pending';
+            
+            // Set status colors
             $status_class = '';
             $status_text = '';
             
             switch ($timesheet_status) {
                 case 'approved':
-                    $status_class = 'label-success';
+                    $status_class = 'label-success'; // Green
                     $status_text = _l('approved');
                     break;
                 case 'rejected':
-                    $status_class = 'label-danger';
+                    $status_class = 'label-danger'; // Red
                     $status_text = _l('rejected');
                     break;
                 default:
-                    $status_class = 'label-default';
+                    $status_class = 'label-warning'; // Yellow
                     $status_text = _l('pending');
                     break;
             }
             
-            $_data = '<span class="label ' . $status_class . '">' . $status_text . '</span>';
+            // Show dropdown if user has permission, otherwise show label
+            if ($can_update_status) {
+                // User has permission - show dropdown with colored background
+                $_data = '<select name="timesheet_status" class="form-control timesheet-status-change status-' . $timesheet_status . '" style="width: auto; display: inline-block; padding: 3px 8px; height: auto; font-size: 12px;" data-timesheet-id="' . $aRow['id'] . '" data-original-value="' . $timesheet_status . '">';
+                $_data .= '<option value="pending" ' . ($timesheet_status == 'pending' ? 'selected' : '') . '>' . _l('pending') . '</option>';
+                $_data .= '<option value="approved" ' . ($timesheet_status == 'approved' ? 'selected' : '') . '>' . _l('approved') . '</option>';
+                $_data .= '<option value="rejected" ' . ($timesheet_status == 'rejected' ? 'selected' : '') . '>' . _l('rejected') . '</option>';
+                $_data .= '</select>';
+            } else {
+                // User does not have permission - show label only
+                $_data = '<span class="label ' . $status_class . '">' . $status_text . '</span>';
+            }
         } elseif ($aColumns[$i] == 'start_time' || $aColumns[$i] == 'end_time') {
             if ($aColumns[$i] == 'end_time' && $_data == null) {
                 $_data = '';

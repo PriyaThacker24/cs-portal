@@ -48,3 +48,116 @@ render_datatable($table_data, 'timesheets'); ?>
         <?php $this->load->view('admin/projects/timesheet'); ?>
     </div>
 </div>
+
+<style>
+/* Timesheet status dropdown background colors */
+.timesheet-status-change.status-pending {
+    background-color: #fcf8e3 !important;
+    color: #8a6d3b !important;
+    border-color: #f0ad4e !important;
+}
+
+.timesheet-status-change.status-approved {
+    background-color: #dff0d8 !important;
+    color: #3c763d !important;
+    border-color: #5cb85c !important;
+}
+
+.timesheet-status-change.status-rejected {
+    background-color: #f2dede !important;
+    color: #a94442 !important;
+    border-color: #d9534f !important;
+}
+</style>
+
+<script>
+// Timesheet status change handler
+function initTimesheetStatusHandler() {
+    if (typeof jQuery === 'undefined') {
+        setTimeout(initTimesheetStatusHandler, 100);
+        return;
+    }
+    
+    jQuery(document).ready(function($) {
+        // Function to update dropdown background color
+        function updateDropdownColor($dropdown) {
+            var status = $dropdown.val();
+            $dropdown.removeClass('status-pending status-approved status-rejected');
+            $dropdown.addClass('status-' + status);
+        }
+        
+        // Initialize colors for existing dropdowns after table loads
+        $('.table-timesheets').on('draw.dt', function() {
+            $('.timesheet-status-change').each(function() {
+                updateDropdownColor($(this));
+            });
+        });
+        
+        // Initialize colors on page load
+        setTimeout(function() {
+            $('.timesheet-status-change').each(function() {
+                updateDropdownColor($(this));
+            });
+        }, 1000);
+        
+        // Handle status change
+        $('body').on('change', '.timesheet-status-change', function(e) {
+            var $select = $(this);
+            var status = $select.val();
+            var timesheetId = $select.data('timesheet-id');
+            var originalValue = $select.data('original-value');
+            
+            if (!timesheetId) {
+                alert_float('danger', 'Timesheet ID not found');
+                return;
+            }
+            
+            // Update color immediately
+            updateDropdownColor($select);
+            
+            $select.prop('disabled', true);
+            
+            $.ajax({
+                url: admin_url + 'projects/update_timesheet_status',
+                type: 'POST',
+                data: {
+                    timesheet_id: timesheetId,
+                    status: status
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert_float('success', response.message);
+                        $select.data('original-value', status);
+                        
+                        setTimeout(function() {
+                            if ($('.table-timesheets').length && $.fn.DataTable.isDataTable('.table-timesheets')) {
+                                $('.table-timesheets').DataTable().ajax.reload(null, false);
+                            } else {
+                                location.reload();
+                            }
+                        }, 500);
+                    } else {
+                        alert_float('danger', response.message);
+                        if (originalValue) {
+                            $select.val(originalValue);
+                            updateDropdownColor($select);
+                        }
+                    }
+                    $select.prop('disabled', false);
+                },
+                error: function(xhr, status, error) {
+                    alert_float('danger', 'Error updating status: ' + error);
+                    if (originalValue) {
+                        $select.val(originalValue);
+                        updateDropdownColor($select);
+                    }
+                    $select.prop('disabled', false);
+                }
+            });
+        });
+    });
+}
+
+initTimesheetStatusHandler();
+</script>
