@@ -1,0 +1,279 @@
+/* Tasks Filter Panel - Zoho Style */
+
+/* Filter Trigger Button */
+.btn-tasks-filter-trigger {
+    margin-left: 5px;
+}
+
+/* Filter Panel */
+.tasks-filter-panel {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    transition: right 0.3s ease-in-out;
+}
+
+.tasks-filter-panel.active {
+    right: 0;
+}
+
+/* Overlay */
+.tasks-filter-panel .filter-panel-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.tasks-filter-panel.active .filter-panel-overlay {
+    opacity: 1;
+}
+
+/* Panel Content */
+.tasks-filter-panel .filter-panel-content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 420px;
+    max-width: 90%;
+    height: 100%;
+    background: #ffffff;
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.tasks-filter-panel.active .filter-panel-content {
+    transform: translateX(0);
+}
+
+/* Header */
+.tasks-filter-panel .filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid #e8e8e8;
+    background: #f9f9f9;
+}
+
+.tasks-filter-panel .filter-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.tasks-filter-panel .filter-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tasks-filter-panel .filter-close:hover {
+    color: #333;
+}
+
+/* Filter Search */
+.tasks-filter-panel .filter-panel-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tasks-filter-panel .filter-search-wrapper {
+    position: relative;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.tasks-filter-panel .filter-search-wrapper i {
+    position: absolute;
+    left: 34px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.tasks-filter-panel .filter-search-input {
+    width: 100%;
+    padding: 10px 12px 10px 32px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.tasks-filter-panel .filter-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Accordion */
+.tasks-filter-panel .filter-accordion {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px 24px;
+}
+
+.tasks-filter-panel .filter-accordion-item {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tasks-filter-panel .filter-accordion-item:last-child {
+    margin-bottom: 0;
+}
+
+.tasks-filter-panel .filter-accordion-item.has-value {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 1px rgba(26, 115, 232, 0.2);
+}
+
+.tasks-filter-panel .filter-accordion-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+}
+
+.tasks-filter-panel .filter-accordion-header:focus {
+    outline: none;
+}
+
+.tasks-filter-panel .filter-accordion-header i {
+    color: #666;
+    transition: transform 0.2s ease;
+}
+
+.tasks-filter-panel .filter-accordion-item.is-open .filter-accordion-header i {
+    transform: rotate(-180deg);
+}
+
+.tasks-filter-panel .filter-label {
+    font-weight: 500;
+}
+
+.tasks-filter-panel .filter-accordion-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid #f1f1f1;
+    background: #fafafa;
+}
+
+.tasks-filter-panel .filter-accordion-item.is-open .filter-accordion-body {
+    display: block;
+}
+
+/* Footer */
+.tasks-filter-panel .filter-panel-footer {
+    border-top: 1px solid #e8e8e8;
+    padding: 20px;
+    background: #fff;
+}
+
+.tasks-filter-panel .filter-match-conditions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.tasks-filter-panel .radio-label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    color: #333;
+}
+
+.tasks-filter-panel .radio-label input[type="radio"] {
+    margin-right: 8px;
+}
+
+.tasks-filter-panel .filter-footer-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.tasks-filter-panel .filter-footer-actions .btn {
+    flex: 1;
+}
+
+.tasks-filter-panel .btn-filter-find i {
+    margin-right: 4px;
+}
+
+.tasks-filter-panel .filter-accordion-body .form-group {
+    margin-bottom: 18px;
+}
+
+.tasks-filter-panel .filter-accordion-body .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.tasks-filter-panel .filter-accordion-body label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+/* Scrollbar Styling */
+.tasks-filter-panel .filter-accordion::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tasks-filter-panel .filter-accordion::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.tasks-filter-panel .filter-accordion::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.tasks-filter-panel .filter-accordion::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Active Filter Indicator */
+.tasks-filter-panel .filter-accordion-item.has-value .filter-label {
+    color: #1a73e8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tasks-filter-panel .filter-panel-content {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+

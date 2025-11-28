@@ -1,5 +1,7 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
+<!-- Tasks Filter Panel CSS -->
+<link rel="stylesheet" href="<?= base_url('assets/css/tasks-filter.css'); ?>">
 <div id="wrapper">
     <div class="content" id="vueApp">
         <div class="row">
@@ -59,7 +61,10 @@
                     <?= render_input('search', '', '', 'search', ['data-name' => 'search', 'onkeyup' => 'tasks_kanban();', 'placeholder' => _l('search_tasks')], [], 'no-margin') ?>
                 </div>
                 <?php } else { ?>
-                <?php $this->load->view('admin/tasks/filters', ['filters_wrapper_id' => 'vueApp', 'detached' => true]); ?>
+                <div class="pull-right">
+                    <!-- Zoho-Style Filter Panel -->
+                    <?php $this->load->view('admin/tasks/tasks_filter_panel'); ?>
+                </div>
                 <?php } ?>
             </div>
         </div>
@@ -96,6 +101,7 @@
     </div>
 </div>
 <?php init_tail(); ?>
+<script src="<?= base_url('assets/js/tasks-filter.js'); ?>"></script>
 <script>
     taskid = '<?= e($taskid); ?>';
     $(function() {

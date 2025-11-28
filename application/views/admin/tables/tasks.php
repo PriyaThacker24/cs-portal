@@ -2,6 +2,8 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+use app\services\tasks\TasksAdvancedFilters;
+
 return App_table::find('tasks')
     ->outputUsing(function ($params) {
         extract($params);
@@ -31,6 +33,16 @@ return App_table::find('tasks')
 
         if ($filtersWhere = $this->getWhereFromRules()) {
             $where[] = $filtersWhere;
+        }
+
+        // Apply Zoho-style advanced filters
+        $tasksFilters = $this->ci->input->post('tasks_filters');
+        if ($tasksFilters) {
+            $advancedFilters = new TasksAdvancedFilters($tasksFilters);
+            $advancedWhereClause = $advancedFilters->buildWhereClause();
+            if (!empty($advancedWhereClause)) {
+                $where[] = $advancedWhereClause;
+            }
         }
                 
         if (staff_cant('view', 'tasks')) {
