@@ -1,5 +1,6 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
+<link href="<?= base_url('assets/css/projects-filter.css'); ?>" rel="stylesheet" type="text/css" />
 <div id="wrapper">
     <div class="content">
         <div id="vueApp">
@@ -23,6 +24,8 @@
                                 class="btn btn-default btn-with-tooltip sm:!tw-px-3">
                                 <i class="fa fa-align-left" aria-hidden="true"></i>
                             </a>
+                            <!-- Zoho-Style Filter Button -->
+                            <?php $this->load->view('admin/projects/filter_panel'); ?>
                             <div class="tw-hidden md:tw-block md:tw-ml-6 rtl:md:tw-mr-6">
                                 <?php $this->load->view('admin/projects/stats'); ?>
                             </div>
@@ -54,6 +57,7 @@
 </div>
 <?php $this->load->view('admin/projects/copy_settings'); ?>
 <?php init_tail(); ?>
+<script src="<?= base_url('assets/js/projects-filter.js'); ?>"></script>
 <script>
     $(function() {
         initDataTable('.table-projects', admin_url + 'projects/table', undefined, undefined, {},

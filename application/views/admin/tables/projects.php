@@ -2,6 +2,8 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+use app\services\projects\ProjectsAdvancedFilters;
+
 return App_table::find('projects')
     ->outputUsing(function ($params) {
         extract($params);
@@ -43,6 +45,16 @@ return App_table::find('projects')
         if (staff_cant('view', 'projects')) {
             // Show projects where user is admin, member, or has permissions
             array_push($where, ' AND (' . db_prefix() . 'projects.addedfrom=' . get_staff_user_id() . ' OR ' . db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . get_staff_user_id() . '))');
+        }
+
+        $filtersInput = $this->ci->input->post('filters');
+        if ($filtersInput === null) {
+            $filtersInput = $this->ci->input->get('filters');
+        }
+
+        $advancedFiltersWhere = (new ProjectsAdvancedFilters($filtersInput))->buildWhereClause();
+        if ($advancedFiltersWhere !== '') {
+            $where[] = $advancedFiltersWhere;
         }
 
         $custom_fields = get_table_custom_fields('projects');
