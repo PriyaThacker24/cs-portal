@@ -54,7 +54,7 @@
 
 <!-- Filter Trigger Button -->
 <button type="button" class="btn btn-default btn-filter-trigger" id="btnOpenProjectFilter">
-    <i class="fa fa-filter"></i> <?= _l('filter'); ?>
+    <i class="fa fa-filter"></i> <?= _l('filters'); ?>
 </button>
 
 

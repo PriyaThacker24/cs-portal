@@ -24,19 +24,19 @@
                                 class="btn btn-default btn-with-tooltip sm:!tw-px-3">
                                 <i class="fa fa-align-left" aria-hidden="true"></i>
                             </a>
-                            <!-- Zoho-Style Filter Button -->
-                            <?php $this->load->view('admin/projects/filter_panel'); ?>
                             <div class="tw-hidden md:tw-block md:tw-ml-6 rtl:md:tw-mr-6">
                                 <?php $this->load->view('admin/projects/stats'); ?>
                             </div>
-                            <div class="ltr:tw-ml-auto rtl:tw-mr-auto">
-                                <app-filters
+                            <div class="ltr:tw-ml-auto rtl:tw-mr-auto tw-flex tw-items-center tw-gap-2">
+                                <!-- Zoho-Style Filter Button -->
+                                <?php $this->load->view('admin/projects/filter_panel'); ?>
+                                <!-- <app-filters
                                     id="<?= $table->id(); ?>"
                                     view="<?= $table->viewName(); ?>"
                                     :rules="extra.projectsRules || <?= app\services\utilities\Js::from($this->input->get('status') ? $table->findRule('status')->setValue([(int) $this->input->get('status')]) : []); ?>"
                                     :saved-filters="<?= $table->filtersJs(); ?>"
                                     :available-rules="<?= $table->rulesJs(); ?>">
-                                </app-filters>
+                                </app-filters> -->
                             </div>
                         </div>
                         <div class="clearfix"></div>
