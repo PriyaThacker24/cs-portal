@@ -1,8 +1,10 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/project-timelog-filter.css'); ?>" />
 <a href="#" onclick="new_timesheet();return false;" class="btn btn-primary tw-mb-2">
     <i class="fa-regular fa-plus tw-mr-1"></i>
     <?= _l('record_timesheet'); ?>
 </a>
+<?php $this->load->view('admin/projects/project_timelog_filter_panel'); ?>
 <div class="panel_s">
     <div class="panel-body panel-table-full">
         <?php if (staff_can('create', 'projects')) { ?>
@@ -160,4 +162,10 @@ function initTimesheetStatusHandler() {
 }
 
 initTimesheetStatusHandler();
+</script><script src="<?= base_url('assets/js/project-timelog-filter.js'); ?>"></script>
+<script>
+// Initialize the project timelog filter panel
+if (typeof ProjectTimelogFilter !== 'undefined') {
+    ProjectTimelogFilter.init();
+}
 </script>

@@ -2,6 +2,8 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+use app\services\timelog\ProjectTimelogAdvancedFilters;
+
 // Check if status column exists before adding it to columns
 $has_status_column = false;
 try {
@@ -73,6 +75,21 @@ foreach ($staff_ids as $s) {
 
 if (count($_staff_ids) > 0) {
     array_push($where, 'AND ' . db_prefix() . 'taskstimers.staff_id IN (' . implode(', ', $_staff_ids) . ')');
+}
+
+// Apply advanced filters from Zoho-style filter panel
+$advancedFiltersJson = $this->ci->input->post('advanced_filters');
+if (!empty($advancedFiltersJson)) {
+    try {
+        $advancedFilters = new ProjectTimelogAdvancedFilters($advancedFiltersJson);
+        $advancedWhere = $advancedFilters->buildWhereClause();
+        if (!empty($advancedWhere)) {
+            array_push($where, $advancedWhere);
+        }
+    } catch (Exception $e) {
+        // Log error but don't break the table
+        log_activity('Advanced filter error: ' . $e->getMessage());
+    }
 }
 
 $additionalSelect = [

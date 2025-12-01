@@ -522,15 +522,35 @@ function get_sql_select_task_total_finished_checklist_items()
  * This text is used in WHERE statements for tasks if the staff member don't have permission for tasks VIEW
  * This query will shown only tasks that are created from current user, public tasks or where this user is added is task follower.
  * Other statement will be included the tasks to be visible for this user only if Show All Tasks For Project Members is set to YES
+ * Additionally, users with project-level "task_create" permission can see ALL tasks for that project
  * @return string
  */
 function get_tasks_where_string($table = true)
 {
-    $_tasks_where = '(' . db_prefix() . 'tasks.id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid = ' . get_staff_user_id() . ') OR ' . db_prefix() . 'tasks.id IN (SELECT taskid FROM ' . db_prefix() . 'task_followers WHERE staffid = ' . get_staff_user_id() . ') OR (addedfrom=' . get_staff_user_id() . ' AND is_added_from_contact=0)';
+    $staffId = get_staff_user_id();
+    $dbPrefix = db_prefix();
+    
+    $_tasks_where = '(' . $dbPrefix . 'tasks.id IN (SELECT taskid FROM ' . $dbPrefix . 'task_assigned WHERE staffid = ' . $staffId . ') OR ' . $dbPrefix . 'tasks.id IN (SELECT taskid FROM ' . $dbPrefix . 'task_followers WHERE staffid = ' . $staffId . ') OR (addedfrom=' . $staffId . ' AND is_added_from_contact=0)';
+    
     if (get_option('show_all_tasks_for_project_member') == 1) {
-        $_tasks_where .= ' OR (' . db_prefix() . 'tasks.rel_type="project" AND ' . db_prefix() . 'tasks.rel_id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . get_staff_user_id() . '))';
+        $_tasks_where .= ' OR (' . $dbPrefix . 'tasks.rel_type="project" AND ' . $dbPrefix . 'tasks.rel_id IN (SELECT project_id FROM ' . $dbPrefix . 'project_members WHERE staff_id=' . $staffId . '))';
     }
+    
+    // Show ALL tasks for projects where user has project-level "task_create" permission
+    // Also show all tasks for projects where user is the project creator
+    $_tasks_where .= ' OR (' . $dbPrefix . 'tasks.rel_type="project" AND ' . $dbPrefix . 'tasks.rel_id IN (
+        SELECT project_id FROM ' . $dbPrefix . 'project_members 
+        WHERE staff_id=' . $staffId . ' 
+        AND (permissions LIKE \'%"task_create"%\' OR permissions LIKE \'%task_create%\')
+    ))';
+    
+    // Also show all tasks for projects where user is the project creator (addedfrom)
+    $_tasks_where .= ' OR (' . $dbPrefix . 'tasks.rel_type="project" AND ' . $dbPrefix . 'tasks.rel_id IN (
+        SELECT id FROM ' . $dbPrefix . 'projects WHERE addedfrom=' . $staffId . '
+    ))';
+    
     $_tasks_where .= ' OR is_public = 1)';
+    
     if ($table == true) {
         $_tasks_where = 'AND ' . $_tasks_where;
     }

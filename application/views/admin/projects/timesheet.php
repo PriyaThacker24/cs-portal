@@ -94,14 +94,58 @@
                                          <div class="form-group">
                                                 <select name="timesheet_task_id" id="timesheet_task_id" class="selectpicker" data-live-search="true" data-width="100%" data-none-selected-text="-">
                                             <option value=""></option>
-                                            <?php $has_permission_create = staff_can('create',  'projects');
-                                            foreach ($tasks as $task) {
-                                                if ((!$has_permission_create && !$this->tasks_model->is_task_assignee(get_staff_user_id(), $task['id']))) {
-                                                    continue;
-                                                }
-                                                echo '<option value="' . $task['id'] . '">' . e($task['name']) . '</option>';
+                                            <?php 
+                                            // Check permissions: staff-level "Task Add" OR project-level "Task Add"
+                                            $currentUserId = get_staff_user_id();
+                                            $currentProjectId = $project->id;
+                                            $canViewAllTasks = false;
+                                            
+                                            // Priority 1: Staff-level "Task Add" permission
+                                            if (staff_can('create', 'tasks')) {
+                                                $canViewAllTasks = true;
                                             }
-                                                ?>
+                                            
+                                            // Priority 2: Project-level "Task Add" permission
+                                            if (!$canViewAllTasks && $currentProjectId > 0) {
+                                                $this->load->model('projects_model');
+                                                if ($this->projects_model->hasProjectPermission($currentUserId, $currentProjectId, 'task_create')) {
+                                                    $canViewAllTasks = true;
+                                                }
+                                            }
+                                            
+                                            // Fetch ALL tasks for this project directly (not relying on pre-filtered $tasks)
+                                            $this->load->model('tasks_model');
+                                            
+                                            if ($canViewAllTasks) {
+                                                // User has Task Add permission - fetch ALL tasks (no status filter)
+                                                $allProjectTasks = $this->db->select('id, name, status')
+                                                    ->from(db_prefix() . 'tasks')
+                                                    ->where('rel_type', 'project')
+                                                    ->where('rel_id', $currentProjectId)
+                                                    ->order_by('name', 'ASC')
+                                                    ->get()
+                                                    ->result_array();
+                                                
+                                                foreach ($allProjectTasks as $task) {
+                                                    echo '<option value="' . $task['id'] . '">' . e($task['name']) . '</option>';
+                                                }
+                                            } else {
+                                                // User does NOT have Task Add permission - show only assigned tasks
+                                                $assignedTasks = $this->db->select(db_prefix() . 'tasks.id, ' . db_prefix() . 'tasks.name, ' . db_prefix() . 'tasks.status')
+                                                    ->from(db_prefix() . 'tasks')
+                                                    ->join(db_prefix() . 'task_assigned', db_prefix() . 'task_assigned.taskid = ' . db_prefix() . 'tasks.id')
+                                                    ->where(db_prefix() . 'tasks.rel_type', 'project')
+                                                    ->where(db_prefix() . 'tasks.rel_id', $currentProjectId)
+                                                    ->where(db_prefix() . 'task_assigned.staffid', $currentUserId)
+                                                    ->order_by(db_prefix() . 'tasks.name', 'ASC')
+                                                    ->get()
+                                                    ->result_array();
+                                                
+                                                foreach ($assignedTasks as $task) {
+                                                    echo '<option value="' . $task['id'] . '">' . e($task['name']) . '</option>';
+                                                }
+                                            }
+                                            ?>
                                         </select>
                                          </div>
                                     </div>
