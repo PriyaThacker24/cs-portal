@@ -959,3 +959,36 @@ function _maybe_remove_task_from_project_milestone(task_id) {
     }
   }
 }
+
+// Projects Kanban Update - handles drag and drop status changes
+function projects_kanban_update(ui, object) {
+  if (object === ui.item.parent()[0]) {
+    var status = $(ui.item.parent()[0]).attr("data-project-status-id");
+
+    var data = {
+      order: [],
+      status: status,
+    };
+
+    $.each($(ui.item.parent()[0]).find("[data-project-id]"), function (idx, el) {
+      var id = $(el).attr("data-project-id");
+      if (id) {
+        data.order.push([id, idx + 1]);
+      }
+    });
+
+    // Update project status
+    $.post(admin_url + "projects/update_order", data);
+
+    check_kanban_empty_col("[data-project-id]");
+
+    setTimeout(function () {
+      projects_kanban();
+    }, 200);
+  }
+}
+
+// Init projects kanban
+function projects_kanban() {
+  init_kanban("projects/kanban", projects_kanban_update, ".projects-status", 265, 360);
+}

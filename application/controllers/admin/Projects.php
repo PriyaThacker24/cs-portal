@@ -3,6 +3,7 @@
 use app\services\projects\AllProjectsGantt;
 use app\services\projects\Gantt;
 use app\services\projects\HoursOverviewChart;
+use app\services\projects\ProjectsKanban;
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
@@ -19,6 +20,19 @@ class Projects extends AdminController
     public function index()
     {
         close_setup_menu();
+        
+        if ($this->input->get('kanban')) {
+            $this->switch_kanban(0, true);
+        }
+
+        $data['switch_kanban'] = false;
+        $data['bodyclass']     = 'projects-page';
+
+        if ($this->session->userdata('projects_kanban_view') == 'true') {
+            $data['switch_kanban'] = true;
+            $data['bodyclass']     = 'projects-page kan-ban-body';
+        }
+        
         $data['statuses'] = $this->projects_model->get_project_statuses();
         $data['title']    = _l('projects');
         $data['table']    = App_table::find('projects');
@@ -30,6 +44,54 @@ class Projects extends AdminController
         App_table::find('projects')->output([
             'clientid' => $clientid,
         ]);
+    }
+
+    public function kanban()
+    {
+        echo $this->load->view('admin/projects/kan_ban', [], true);
+    }
+
+    public function projects_kanban_load_more()
+    {
+        $status = $this->input->get('status');
+        $page   = $this->input->get('page');
+
+        $projects = (new ProjectsKanban($status))
+            ->search($this->input->get('search'))
+            ->sortBy(
+                $this->input->get('sort_by'),
+                $this->input->get('sort')
+            )
+            ->page($page)->get();
+
+        foreach ($projects as $project) {
+            $this->load->view('admin/projects/_kan_ban_card', [
+                'project' => $project,
+                'status' => $status,
+            ]);
+        }
+    }
+
+    public function update_order()
+    {
+        $this->projects_model->update_order($this->input->post());
+    }
+
+    public function switch_kanban($set = 0, $manual = false)
+    {
+        if ($set == 1) {
+            $set = 'true';
+        } else {
+            $set = 'false';
+        }
+
+        $this->session->set_userdata([
+            'projects_kanban_view' => $set,
+        ]);
+
+        if ($manual == false) {
+            redirect(previous_url() ?: $_SERVER['HTTP_REFERER']);
+        }
     }
 
     public function staff_projects()

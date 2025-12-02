@@ -86,6 +86,11 @@ class Projects_model extends App_Model
         return $statuses;
     }
 
+    public function update_order($data)
+    {
+        \app\services\AbstractKanban::updateOrder($data['order'], 'id', 'projects', $data['status']);
+    }
+
     public function get_distinct_tasks_timesheets_staff($project_id)
     {
         return $this->db->query('SELECT DISTINCT staff_id FROM ' . db_prefix() . 'taskstimers LEFT JOIN ' . db_prefix() . 'tasks ON ' . db_prefix() . 'tasks.id = ' . db_prefix() . 'taskstimers.task_id WHERE rel_type="project" AND rel_id=' . $this->db->escape_str($project_id))->result_array();
