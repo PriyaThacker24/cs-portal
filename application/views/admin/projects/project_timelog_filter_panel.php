@@ -53,7 +53,7 @@
 </div>
 
 <!-- Filter Trigger Button -->
-<button type="button" class="btn btn-default btn-project-timelog-filter-trigger" id="btnOpenProjectTimelogFilter">
+<button type="button" class="btn btn-default btn-project-timelog-filter-trigger pull-right" id="btnOpenProjectTimelogFilter">
     <i class="fa fa-filter"></i> <?= _l('filters'); ?>
 </button>
 

@@ -16,7 +16,7 @@
             ?>
         </div>
         <?php if (count($timesheets_staff_ids) > 0) { ?>
-        <div class="btn-group pull-right mleft4 btn-with-tooltip-group _filter_data" data-toggle="tooltip"
+        <!-- <div class="btn-group pull-right mleft4 btn-with-tooltip-group _filter_data" data-toggle="tooltip"
             data-title="<?= _l('filter_by'); ?>">
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
                 aria-expanded="false">
@@ -32,7 +32,7 @@
                 </li>
                 <?php } ?>
             </ul>
-        </div>
+        </div> -->
         <?php } ?>
         <?php } ?>
         <?php $table_data = [

@@ -4171,4 +4171,9 @@ $lang['greater_than'] = 'Greater Than';
 $lang['less_than_or_equal'] = 'Less Than or Equal To';
 $lang['greater_than_or_equal'] = 'Greater Than or Equal To';
 $lang['from_date'] = 'From Date';
-$lang['to_date'] = 'To Date';
+$lang['to_date'] = 'To Date'; 
+
+$lang['work_item'] = 'Work Item';
+$lang['select_task'] = 'Select Task';
+$lang['select_type'] = 'Select Type';
+$lang['approval_status'] = 'Approval Status';
