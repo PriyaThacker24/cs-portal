@@ -152,6 +152,11 @@
                                 </div>
                             </div>
                         </div>
+                        <?php 
+                        // Get current logged-in user info
+                        $currentStaffId = get_staff_user_id();
+                        $currentStaffName = get_staff_full_name($currentStaffId);
+                        ?>
                         <div class="row mtop15">
                             <div class="col-md-12">
                                 <div class="row">
@@ -161,8 +166,10 @@
                                     <div class="col-md-9">
                                       <div class="form-group">
                                             <select name="timesheet_staff_id" id="timesheet_staff_id" class="selectpicker" data-live-search="true" data-width="100%" data-none-selected-text="-">
-                                            <option value=""></option>
+                                            <option value="<?php echo $currentStaffId; ?>" selected><?php echo e($currentStaffName); ?></option>
                                         </select>
+                                        <input type="hidden" id="current_staff_id" value="<?php echo $currentStaffId; ?>">
+                                        <input type="hidden" id="current_staff_name" value="<?php echo e($currentStaffName); ?>">
                                       </div>
                                     </div>
                                 </div>

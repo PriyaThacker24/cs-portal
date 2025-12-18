@@ -380,8 +380,18 @@ $(function () {
   $("#timesheet").on("hidden.bs.modal", function (event) {
     var $t = $("#timesheet");
     $t.find('select[name="timesheet_staff_id"]').removeAttr("data-staff_id");
-    $t.find('select[name="timesheet_staff_id"]').empty();
-    $t.find('select[name="timesheet_staff_id"]').selectpicker("refresh");
+    
+    // Reset Member dropdown to current logged-in user
+    var currentStaffId = $("#current_staff_id").val();
+    var currentStaffName = $("#current_staff_name").val();
+    var select_staff = $t.find('select[name="timesheet_staff_id"]');
+    if (currentStaffId && currentStaffName) {
+      select_staff.html('<option value="' + currentStaffId + '" selected>' + currentStaffName + '</option>');
+    } else {
+      select_staff.empty();
+    }
+    select_staff.selectpicker("refresh");
+    
     $t.find('select[name="timesheet_task_id"]').selectpicker("val", "");
     $t.find('select[name="bill_type"]').selectpicker("val", "billable");
     $t.find('textarea[name="note"]').val("");
@@ -394,7 +404,14 @@ $(function () {
     var select_staff = $('#timesheet select[name="timesheet_staff_id"]');
     var _task_id = $(this).val();
     if (_task_id == "") {
-      select_staff.html("");
+      // When no task is selected, show current logged-in user
+      var currentStaffId = $("#current_staff_id").val();
+      var currentStaffName = $("#current_staff_name").val();
+      if (currentStaffId && currentStaffName) {
+        select_staff.html('<option value="' + currentStaffId + '" selected>' + currentStaffName + '</option>');
+      } else {
+        select_staff.html("");
+      }
       select_staff.selectpicker("refresh");
       return;
     }

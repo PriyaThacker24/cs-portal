@@ -1040,29 +1040,25 @@ class Projects extends AdminController
 
     public function timesheet_task_assignees($task_id, $project_id, $staff_id = 'undefined')
     {
-        $assignees             = $this->tasks_model->get_task_assignees($task_id);
-        $data                  = '';
-        $has_permission_edit   = staff_can('edit', 'projects');
-        $has_permission_create = staff_can('edit', 'projects');
-        // The second condition if staff member edit their own timesheet
-        if ($staff_id == 'undefined' || $staff_id != 'undefined' && (! $has_permission_edit || ! $has_permission_create)) {
-            $staff_id     = get_staff_user_id();
-            $current_user = true;
+        $data = '';
+        
+        // Get current logged-in user
+        $current_staff_id = get_staff_user_id();
+        $current_staff_name = get_staff_full_name($current_staff_id);
+        
+        // Get task creator
+        $task = $this->tasks_model->get($task_id);
+        $task_creator_id = $task ? $task->addedfrom : null;
+        
+        // Always show current logged-in user as selected (first option)
+        $data .= '<option value="' . $current_staff_id . '" selected>' . e($current_staff_name) . '</option>';
+        
+        // Add task creator as second option (if different from current user)
+        if ($task_creator_id && $task_creator_id != $current_staff_id) {
+            $task_creator_name = get_staff_full_name($task_creator_id);
+            $data .= '<option value="' . $task_creator_id . '">' . e($task_creator_name) . '</option>';
         }
-
-        foreach ($assignees as $staff) {
-            $selected = '';
-            // maybe is admin and not project member
-            if ($staff['assigneeid'] == $staff_id && $this->projects_model->is_member($project_id, $staff_id)) {
-                $selected = ' selected';
-            }
-            if ((! $has_permission_edit || ! $has_permission_create) && isset($current_user)) {
-                if ($staff['assigneeid'] != $staff_id) {
-                    continue;
-                }
-            }
-            $data .= '<option value="' . $staff['assigneeid'] . '"' . $selected . '>' . e(get_staff_full_name($staff['assigneeid'])) . '</option>';
-        }
+        
         echo $data;
     }
 
