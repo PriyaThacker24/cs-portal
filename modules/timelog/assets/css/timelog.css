@@ -1,0 +1,402 @@
+/**
+ * Timelog Module Styles
+ * Zoho-style timelog interface
+ */
+
+.timelog-container {
+    padding: 20px;
+}
+
+/* Header Styles */
+.timelog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.timelog-header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.timelog-group-by {
+    min-width: 150px;
+}
+
+.timelog-week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-week-nav {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-week-nav:hover {
+    background: #f5f5f5;
+}
+
+.timelog-week-display {
+    font-weight: 500;
+    color: #333;
+    min-width: 200px;
+    text-align: center;
+}
+
+.timelog-header-right {
+    display: flex;
+    gap: 10px;
+}
+
+/* Filters Panel */
+.timelog-filters-panel {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.timelog-filters-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+/* Loading Indicator */
+#timelog_loading {
+    padding: 40px;
+    text-align: center;
+}
+
+#timelog_loading i {
+    color: #007bff;
+}
+
+/* Empty State */
+.timelog-empty-state {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+}
+
+.timelog-empty-state i {
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+/* Grouped List Styles */
+.timelog-grouped-list {
+    margin-bottom: 20px;
+}
+
+.timelog-grouped-list .table-responsive {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.timelog-grouped-list table.table-timelogs {
+    margin: 0;
+    width: 100%;
+}
+
+.timelog-grouped-list table.table-timelogs thead {
+    background: #f8f9fa;
+}
+
+.timelog-grouped-list table.table-timelogs thead th {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    background: #fff !important;
+}
+
+.timelog-group {
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.timelog-group-header {
+    background: #f8f9fa;
+    /* border-bottom: 1px solid #e0e0e0; */
+    /* padding: 12px 15px; */
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.timelog-group-header:hover {
+    background: #f0f0f0;
+}
+
+.group-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-toggle-group {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: #666;
+    font-size: 12px;
+}
+
+.btn-toggle-group:hover {
+    color: #333;
+}
+
+.btn-toggle-group i {
+    transition: transform 0.2s;
+}
+
+.btn-toggle-group[aria-expanded="false"] i {
+    transform: rotate(-90deg);
+}
+
+.group-header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.group-header-info i {
+    color: #666;
+    font-size: 14px;
+}
+
+.group-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.group-header-totals {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: auto;
+}
+
+.group-total-hours {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.group-billable-hours {
+    color: #007bff;
+    font-size: 13px;
+}
+
+.group-non-billable-hours {
+    color: #ff9800;
+    font-size: 13px;
+}
+
+.group-records-count {
+    background: #ff9800;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+
+/* Group Header Row */
+.timelog-group-header-row {
+    background: #f8f9fa !important;
+}
+
+.timelog-group-header-cell {
+    padding: 12px 15px !important;
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.timelog-group-header-row:hover {
+    background: #f0f0f0 !important;
+}
+
+.timelog-group-header-row:hover .timelog-group-header-cell {
+    background: #f0f0f0 !important;
+}
+
+/* Group Body Rows */
+.timelog-group-body-row {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.timelog-group-body-row:hover {
+    background: #f9f9f9;
+}
+
+.timelog-group-body-row td {
+    padding: 12px;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.timelog-group-body-row .log-title a {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.timelog-group-body-row .log-title a:hover {
+    color: #007bff;
+}
+
+.timelog-group-body-row .log-hours {
+    font-weight: 500;
+    color: #333;
+}
+
+.timelog-group-body-row .staff-name a,
+.timelog-group-body-row .project-name a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.timelog-group-body-row .staff-name a:hover,
+.timelog-group-body-row .project-name a:hover {
+    text-decoration: underline;
+}
+
+.timelog-group-body-row .billing-type .label {
+    font-size: 11px;
+    padding: 4px 8px;
+    font-weight: 500;
+}
+
+.timelog-group-body-row .billing-type .label-info {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.timelog-group-body-row .billing-type .label-warning {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.timelog-group-body-row .approval-status .label {
+    font-size: 11px;
+    padding: 4px 10px;
+    font-weight: 500;
+    border-radius: 3px;
+}
+
+.timelog-group-body-row .approval-status .label-success {
+    background: #4caf50;
+    color: #fff;
+}
+
+.timelog-group-body-row .approval-status .label-warning {
+    background: #ff9800;
+    color: #fff;
+}
+
+.timelog-group-body-row .approval-status .label-danger {
+    background: #f44336;
+    color: #fff;
+}
+
+.timelog-group-body-row .notes i {
+    color: #999;
+    cursor: help;
+}
+
+.timelog-group-body-row .created-by {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Checkbox Styles */
+.timelog-checkbox,
+.select-all-group {
+    cursor: pointer;
+}
+
+/* Summary Footer */
+.timelog-summary-footer {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #fff;
+    /* border-top: 1px solid #ddd; */
+    border-radius: 4px;
+}
+
+.timelog-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.timelog-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 13px;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .timelog-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .timelog-header-left {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .timelog-header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .group-header-totals {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .timelog-group-body {
+        overflow-x: auto;
+    }
+}

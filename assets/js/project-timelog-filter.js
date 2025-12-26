@@ -38,6 +38,7 @@ var ProjectTimelogFilter = (function() {
 
         bindEvents();
         initializeAccordionState();
+        initializeDatepickers();
         initializeSelectPickers();
         loadSavedFilters();
     }
@@ -92,6 +93,54 @@ var ProjectTimelogFilter = (function() {
         $(document).on('change', '.project-timelog-filter-panel .filter-accordion-item input, .project-timelog-filter-panel .filter-accordion-item select', function() {
             markFilterAsActive($(this));
         });
+
+        // Start Date operator change handler
+        $(document).on('change', '#project_timelog_start_date_operator_select', function() {
+            handleStartDateOperatorChange($(this).val());
+        });
+    }
+
+    /**
+     * Handle Start Date operator dropdown change
+     * Shows/hides date input fields based on selected operator
+     */
+    function handleStartDateOperatorChange(operator) {
+        $filterPanel = $('#projectTimelogFilterPanel');
+        // Hide all date input groups first
+        $filterPanel.find('.start-date-input-group').hide();
+        
+        // Clear all date inputs when operator changes
+        $filterPanel.find('[name="start_date_value"], [name="start_date_from"], [name="start_date_to"]').val('');
+        
+        // Preset operators that don't require date input
+        var presetOperators = [
+            'today', 'yesterday', 'tomorrow', 'till_yesterday', 
+            'this_week', 'last_week', 'next_week',
+            'this_month', 'last_month', 'next_month',
+            'last_7_days', 'next_30_days', 'unscheduled'
+        ];
+        
+        // Advanced operators that require single date input
+        var singleDateOperators = ['is', 'less_than', 'greater_than', 'less_than_or_equal', 'greater_than_or_equal'];
+        
+        // Check if it's a preset operator (no date input needed)
+        if (presetOperators.indexOf(operator) !== -1) {
+            // No date input needed for preset operators
+            return;
+        }
+        
+        // Check if single date input is needed
+        if (singleDateOperators.indexOf(operator) !== -1) {
+            $filterPanel.find('#project_timelog_start_date_single_picker').show();
+            return;
+        }
+        
+        // Between operator needs two date inputs
+        if (operator === 'between') {
+            $filterPanel.find('#project_timelog_start_date_range_picker').show();
+            $filterPanel.find('#project_timelog_start_date_range_picker_end').show();
+            return;
+        }
     }
 
     /**
@@ -199,6 +248,9 @@ var ProjectTimelogFilter = (function() {
                 $(this).selectpicker('refresh');
             }
         });
+        
+        // Hide date input groups
+        $filterPanel.find('.start-date-input-group').hide();
 
         // Remove active indicators and collapse accordions
         $accordionItems = $filterPanel.find('.filter-accordion-item');
@@ -242,6 +294,8 @@ var ProjectTimelogFilter = (function() {
                 filterValue = collectLogUserFilterValues($panel);
             } else if (filterType === 'work_item') {
                 filterValue = collectWorkItemFilterValues($panel);
+            } else if (filterType === 'start_date') {
+                filterValue = collectStartDateFilterValues($panel);
             } else if (filterType === 'billing_type') {
                 filterValue = collectBillingTypeFilterValues($panel);
             } else if (filterType === 'approval_status') {
@@ -381,6 +435,62 @@ var ProjectTimelogFilter = (function() {
     }
 
     /**
+     * Collect start date filter values based on selected operator
+     * Handles preset operators (auto-calculate dates) and advanced operators (date inputs)
+     */
+    function collectStartDateFilterValues($panel) {
+        var filterValue = {};
+        
+        // Get the operator value
+        var operator = $panel.find('[name="start_date_operator"]').val();
+        if (!operator) {
+            return filterValue;
+        }
+        
+        filterValue.operator = operator;
+        
+        // Preset operators that don't require date input
+        var presetOperators = [
+            'today', 'yesterday', 'tomorrow', 'till_yesterday', 
+            'this_week', 'last_week', 'next_week',
+            'this_month', 'last_month', 'next_month',
+            'last_7_days', 'next_30_days', 'unscheduled'
+        ];
+        
+        // If preset operator, return just the operator (backend will calculate dates)
+        if (presetOperators.indexOf(operator) !== -1) {
+            return filterValue;
+        }
+        
+        // Advanced operators that require single date input
+        var singleDateOperators = ['is', 'less_than', 'greater_than', 'less_than_or_equal', 'greater_than_or_equal'];
+        
+        if (singleDateOperators.indexOf(operator) !== -1) {
+            var dateValue = $panel.find('[name="start_date_value"]').val();
+            if (dateValue && dateValue.length > 0) {
+                filterValue.value = dateValue;
+            } else {
+                return {}; // Return empty if no date selected
+            }
+        }
+        
+        // Between operator needs two date values
+        if (operator === 'between') {
+            var fromDate = $panel.find('[name="start_date_from"]').val();
+            var toDate = $panel.find('[name="start_date_to"]').val();
+            
+            if (fromDate && fromDate.length > 0 && toDate && toDate.length > 0) {
+                filterValue.from = fromDate;
+                filterValue.to = toDate;
+            } else {
+                return {}; // Return empty if dates not complete
+            }
+        }
+        
+        return filterValue;
+    }
+
+    /**
      * Reload DataTable with current filters
      */
     function reloadTableWithFilters() {
@@ -467,8 +577,45 @@ var ProjectTimelogFilter = (function() {
                 }
             }
             
-            // Set values
-            if (filterValue.value) {
+            // Set values - special handling for start_date
+            if (filterType === 'start_date') {
+                // Handle start_date filter restoration
+                if (filterValue.operator) {
+                    var $operator = $panel.find('[name="start_date_operator"]');
+                    if ($operator.length) {
+                        $operator.val(filterValue.operator);
+                        if ($operator.hasClass('selectpicker') && typeof $.fn.selectpicker !== 'undefined') {
+                            $operator.selectpicker('refresh');
+                        }
+                        // Trigger operator change to show/hide date inputs
+                        handleStartDateOperatorChange(filterValue.operator);
+                    }
+                }
+                
+                if (filterValue.value) {
+                    var $valueField = $panel.find('[name="start_date_value"]');
+                    if ($valueField.length) {
+                        $valueField.val(filterValue.value);
+                        markFilterAsActive($valueField);
+                    }
+                }
+                
+                if (filterValue.from) {
+                    var $fromField = $panel.find('[name="start_date_from"]');
+                    if ($fromField.length) {
+                        $fromField.val(filterValue.from);
+                        markFilterAsActive($fromField);
+                    }
+                }
+                
+                if (filterValue.to) {
+                    var $toField = $panel.find('[name="start_date_to"]');
+                    if ($toField.length) {
+                        $toField.val(filterValue.to);
+                        markFilterAsActive($toField);
+                    }
+                }
+            } else if (filterValue.value) {
                 var $valueField = $panel.find('[name="' + filterType + '_value[]"], [name="' + filterType + '_value"]');
                 if ($valueField.length) {
                     $valueField.val(filterValue.value);
@@ -483,6 +630,18 @@ var ProjectTimelogFilter = (function() {
                 toggleAccordion($panel, true);
             }
         });
+    }
+
+    /**
+     * Initialize all datepickers
+     */
+    function initializeDatepickers() {
+        if ($filterPanel.length && typeof $.fn.datepicker !== 'undefined') {
+            $filterPanel.find('.datepicker').datepicker({
+                autoclose: true,
+                format: (typeof app !== 'undefined' && app.options && app.options.date_format) ? app.options.date_format : 'yyyy-mm-dd'
+            });
+        }
     }
 
     /**

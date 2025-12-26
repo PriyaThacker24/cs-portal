@@ -104,6 +104,60 @@ if ($currentProjectId > 0) {
     </div>
 </div>
 
+<!-- Start Date Filter -->
+<div class="filter-accordion-item" data-filter="start_date">
+    <button type="button" class="filter-accordion-header" aria-expanded="false">
+        <span class="filter-label"><?= _l('task_single_start_date'); ?></span>
+        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+    </button>
+    <div class="filter-accordion-body" aria-hidden="true">
+        <div class="form-group">
+            <label><?= _l('operator'); ?></label>
+            <select class="form-control selectpicker" name="start_date_operator" id="project_timelog_start_date_operator_select">
+                <!-- Preset Date Operators -->
+                <optgroup label="<?= _l('preset_dates'); ?>">
+                    <option value="today"><?= _l('today'); ?></option>
+                    <option value="till_yesterday"><?= _l('till_yesterday'); ?></option>
+                    <option value="unscheduled"><?= _l('unscheduled'); ?></option>
+                    <option value="yesterday"><?= _l('yesterday'); ?></option>
+                    <option value="tomorrow"><?= _l('tomorrow'); ?></option>
+                    <option value="this_week"><?= _l('this_week'); ?></option>
+                    <option value="this_month"><?= _l('this_month'); ?></option>
+                    <option value="last_week"><?= _l('last_week'); ?></option>
+                    <option value="last_month"><?= _l('last_month'); ?></option>
+                    <option value="last_7_days"><?= _l('last_7_days'); ?></option>
+                    <option value="next_week"><?= _l('next_week'); ?></option>
+                    <option value="next_month"><?= _l('next_month'); ?></option>
+                    <option value="next_30_days"><?= _l('next_30_days'); ?></option>
+                </optgroup>
+                <!-- Advanced Operators -->
+                <optgroup label="<?= _l('advanced'); ?>">
+                    <option value="is"><?= _l('is'); ?></option>
+                    <option value="between"><?= _l('between'); ?></option>
+                    <option value="less_than"><?= _l('less_than'); ?></option>
+                    <option value="greater_than"><?= _l('greater_than'); ?></option>
+                    <option value="less_than_or_equal"><?= _l('less_than_or_equal'); ?></option>
+                    <option value="greater_than_or_equal"><?= _l('greater_than_or_equal'); ?></option>
+                </optgroup>
+            </select>
+        </div>
+        <!-- Single Date Picker (shown for is, less_than, greater_than, etc.) -->
+        <div class="form-group start-date-input-group" id="project_timelog_start_date_single_picker" style="display:none;">
+            <label><?= _l('date'); ?></label>
+            <input type="text" class="form-control datepicker" name="start_date_value" autocomplete="off">
+        </div>
+        <!-- Date Range Pickers (shown for between) -->
+        <div class="form-group start-date-input-group" id="project_timelog_start_date_range_picker" style="display:none;">
+            <label><?= _l('from_date'); ?></label>
+            <input type="text" class="form-control datepicker" name="start_date_from" autocomplete="off">
+        </div>
+        <div class="form-group start-date-input-group" id="project_timelog_start_date_range_picker_end" style="display:none;">
+            <label><?= _l('to_date'); ?></label>
+            <input type="text" class="form-control datepicker" name="start_date_to" autocomplete="off">
+        </div>
+    </div>
+</div>
+
 <!-- Billing Type Filter -->
 <div class="filter-accordion-item" data-filter="billing_type">
     <button type="button" class="filter-accordion-header" aria-expanded="false">
