@@ -68,17 +68,54 @@ class Timelog_model extends App_Model
         $this->db->where(db_prefix() . 'taskstimers.start_time <=', $weekEndTimestamp);
         $this->db->where(db_prefix() . 'taskstimers.end_time IS NOT NULL', null, false);
         
-        // Apply filters
-        if (!empty($filters['project_id'])) {
+        // Apply advanced filters using ProjectTimelogAdvancedFilters class
+        if (!empty($filters['advanced_filters'])) {
+            try {
+                $filterData = is_string($filters['advanced_filters']) ? json_decode($filters['advanced_filters'], true) : $filters['advanced_filters'];
+                
+                // Handle Project filter separately (not in ProjectTimelogAdvancedFilters)
+                if (isset($filterData['project']) && !empty($filterData['project']['value'])) {
+                    $projectIds = is_array($filterData['project']['value']) ? $filterData['project']['value'] : [$filterData['project']['value']];
+                    $operator = isset($filterData['project']['operator']) ? $filterData['project']['operator'] : 'is';
+                    
+                    if ($operator === 'is_not') {
+                        $this->db->where_not_in(db_prefix() . 'projects.id', $projectIds);
+                    } else {
+                        $this->db->where_in(db_prefix() . 'projects.id', $projectIds);
+                    }
+                }
+                
+                // Remove project filter from data before passing to ProjectTimelogAdvancedFilters
+                $filterDataWithoutProject = $filterData;
+                unset($filterDataWithoutProject['project']);
+                
+                // Only process if there are other filters besides project
+                if (!empty($filterDataWithoutProject) && count($filterDataWithoutProject) > (isset($filterDataWithoutProject['match']) ? 1 : 0)) {
+                    $advancedFilters = new \app\services\timelog\ProjectTimelogAdvancedFilters($filterDataWithoutProject);
+                    $advancedWhere = $advancedFilters->buildWhereClause();
+                    if (!empty($advancedWhere)) {
+                        // Remove leading ' AND ' if present, then add it properly
+                        $advancedWhere = ltrim($advancedWhere, ' AND ');
+                        $this->db->where('(' . $advancedWhere . ')', null, false);
+                    }
+                }
+            } catch (Exception $e) {
+                // Log error but don't break the query
+                log_message('error', 'Timelog advanced filter error: ' . $e->getMessage());
+            }
+        }
+        
+        // Legacy simple filters (for backward compatibility)
+        if (!empty($filters['project_id']) && empty($filters['advanced_filters'])) {
             $this->db->where(db_prefix() . 'projects.id', $filters['project_id']);
         }
         
-        if (!empty($filters['staff_id'])) {
+        if (!empty($filters['staff_id']) && empty($filters['advanced_filters'])) {
             $this->db->where(db_prefix() . 'taskstimers.staff_id', $filters['staff_id']);
         }
         
-        // Apply billing type filter
-        if ($has_bill_type_column && !empty($filters['billing_type'])) {
+        // Apply billing type filter (legacy)
+        if ($has_bill_type_column && !empty($filters['billing_type']) && empty($filters['advanced_filters'])) {
             if ($filters['billing_type'] == 'billable') {
                 $this->db->where(db_prefix() . 'taskstimers.bill_type', 'billable');
             } elseif ($filters['billing_type'] == 'non_billable') {

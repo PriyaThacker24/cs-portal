@@ -19,6 +19,12 @@ var TimelogModule = (function() {
 
                bindEvents();
                initTimelogDrawer();
+               
+               // Ensure filter panel is initialized
+               if (typeof TimelogFilter !== 'undefined' && TimelogFilter.init) {
+                   TimelogFilter.init();
+               }
+               
                loadTimelogs();
            }
 
@@ -42,12 +48,19 @@ var TimelogModule = (function() {
             loadTimelogs();
         });
 
-        // Filter toggle
-        $('#btn_filter').on('click', function() {
-            $('#filters_panel').slideToggle();
+        // Filter toggle - open advanced filter panel
+        $('#btn_filter').on('click', function(e) {
+            e.preventDefault();
+            if (typeof TimelogFilter !== 'undefined' && TimelogFilter.openFilterPanel) {
+                TimelogFilter.openFilterPanel();
+            } else {
+                // Fallback: try to open panel directly
+                $('#timelogFilterPanel').addClass('active');
+                $('body').addClass('filter-panel-open');
+            }
         });
 
-        // Apply filters
+        // Apply filters (legacy - kept for backward compatibility)
         $('#btn_apply_filters').on('click', function() {
             applyFilters();
         });
@@ -152,6 +165,15 @@ var TimelogModule = (function() {
         $loading.show();
         $content.hide();
 
+        // Get advanced filters from TimelogFilter if available
+        var advancedFilters = '';
+        if (typeof TimelogFilter !== 'undefined' && TimelogFilter.getFilters) {
+            var filterData = TimelogFilter.getFilters();
+            if (filterData && Object.keys(filterData).length > 0) {
+                advancedFilters = JSON.stringify(filterData);
+            }
+        }
+        
         var data = {
             week_start: currentWeekStart,
             group_by: currentGroupBy,
@@ -159,6 +181,11 @@ var TimelogModule = (function() {
             staff_id: currentFilters.staff_id || '',
             billing_type: currentFilters.billing_type || ''
         };
+        
+        // Add advanced filters if available
+        if (advancedFilters) {
+            data.advanced_filters = advancedFilters;
+        }
 
         $.ajax({
             url: admin_url + 'timelog/get_data',

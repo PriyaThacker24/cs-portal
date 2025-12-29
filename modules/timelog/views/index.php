@@ -69,56 +69,8 @@
                         </div>
                     </div>
                     
-                    <!-- Filters Panel (Initially Hidden) -->
-                    <div class="timelog-filters-panel" id="filters_panel" style="display: none;">
-                        <div class="timelog-filters-content">
-                            <div class="form-group">
-                                <label><?= _l('project'); ?></label>
-                                <select id="filter_project" class="form-control selectpicker" data-live-search="true">
-                                    <option value=""><?= _l('all_projects'); ?></option>
-                                    <?php foreach ($projects as $project) { ?>
-                                        <option value="<?= $project['id']; ?>" <?= ($filters['project_id'] == $project['id'] ? 'selected' : ''); ?>>
-                                            <?= e($project['name']); ?>
-                                        </option>
-                                    <?php } ?>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label><?= _l('staff_member'); ?></label>
-                                <select id="filter_staff" class="form-control selectpicker" data-live-search="true">
-                                    <option value=""><?= _l('all_staff'); ?></option>
-                                    <?php foreach ($staff as $member) { ?>
-                                        <option value="<?= $member['staffid']; ?>" <?= ($filters['staff_id'] == $member['staffid'] ? 'selected' : ''); ?>>
-                                            <?= e($member['firstname'] . ' ' . $member['lastname']); ?>
-                                        </option>
-                                    <?php } ?>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label><?= _l('billing_type'); ?></label>
-                                <select id="filter_billing_type" class="form-control">
-                                    <option value=""><?= _l('all'); ?></option>
-                                    <option value="billable" <?= ($filters['billing_type'] == 'billable' ? 'selected' : ''); ?>>
-                                        <?= _l('task_billable'); ?>
-                                    </option>
-                                    <option value="non_billable" <?= ($filters['billing_type'] == 'non_billable' ? 'selected' : ''); ?>>
-                                        <?= _l('task_not_billable'); ?>
-                                    </option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <button type="button" class="btn btn-primary" id="btn_apply_filters">
-                                    <?= _l('apply_filters'); ?>
-                                </button>
-                                <button type="button" class="btn btn-default" id="btn_clear_filters">
-                                    <?= _l('clear_filters'); ?>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Advanced Filter Panel (Included via view) -->
+                    <?php $this->load->view('timelog/timelog_filter_panel'); ?>
                     
                     <!-- Loading Indicator -->
                     <div id="timelog_loading" class="text-center" style="display: none;">
@@ -150,6 +102,11 @@
 
 <!-- Timelog CSS -->
 <link rel="stylesheet" href="<?= module_dir_url('timelog', 'assets/css/timelog.css'); ?>">
+<!-- Project Timelog Filter CSS (for advanced filter panel) -->
+<link rel="stylesheet" href="<?= base_url('assets/css/project-timelog-filter.css'); ?>">
+
+<!-- Timelog Filter JavaScript -->
+<script src="<?= module_dir_url('timelog', 'assets/js/timelog-filter.js'); ?>"></script>
 
 <!-- Timelog JavaScript -->
 <script src="<?= module_dir_url('timelog', 'assets/js/timelog.js'); ?>"></script>

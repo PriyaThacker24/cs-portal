@@ -64,11 +64,15 @@ class Timelog extends AdminController
             $weekStart = date('Y-m-d', strtotime('monday this week'));
         }
 
+        // Get advanced filters JSON
+        $advancedFiltersJson = $this->input->post('advanced_filters');
+        
         $filters = [
             'project_id' => $this->input->post('project_id'),
             'staff_id' => $this->input->post('staff_id'),
             'billing_type' => $this->input->post('billing_type'),
             'group_by' => $this->input->post('group_by') ?: 'date',
+            'advanced_filters' => $advancedFiltersJson, // Pass advanced filters JSON
         ];
 
         $timelogData = $this->timelog_model->get_timelogs($weekStart, $filters);

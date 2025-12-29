@@ -152,7 +152,8 @@ class ProjectTimelogAdvancedFilters
 
     /**
      * Build Billing Type filter clause
-     * Filters timelogs by billable status
+     * Filters timelogs by bill_type status in taskstimers table
+     * Handles NULL values by treating them as 'billable' (default behavior)
      */
     protected function buildBillingTypeClause(): string
     {
@@ -173,15 +174,28 @@ class ProjectTimelogAdvancedFilters
 
         $prefix = db_prefix();
         
-        // Determine the billable value (1 for billable, 0 for non-billable)
-        $billableValue = ($value === 'billable') ? 1 : 0;
+        // Escape the bill_type value (billable or non_billable)
+        $escapedValue = $this->ci->db->escape($value);
 
         if ($operator === 'is_not') {
-            return "({$prefix}tasks.billable != {$billableValue})";
+            // For "is_not", exclude records where bill_type equals the value OR is NULL (if value is billable)
+            if ($value === 'billable') {
+                // Exclude billable: bill_type != 'billable' AND bill_type IS NOT NULL
+                return "({$prefix}taskstimers.bill_type != {$escapedValue} AND {$prefix}taskstimers.bill_type IS NOT NULL)";
+            } else {
+                // Exclude non_billable: bill_type != 'non_billable' OR bill_type IS NULL (NULL defaults to billable)
+                return "({$prefix}taskstimers.bill_type != {$escapedValue} OR {$prefix}taskstimers.bill_type IS NULL)";
+            }
         }
 
         // Default: is
-        return "({$prefix}tasks.billable = {$billableValue})";
+        if ($value === 'billable') {
+            // Include billable: bill_type = 'billable' OR bill_type IS NULL (NULL defaults to billable)
+            return "({$prefix}taskstimers.bill_type = {$escapedValue} OR {$prefix}taskstimers.bill_type IS NULL)";
+        } else {
+            // Include non_billable: bill_type = 'non_billable' AND bill_type IS NOT NULL
+            return "({$prefix}taskstimers.bill_type = {$escapedValue} AND {$prefix}taskstimers.bill_type IS NOT NULL)";
+        }
     }
 
     /**
