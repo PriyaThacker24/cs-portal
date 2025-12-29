@@ -1982,6 +1982,7 @@ $lang['task_stop_timer']        = 'Stop Timer';
 $lang['task_billable']          = 'Billable';
 $lang['task_billable_yes']      = 'Billable';
 $lang['task_billable_no']       = 'Not Billable';
+$lang['task_not_billable']       = 'Not Billable';
 $lang['billing_type']           = 'Billing Type';
 $lang['billable']               = 'Billable';
 $lang['non_billable']           = 'Non-billable';

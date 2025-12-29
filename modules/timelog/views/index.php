@@ -40,9 +40,9 @@
                             <button type="button" class="btn btn-primary" id="btn_add_timelog">
                                 <i class="fa fa-plus"></i> <?= _l('add_time_log'); ?>
                             </button>
-                            <button type="button" class="btn btn-default" id="btn_toggle_view">
+                            <!-- <button type="button" class="btn btn-default" id="btn_toggle_view">
                                 <i class="fa fa-list"></i> <?= _l('list_view'); ?>
-                            </button>
+                            </button> -->
                             <button type="button" class="btn btn-default" id="btn_filter">
                                 <i class="fa fa-filter"></i> <?= _l('filters'); ?>
                             </button>
@@ -138,6 +138,9 @@
         </div>
     </div>
 </div>
+
+<!-- Include Add Time Log Drawer -->
+<?php $this->load->view('add_timelog_drawer'); ?>
 
 <!-- Hidden inputs for current state -->
 <input type="hidden" id="current_week_start" value="<?= $week_start; ?>">

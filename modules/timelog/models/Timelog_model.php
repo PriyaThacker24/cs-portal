@@ -325,11 +325,18 @@ class Timelog_model extends App_Model
             return $result;
         }
         
-        // Group by date
+        // Group by date (based on start_time)
         $grouped = [];
         
         foreach ($timelogs as $log) {
-            $logDate = $log['log_date'];
+            // Ensure we're using the date from start_time (always use start_time for grouping)
+            if (!isset($log['start_time']) || empty($log['start_time'])) {
+                // Skip logs without a valid start_time
+                continue;
+            }
+            
+            // Extract date from start_time (Unix timestamp)
+            $logDate = date('Y-m-d', $log['start_time']);
             
             if (!isset($grouped[$logDate])) {
                 $grouped[$logDate] = [
