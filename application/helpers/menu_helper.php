@@ -284,7 +284,7 @@ function app_init_admin_sidebar_menu_items()
         ]);
     }
 
-    if (staff_can('view-timesheets', 'reports')) {
+    if (staff_can('view', 'timesheets') || staff_can('view_own', 'timesheets')) {
         $CI->app_menu->add_sidebar_children_item('reports', [
             'slug'     => 'timesheets-reports',
             'name'     => _l('timesheets_overview'),

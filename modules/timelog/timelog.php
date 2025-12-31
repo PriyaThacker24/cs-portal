@@ -38,8 +38,8 @@ function timelog_init_menu_items()
     $CI = &get_instance();
     
     // Check if user has permission to view timesheets or is admin
-    // Allow access if user can view timesheets in reports, view tasks, or is admin
-    // if (staff_can('view-timesheets', 'reports') || staff_can('view', 'tasks') || is_admin()) {
+    // Note: staff_can() already returns true for admins, but we check explicitly for clarity
+    if (is_admin() || staff_can('view', 'timesheets') || staff_can('view_own', 'timesheets')) {
         $CI->app_menu->add_sidebar_menu_item('timelog', [
             'name'     => _l('timelog_menu'),
             'href'     => admin_url('timelog'),
@@ -47,6 +47,6 @@ function timelog_init_menu_items()
             'icon'     => 'fa-regular fa-clock',
             'badge'    => [],
         ]);
-    // }
+    }
 }
 

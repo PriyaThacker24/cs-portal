@@ -130,18 +130,18 @@ function get_available_staff_permissions($data = [])
         ],
         'tasks' => [
             'name'         => _l('tasks'),
-            'capabilities' => array_merge($withNotApplicableViewOwn, [
-                'edit_timesheet'       => _l('permission_edit_timesheets'),
-                'edit_own_timesheet'   => _l('permission_edit_own_timesheets'),
-                'delete_timesheet'     => _l('permission_delete_timesheets'),
-                'delete_own_timesheet' => _l('permission_delete_own_timesheets'),
-                'approve_timesheet'    => _l('permission_approve_timesheets'),
-                'reject_timesheet'     => _l('permission_reject_timesheets'),
-            ]),
+            'capabilities' => $withNotApplicableViewOwn,
              'help' => [
                 'view'     => _l('help_tasks_permissions'),
                 'view_own' => _l('permission_tasks_based_on_assignee'),
             ],
+        ],
+        'timesheets' => [
+            'name'         => _l('timesheets'),
+            'capabilities' => array_merge($allPermissionsArray, [
+                'approve' => _l('permission_approve_timesheets'),
+                'reject'  => _l('permission_reject_timesheets'),
+            ]),
         ],
         'checklist_templates' => [
             'name'         => _l('checklist_templates'),

@@ -21,7 +21,18 @@
 
             <!-- Filter Accordions -->
             <div class="filter-accordion">
-                <?php $this->load->view('timelog/timelog_filter_sub_panels'); ?>
+                <?php 
+                // Pass context to sub panels (for project-specific filtering)
+                // Extract variables that were passed to this view and pass them to sub panels
+                $sub_panel_data = [];
+                if (isset($hide_project_filter)) {
+                    $sub_panel_data['hide_project_filter'] = $hide_project_filter;
+                }
+                if (isset($project_id)) {
+                    $sub_panel_data['project_id'] = $project_id;
+                }
+                $this->load->view('timelog/timelog_filter_sub_panels', $sub_panel_data); 
+                ?>
             </div>
         </div>
 

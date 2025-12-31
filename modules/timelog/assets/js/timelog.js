@@ -116,6 +116,59 @@ var TimelogModule = (function() {
             // Future: Toggle between list and grid view
             alert_float('info', 'List/Grid view toggle coming soon');
         });
+
+        // Timelog status change handler (using event delegation for dynamically loaded content)
+        $(document).on('change', '.timelog-status-change', function() {
+            var $select = $(this);
+            var timelogId = $select.data('timelog-id');
+            var status = $select.val();
+            var originalValue = $select.data('original-value');
+            
+            // If status hasn't changed, do nothing
+            if (status === originalValue) {
+                return;
+            }
+            
+            // Update dropdown color immediately
+            $select.removeClass('status-pending status-approved status-rejected')
+                   .addClass('status-' + status);
+            
+            // Disable dropdown while updating
+            $select.prop('disabled', true);
+            
+            $.ajax({
+                url: admin_url + 'timelog/update_status',
+                type: 'POST',
+                data: {
+                    timelog_id: timelogId,
+                    status: status
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert_float('success', response.message);
+                        $select.data('original-value', status);
+                        // Reload timelogs to reflect the change
+                        loadTimelogs();
+                    } else {
+                        // Revert to original value on error
+                        $select.val(originalValue);
+                        $select.removeClass('status-pending status-approved status-rejected')
+                               .addClass('status-' + originalValue);
+                        alert_float('warning', response.message || (typeof _l !== 'undefined' ? _l('failed_to_update_timesheet') : 'Failed to update status'));
+                    }
+                    $select.prop('disabled', false);
+                },
+                error: function() {
+                    // Revert to original value on error
+                    $select.val(originalValue);
+                    $select.removeClass('status-pending status-approved status-rejected')
+                           .addClass('status-' + originalValue);
+                    alert_float('warning', typeof _l !== 'undefined' ? _l('failed_to_update_timesheet') : 'Failed to update status');
+                    $select.prop('disabled', false);
+                }
+            });
+        });
     }
 
     /**
@@ -165,19 +218,50 @@ var TimelogModule = (function() {
         $loading.show();
         $content.hide();
 
+        // Check if we're in project context (project_id from hidden input)
+        var projectIdFromInput = $('#current_project_id').val();
+        
         // Get advanced filters from TimelogFilter if available
         var advancedFilters = '';
+        var filterData = null;
         if (typeof TimelogFilter !== 'undefined' && TimelogFilter.getFilters) {
-            var filterData = TimelogFilter.getFilters();
+            filterData = TimelogFilter.getFilters();
             if (filterData && Object.keys(filterData).length > 0) {
+                // If we're in project context, ensure project filter is set
+                if (projectIdFromInput) {
+                    filterData.project = {
+                        operator: 'is',
+                        value: [parseInt(projectIdFromInput)]
+                    };
+                }
+                advancedFilters = JSON.stringify(filterData);
+            } else if (projectIdFromInput) {
+                // No filters but we have project_id, create basic filter
+                filterData = {
+                    match: 'any',
+                    project: {
+                        operator: 'is',
+                        value: [parseInt(projectIdFromInput)]
+                    }
+                };
                 advancedFilters = JSON.stringify(filterData);
             }
+        } else if (projectIdFromInput) {
+            // TimelogFilter not available but we have project_id, create basic filter
+            filterData = {
+                match: 'any',
+                project: {
+                    operator: 'is',
+                    value: [parseInt(projectIdFromInput)]
+                }
+            };
+            advancedFilters = JSON.stringify(filterData);
         }
         
         var data = {
             week_start: currentWeekStart,
             group_by: currentGroupBy,
-            project_id: currentFilters.project_id || '',
+            project_id: projectIdFromInput || currentFilters.project_id || '',
             staff_id: currentFilters.staff_id || '',
             billing_type: currentFilters.billing_type || ''
         };
@@ -197,6 +281,9 @@ var TimelogModule = (function() {
                 
                 if (response && response.html) {
                     $content.html(response.html).show();
+                    
+                    // Initialize status dropdown colors
+                    initializeStatusDropdownColors();
                     
                     // Always update week display and summary from response
                     if (response.week_start && response.week_end && response.week_number) {
@@ -837,6 +924,18 @@ var TimelogModule = (function() {
     }
 
     /**
+     * Initialize status dropdown colors
+     */
+    function initializeStatusDropdownColors() {
+        $('.timelog-status-change').each(function() {
+            var $select = $(this);
+            var status = $select.val();
+            $select.removeClass('status-pending status-approved status-rejected')
+                   .addClass('status-' + status);
+        });
+    }
+
+    /**
      * Public API
      */
     return {
@@ -845,4 +944,9 @@ var TimelogModule = (function() {
     };
 
 })();
+
+// Make TimelogModule globally available
+if (typeof window !== 'undefined') {
+    window.TimelogModule = TimelogModule;
+}
 

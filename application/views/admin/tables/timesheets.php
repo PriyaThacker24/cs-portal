@@ -45,7 +45,7 @@ $where = ['AND task_id IN (SELECT id FROM ' . db_prefix() . 'tasks WHERE rel_id=
 $can_see_all_logs = false;
 
 // Check staff-level global permissions
-if (staff_can('edit_timesheet', 'tasks') || staff_can('delete_timesheet', 'tasks') || staff_can('create', 'projects')) {
+if (staff_can('edit', 'timesheets') || staff_can('delete', 'timesheets') || staff_can('create', 'projects')) {
     $can_see_all_logs = true;
 }
 
@@ -123,7 +123,7 @@ $rResult = $result['rResult'];
 $can_update_status = false;
 
 // Priority 1: Check staff-level permissions (Global)
-if (staff_can('approve_timesheet', 'tasks') || staff_can('reject_timesheet', 'tasks')) {
+if (staff_can('approve', 'timesheets') || staff_can('reject', 'timesheets')) {
     $can_update_status = true;
 } else {
     // Priority 2: Check project-level permissions

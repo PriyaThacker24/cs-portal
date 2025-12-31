@@ -15,8 +15,8 @@ class Timelog extends AdminController
      */
     public function index()
     {
-        // Check permissions - allow if user can view timesheets or view tasks
-        if (!staff_can('view-timesheets', 'reports') && !staff_can('view', 'tasks') && !is_admin()) {
+        // Check permissions - allow if user can view timesheets
+        if (!staff_can('view', 'timesheets') && !staff_can('view_own', 'timesheets') && !is_admin()) {
             access_denied('Timelog');
         }
 
@@ -449,5 +449,82 @@ class Timelog extends AdminController
         }
         
         return true;
+    }
+
+    /**
+     * Update timelog approval status
+     */
+    public function update_status()
+    {
+        if (!$this->input->is_ajax_request()) {
+            access_denied('Timelog');
+        }
+
+        // Check permissions
+        if (!staff_can('approve', 'timesheets') && !staff_can('reject', 'timesheets') && !is_admin()) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('access_denied')
+            ]);
+            exit;
+        }
+
+        if ($this->input->post()) {
+            $timelog_id = $this->input->post('timelog_id');
+            $status = $this->input->post('status');
+            
+            if (!in_array($status, ['pending', 'approved', 'rejected'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('invalid_status')
+                ]);
+                exit;
+            }
+            
+            $this->db->select('id, task_id, staff_id');
+            $this->db->where('id', $timelog_id);
+            $timelog = $this->db->get(db_prefix() . 'taskstimers')->row();
+            
+            if (!$timelog) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('timesheet_not_found')
+                ]);
+                exit;
+            }
+            
+            $this->db->where('id', $timelog_id);
+            $update_result = $this->db->update(db_prefix() . 'taskstimers', ['status' => $status]);
+            
+            $status_label = '';
+            switch ($status) {
+                case 'approved':
+                    $status_label = _l('approved');
+                    break;
+                case 'rejected':
+                    $status_label = _l('rejected');
+                    break;
+                default:
+                    $status_label = _l('pending');
+                    break;
+            }
+            
+            if ($update_result) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => _l('timesheet_status_updated_to', $status_label)
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('failed_to_update_timesheet')
+                ]);
+            }
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('invalid_request')
+            ]);
+        }
     }
 }

@@ -149,8 +149,32 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                                     $statusClass = 'label-danger';
                                     $statusText = _l('rejected');
                                 }
+                                
+                                // Check if user has permission to approve/reject timesheets
+                                $can_update_status = false;
+                                if (staff_can('approve', 'timesheets') || staff_can('reject', 'timesheets') || is_admin()) {
+                                    $can_update_status = true;
+                                }
+                                
+                                if ($can_update_status) {
+                                    // User has permission - show dropdown
+                                    ?>
+                                    <select name="timelog_status" class="form-control timelog-status-change status-<?= $status; ?>" 
+                                            style="width: auto; display: inline-block; padding: 3px 8px; height: auto; font-size: 12px;" 
+                                            data-timelog-id="<?= $log['id']; ?>" 
+                                            data-original-value="<?= $status; ?>">
+                                        <option value="pending" <?= ($status == 'pending' ? 'selected' : ''); ?>><?= _l('pending'); ?></option>
+                                        <option value="approved" <?= ($status == 'approved' ? 'selected' : ''); ?>><?= _l('approved'); ?></option>
+                                        <option value="rejected" <?= ($status == 'rejected' ? 'selected' : ''); ?>><?= _l('rejected'); ?></option>
+                                    </select>
+                                    <?php
+                                } else {
+                                    // User does not have permission - show label only
+                                    ?>
+                                    <span class="label <?= $statusClass; ?>"><?= $statusText; ?></span>
+                                    <?php
+                                }
                                 ?>
-                                <span class="label <?= $statusClass; ?>"><?= $statusText; ?></span>
                             </td>
                             <td class="notes">
                                 <?php if (!empty($log['note'])) { ?>

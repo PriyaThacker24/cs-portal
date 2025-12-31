@@ -168,8 +168,13 @@ class Staff extends AdminController
 
     public function timesheets()
     {
+        // Check if user has permission to view timesheets
+        if (!staff_can('view', 'timesheets') && !staff_can('view_own', 'timesheets') && !is_admin()) {
+            access_denied('Timesheets');
+        }
+
         $data['view_all'] = false;
-        if (staff_can('view-timesheets', 'reports') && $this->input->get('view') == 'all') {
+        if (staff_can('view', 'timesheets') && $this->input->get('view') == 'all') {
             $data['staff_members_with_timesheets'] = $this->db->query('SELECT DISTINCT staff_id FROM ' . db_prefix() . 'taskstimers WHERE staff_id !=' . get_staff_user_id())->result_array();
             $data['view_all']                      = true;
         }

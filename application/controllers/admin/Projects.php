@@ -1009,7 +1009,7 @@ class Projects extends AdminController
         if ($this->input->post()) {
             if (
                 $this->input->post('timer_id')
-                && ! (staff_can('edit_timesheet', 'tasks') || (staff_can('edit_own_timesheet', 'tasks') && total_rows(db_prefix() . 'taskstimers', ['staff_id' => get_staff_user_id(), 'id' => $this->input->post('timer_id')]) > 0))
+                && ! staff_can('edit', 'timesheets')
             ) {
                 echo json_encode([
                     'success' => false,

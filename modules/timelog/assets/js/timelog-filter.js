@@ -288,11 +288,25 @@ var TimelogFilter = (function() {
         // Reset match condition to "any"
         $('#timelogFilterPanel input[name="timelog_filter_match"][value="any"]').prop('checked', true);
         
-        // Clear stored filter data
+        // Clear stored filter data, but preserve project filter if in project context
+        var projectIdFromInput = $('#current_project_id').val();
         currentFilters = {};
-        localStorage.removeItem('timelog_filters');
         
-        // Reload timelogs without filters
+        if (projectIdFromInput) {
+            // Preserve project filter when in project context
+            var projectFilterData = {
+                match: 'any',
+                project: {
+                    operator: 'is',
+                    value: [parseInt(projectIdFromInput)]
+                }
+            };
+            localStorage.setItem('timelog_filters', JSON.stringify(projectFilterData));
+        } else {
+            localStorage.removeItem('timelog_filters');
+        }
+        
+        // Reload timelogs (will automatically apply project filter if in project context)
         if (typeof TimelogModule !== 'undefined' && TimelogModule.loadTimelogs) {
             TimelogModule.loadTimelogs();
         } else {
@@ -509,6 +523,15 @@ var TimelogFilter = (function() {
     function applyFilters() {
         console.log('TimelogFilter: Applying filters...');
         currentFilters = collectFilterValues();
+        
+        // If we're in project context, ensure project filter is always included
+        var projectIdFromInput = $('#current_project_id').val();
+        if (projectIdFromInput) {
+            currentFilters.project = {
+                operator: 'is',
+                value: [parseInt(projectIdFromInput)]
+            };
+        }
         
         console.log('TimelogFilter: Collected filters:', currentFilters);
         

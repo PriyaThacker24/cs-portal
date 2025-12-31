@@ -831,37 +831,19 @@ function can_user_timesheet_action($action, $timesheet_staff_id, $project_id = n
         return false;
     }
 
-    $staff_permission_map = [
-        'edit' => 'edit_timesheet',
-        'delete' => 'delete_timesheet',
-    ];
-
-    $staff_own_permission_map = [
-        'edit' => 'edit_own_timesheet',
-        'delete' => 'delete_own_timesheet',
-    ];
-
     $project_permission_map = [
         'edit' => 'log_edit',
         'delete' => 'log_delete',
     ];
 
-    $staff_permission = $staff_permission_map[$action];
-    $staff_own_permission = $staff_own_permission_map[$action];
     $project_permission = $project_permission_map[$action];
 
     // Step 1: Check staff-level global permission first
-    if (staff_can($staff_permission, 'tasks')) {
+    if (staff_can($action, 'timesheets')) {
         return true; // Staff-level global permission exists, can edit/delete all
     }
 
-    // Step 2: Check staff-level own permission
-    if (staff_can($staff_own_permission, 'tasks')) {
-        // Can only edit/delete own timesheets
-        return ($timesheet_staff_id == $user_id);
-    }
-
-    // Step 3: If staff-level permission does NOT exist, fallback to project-level
+    // Step 2: If staff-level permission does NOT exist, fallback to project-level
     // Project-level permissions allow editing/deleting ALL logs in the project, not just own
     if ($project_id) {
         $CI = &get_instance();

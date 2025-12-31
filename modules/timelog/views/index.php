@@ -37,9 +37,11 @@
                             </div>
 </div>
                         <div class="timelog-header-right">
+                            <?php if (staff_can('create', 'timesheets') || is_admin()) { ?>
                             <button type="button" class="btn btn-primary" id="btn_add_timelog">
                                 <i class="fa fa-plus"></i> <?= _l('add_time_log'); ?>
                             </button>
+                            <?php } ?>
                             <!-- <button type="button" class="btn btn-default" id="btn_toggle_view">
                                 <i class="fa fa-list"></i> <?= _l('list_view'); ?>
                             </button> -->

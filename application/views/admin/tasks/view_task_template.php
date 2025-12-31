@@ -269,10 +269,10 @@ foreach ($task->timesheets as $timesheet) { ?>
                                         <div
                                             class="tw-flex tw-items-center tw-shrink-0 tw-self-start tw-space-x-1.5 tw-ml-2">
                                             <?php
-                                  if (staff_can('delete_timesheet', 'tasks') || (staff_can('delete_own_timesheet', 'tasks') && $timesheet['staff_id'] == get_staff_user_id())) {
+                                  if (staff_can('delete', 'timesheets')) {
                                       echo '<a href="' . admin_url('tasks/delete_timesheet/' . $timesheet['id']) . '" class="task-single-delete-timesheet text-danger" data-task-id="' . $task->id . '"><i class="fa fa-remove"></i></a>';
                                   }
-                                        if (staff_can('edit_timesheet', 'tasks') || (staff_can('edit_own_timesheet', 'tasks') && $timesheet['staff_id'] == get_staff_user_id())) {
+                                        if (staff_can('edit', 'timesheets')) {
                                             echo '<a href="#" class="task-single-edit-timesheet text-info" data-toggle="tooltip" data-title="' . _l('edit') . '" data-timesheet-id="' . $timesheet['id'] . '">
                                     <i class="fa fa-edit"></i>
                                     </a>';
@@ -343,7 +343,7 @@ foreach ($task->timesheets as $timesheet) { ?>
                     </td>
                 </tr>
                 <?php } ?>
-                <?php if ($task->billed == 0 && ($is_assigned || (count($task->assignees) > 0 && is_admin())) && $task->status != Tasks_model::STATUS_COMPLETE) {
+                <?php if ($task->billed == 0 && ($is_assigned || (count($task->assignees) > 0 && is_admin())) && $task->status != Tasks_model::STATUS_COMPLETE && staff_can('create', 'timesheets')) {
                     ?>
                 <tr class="odd">
                     <td colspan="5" class="add-timesheet">

@@ -4,16 +4,26 @@
 // Get active staff members
 $activeStaff = $this->staff_model->get('', ['active' => 1]);
 
-// Get all tasks across all projects for timelog filter
+// Check if we're in project context (hide project filter and filter tasks by project)
+$hide_project_filter = isset($hide_project_filter) ? $hide_project_filter : false;
+$project_id = isset($project_id) ? $project_id : null;
+
+// Get tasks - filter by project if in project context
 $this->load->model('tasks_model');
-$allTasks = $this->db->select('id, name, status, rel_id')
+$tasksQuery = $this->db->select('id, name, status, rel_id')
     ->from(db_prefix() . 'tasks')
-    ->where('rel_type', 'project')
-    ->order_by('name', 'ASC')
+    ->where('rel_type', 'project');
+    
+if ($project_id) {
+    $tasksQuery->where('rel_id', $project_id);
+}
+
+$allTasks = $tasksQuery->order_by('name', 'ASC')
     ->get()
     ->result_array();
 ?>
 
+<?php if (!$hide_project_filter): ?>
 <!-- Project Filter -->
 <div class="filter-accordion-item" data-filter="project">
     <button type="button" class="filter-accordion-header" aria-expanded="false">
@@ -38,6 +48,7 @@ $allTasks = $this->db->select('id, name, status, rel_id')
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Log User Filter -->
 <div class="filter-accordion-item" data-filter="log_user">

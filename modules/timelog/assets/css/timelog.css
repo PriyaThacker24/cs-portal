@@ -7,6 +7,51 @@
     padding: 20px;
 }
 
+/* Status Dropdown Styles */
+.timelog-status-change.status-pending {
+    background-color: #f0ad4e;
+    color: #fff;
+    border-color: #f0ad4e;
+}
+
+.timelog-status-change.status-pending:hover,
+.timelog-status-change.status-pending:focus {
+    background-color: #ec971f;
+    border-color: #ec971f;
+    color: #fff;
+}
+
+.timelog-status-change.status-approved {
+    background-color: #5cb85c;
+    color: #fff;
+    border-color: #5cb85c;
+}
+
+.timelog-status-change.status-approved:hover,
+.timelog-status-change.status-approved:focus {
+    background-color: #449d44;
+    border-color: #449d44;
+    color: #fff;
+}
+
+.timelog-status-change.status-rejected {
+    background-color: #d9534f;
+    color: #fff;
+    border-color: #d9534f;
+}
+
+.timelog-status-change.status-rejected:hover,
+.timelog-status-change.status-rejected:focus {
+    background-color: #c9302c;
+    border-color: #c9302c;
+    color: #fff;
+}
+
+.timelog-status-change option {
+    background-color: #fff;
+    color: #333;
+}
+
 /* Header Styles */
 .timelog-header {
     display: flex;

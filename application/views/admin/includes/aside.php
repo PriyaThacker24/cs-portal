@@ -23,9 +23,11 @@
             <li class="header-my-profile"><a
                     href="<?= admin_url('profile'); ?>"><?= _l('nav_my_profile'); ?></a>
             </li>
+            <?php if (staff_can('view', 'timesheets') || staff_can('view_own', 'timesheets')) { ?>
             <li class="header-my-timesheets"><a
                     href="<?= admin_url('staff/timesheets'); ?>"><?= _l('my_timesheets'); ?></a>
             </li>
+            <?php } ?>
             <li class="header-edit-profile"><a
                     href="<?= admin_url('staff/edit_profile'); ?>"><?= _l('nav_edit_profile'); ?>
                 </a>
