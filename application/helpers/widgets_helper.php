@@ -91,6 +91,11 @@ function render_dashboard_widgets($container)
         $widgets           = get_dashboard_widgets();
 
         foreach ($widgets as $key => $widget) {
+            // Skip projects_activity widget if user is not admin
+            if ($widget['path'] == 'admin/dashboard/widgets/projects_activity' && !is_admin()) {
+                unset($widgets[$key]);
+                continue;
+            }
             $html = str_get_html($CI->load->view($widget['path'], [], true));
             if ($html) {
                 $widgetContainer = $html->firstChild();

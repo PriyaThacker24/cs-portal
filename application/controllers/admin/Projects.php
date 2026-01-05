@@ -409,6 +409,9 @@ class Projects extends AdminController
                 $data['currencies']         = $this->currencies_model->get();
                 $data['expenses_table']     = App_table::find('project_expenses');
             } elseif ($group == 'project_activity') {
+                if (!is_admin()) {
+                    access_denied('Project Activity');
+                }
                 $data['activity'] = $this->projects_model->get_activity($id);
             } elseif ($group == 'project_notes') {
                 $data['staff_notes'] = $this->projects_model->get_staff_notes($id, get_staff_user_id());

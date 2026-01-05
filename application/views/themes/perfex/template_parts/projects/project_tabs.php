@@ -125,7 +125,7 @@
             </li>
             <?php } ?>
 
-            <?php if ($project->settings->view_activity_log == 1 && $project->settings->available_features['project_activity'] == 1) { ?>
+            <?php if ($project->settings->view_activity_log == 1 && $project->settings->available_features['project_activity'] == 1 && is_staff_logged_in() && is_admin()) { ?>
             <li role="presentation" class="project_tab_activity">
                 <a data-group="project_activity"
                     href="<?= site_url('clients/project/' . $project->id . '?group=project_activity'); ?>"

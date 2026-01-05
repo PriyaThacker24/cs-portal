@@ -1,4 +1,7 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<?php if (!is_admin()) {
+    return;
+} ?>
 <div class="widget<?php if (count($projects_activity) == 0) {
     echo ' hide';
 } ?>" id="widget-<?php echo create_widget_id(); ?>" data-name="<?php echo _l('home_project_activity'); ?>">

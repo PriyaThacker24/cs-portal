@@ -468,8 +468,8 @@ a:visited {
 
 .navbar-default {
   border: 0;
-  border-bottom: 1px solid #e2e8f0;
-  background: white;
+  /* border-bottom: 1px solid #e2e8f0; */
+  background: transparent;
 }
 
 .navbar-default .navbar-nav > li > a {
@@ -525,8 +525,8 @@ a:visited {
 }
 
 .navbar a.navbar-brand img {
-  width: auto;
-  height: 34px;
+  /* width: auto;
+  height: 34px; */
 }
 
 .navbar-default .navbar-nav > li.customers-nav-item-login > a {
@@ -538,6 +538,7 @@ a:visited {
   border-radius: 6px !important;
   padding: 8px 16px;
   margin-left: 10px;
+  display: none;
 }
 
 .navbar-default .navbar-nav > li.customers-nav-item-login > a:hover,
@@ -1815,4 +1816,16 @@ body[dir="rtl"].safari .table-responsive .table {
     transform-origin: 0 0;
     -webkit-transform-origin: 0 0;
   }
+}
+
+/* Center logo on login page */
+body.customers_login .navbar-header {
+  width: 100%;
+  text-align: center;
+}
+
+body.customers_login .navbar-brand {
+  float: none;
+  display: inline-block;
+  margin: 0 auto;
 }

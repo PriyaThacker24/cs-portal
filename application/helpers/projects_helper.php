@@ -232,6 +232,7 @@ function app_init_project_tabs()
         'view'                      => 'admin/projects/project_activity',
         'position'                  => 60,
         'linked_to_customer_option' => ['view_activity_log'],
+        'visible'                   => is_admin(),
     ]);
 
     $CI->app_tabs->add_project_tab('project_permissions', [

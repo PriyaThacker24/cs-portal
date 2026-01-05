@@ -403,6 +403,9 @@ class Clients extends ClientsController
                         ]);
                 }
             } elseif ($group == 'project_activity') {
+                if (!is_staff_logged_in() || !is_admin()) {
+                    access_denied('Project Activity');
+                }
                 $data['activity'] = $this->projects_model->get_activity($id);
             } elseif ($group == 'project_milestones') {
                 $data['milestones'] = $this->projects_model->get_milestones($id, ['hide_from_customer' => 0]);
