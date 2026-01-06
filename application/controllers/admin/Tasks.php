@@ -976,6 +976,68 @@ class Tasks extends AdminController
         }
     }
 
+    public function change_billable($billable, $id)
+    {
+        $task = $this->tasks_model->get($id);
+        if (!$task) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Task not found',
+            ]);
+            return;
+        }
+
+        // Check permissions - same logic as view
+        $can_edit = false;
+        if ($task->rel_type == 'project' && isset($task->rel_id)) {
+            $can_edit = can_user_task_action('edit', $task->rel_id);
+        } else {
+            $can_edit = staff_can('edit', 'tasks');
+        }
+
+        if (!$can_edit) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('access_denied'),
+            ]);
+            return;
+        }
+
+        // Don't allow changing if task is already billed
+        if ($task->billed == 1) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('task_billed_cant_start_timer'),
+            ]);
+            return;
+        }
+
+        // Don't allow changing if task is complete
+        if ($task->status == Tasks_model::STATUS_COMPLETE) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('task_complete'),
+            ]);
+            return;
+        }
+
+        $data = hooks()->apply_filters('before_update_task', ['billable' => (int)$billable], $id);
+
+        $this->db->where('id', $id);
+        $this->db->update(db_prefix() . 'tasks', $data);
+
+        $success = $this->db->affected_rows() > 0 ? true : false;
+
+        hooks()->do_action('after_update_task', $id);
+
+        // Don't do this query if the action is not performed via task single
+        $taskHtml = $this->input->get('single_task') === 'true' ? $this->get_task_data($id, true) : '';
+        echo json_encode([
+            'success'  => $success,
+            'taskHtml' => $taskHtml,
+        ]);
+    }
+
     public function change_milestone($milestone_id, $id)
     {
         if (staff_can('edit',  'tasks')) {
@@ -999,18 +1061,51 @@ class Tasks extends AdminController
 
     public function task_single_inline_update($task_id)
     {
-        if (staff_can('edit',  'tasks')) {
-            $post_data = $this->input->post();
-            foreach ($post_data as $key => $val) {
-                $data = hooks()->apply_filters('before_update_task', [
-                    $key => to_sql_date($val),
-                ], $task_id);
+        $task = $this->tasks_model->get($task_id);
+        if (!$task) {
+            return;
+        }
 
-                $this->db->where('id', $task_id);
-                $this->db->update(db_prefix() . 'tasks', $data);
+        // Check permissions - same logic as view
+        $can_edit = false;
+        if ($task->rel_type == 'project' && isset($task->rel_id)) {
+            $can_edit = can_user_task_action('edit', $task->rel_id);
+        } else {
+            $can_edit = staff_can('edit', 'tasks');
+        }
 
-                hooks()->do_action('after_update_task', $task_id);
+        if (!$can_edit) {
+            return;
+        }
+
+        $post_data = $this->input->post();
+        $data = [];
+        
+        foreach ($post_data as $key => $val) {
+            // Handle date fields
+            if ($key == 'startdate' || $key == 'duedate') {
+                $data[$key] = to_sql_date($val);
+            } 
+            // Handle billable checkbox
+            elseif ($key == 'billable') {
+                // Only allow changing if task is not billed and not complete
+                if ($task->billed == 0 && $task->status != Tasks_model::STATUS_COMPLETE) {
+                    $data[$key] = ($val == '1' || $val == 1) ? 1 : 0;
+                }
             }
+            // Handle other fields
+            else {
+                $data[$key] = $val;
+            }
+        }
+        
+        if (!empty($data)) {
+            $data = hooks()->apply_filters('before_update_task', $data, $task_id);
+            
+            $this->db->where('id', $task_id);
+            $this->db->update(db_prefix() . 'tasks', $data);
+            
+            hooks()->do_action('after_update_task', $task_id);
         }
     }
 

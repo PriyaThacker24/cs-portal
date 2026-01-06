@@ -302,6 +302,166 @@ class Clients extends AdminController
         }
     }
 
+    public function form_client($client_id = '')
+    {
+        if (staff_cant('create', 'customers')) {
+            if ($this->input->is_ajax_request() || $this->input->post()) {
+                header('Content-Type: application/json');
+                header($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
+                echo json_encode([
+                    'success' => false,
+                    'message' => _l('access_denied'),
+                ]);
+                die;
+            }
+            echo _l('access_denied');
+            die;
+        }
+
+        // Load form validation library
+        $this->load->library('form_validation');
+
+        if ($this->input->post()) {
+            // Start output buffering to catch any errors/warnings
+            ob_start();
+            
+            try {
+                header('Content-Type: application/json');
+                
+                // Clean up the data
+                $data = $this->input->post();
+                
+                // Remove any empty arrays that might cause issues
+                if (isset($data['groups_in']) && (empty($data['groups_in']) || !is_array($data['groups_in']))) {
+                    unset($data['groups_in']);
+                }
+                
+                if ($client_id == '') {
+                    // Validation rules - same as standard customer form
+                    if (get_option('company_is_required') == 1) {
+                        $this->form_validation->set_rules('company', _l('clients_company'), 'required');
+                    }
+                    
+                    // Validate custom fields
+                    $custom_fields = get_custom_fields('customers', [
+                        'required' => 1,
+                    ]);
+                    
+                    if (is_array($custom_fields) && count($custom_fields) > 0) {
+                        foreach ($custom_fields as $field) {
+                            $field_name = 'custom_fields[customers][' . $field['id'] . ']';
+                            if ($field['type'] == 'checkbox' || $field['type'] == 'multiselect') {
+                                $field_name .= '[]';
+                            }
+                            $this->form_validation->set_rules($field_name, $field['name'], 'required');
+                        }
+                    }
+                    
+                    if ($this->form_validation->run() === false) {
+                        ob_clean();
+                        header('Content-Type: application/json');
+                        header($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
+                        echo json_encode([
+                            'success' => false,
+                            'message' => validation_errors(),
+                        ]);
+                        die;
+                    }
+                    
+                    $id = $this->clients_model->add($data, false);
+                    
+                    // Clear any output that might have been generated
+                    ob_clean();
+                    
+                    if ($id) {
+                        if (staff_cant('view', 'customers')) {
+                            $assign['customer_admins']   = [];
+                            $assign['customer_admins'][] = get_staff_user_id();
+                            $this->clients_model->assign_admins($assign, $id);
+                        }
+                        
+                        // Get customer name for auto-selection
+                        $client = $this->clients_model->get($id);
+                        $client_name = '';
+                        if ($client) {
+                            if (!empty($client->company)) {
+                                $client_name = $client->company;
+                            } else {
+                                $primary_contact_id = get_primary_contact_user_id($id);
+                                if ($primary_contact_id) {
+                                    $primary_contact = $this->clients_model->get_contact($primary_contact_id);
+                                    if ($primary_contact) {
+                                        $client_name = trim($primary_contact->firstname . ' ' . $primary_contact->lastname);
+                                    }
+                                }
+                                if (empty($client_name)) {
+                                    $client_name = 'Customer #' . $id;
+                                }
+                            }
+                        }
+                        
+                        echo json_encode([
+                            'success' => true,
+                            'message' => _l('added_successfully', _l('client')),
+                            'client_id' => $id,
+                            'client_name' => $client_name,
+                        ]);
+                    } else {
+                        header('Content-Type: application/json');
+                        header($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
+                        echo json_encode([
+                            'success' => false,
+                            'message' => _l('problem_adding', _l('client')),
+                        ]);
+                    }
+                } else {
+                    ob_clean();
+                    header('Content-Type: application/json');
+                    header($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Invalid request',
+                    ]);
+                }
+            } catch (Exception $e) {
+                ob_clean();
+                header('Content-Type: application/json');
+                header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(),
+                ]);
+            } catch (Error $e) {
+                ob_clean();
+                header('Content-Type: application/json');
+                header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(),
+                ]);
+            }
+            
+            die;
+        }
+
+        $data['client_id'] = $client_id;
+        
+        // Get customer groups
+        $data['groups'] = $this->clients_model->get_groups();
+        if (!is_array($data['groups'])) {
+            $data['groups'] = [];
+        }
+        
+        // Get currencies
+        $this->load->model('currencies_model');
+        $data['currencies'] = $this->currencies_model->get();
+        if (!is_array($data['currencies'])) {
+            $data['currencies'] = [];
+        }
+        
+        $this->load->view('admin/clients/modals/client', $data);
+    }
+
     public function form_contact($customer_id, $contact_id = '')
     {
         if (staff_cant('view', 'customers')) {

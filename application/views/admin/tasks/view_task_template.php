@@ -788,9 +788,12 @@ echo $comments;
                         </a>
                     </li>
                     <?php } ?>
-                    <?php if (staff_can('create', 'tasks')) { ?>
+                    <li>
+                        <a href="#" onclick="copyTaskLink('<?php echo admin_url('tasks/view/' . $task->id); ?>'); return false;">Copy Link</a>
+                    </li>
+                    <!-- <?php if (staff_can('create', 'tasks')) { ?>
                     <?php
-   $copy_template = '';
+                    $copy_template = '';
                         if (count($task->assignees) > 0) {
                             $copy_template .= "<div class='checkbox'><input type='checkbox' name='copy_task_assignees' id='copy_task_assignees' checked><label for='copy_task_assignees'>" . _l('task_single_assignees') . '</label></div>';
                         }
@@ -819,7 +822,7 @@ echo $comments;
                             data-content="<?= htmlspecialchars($copy_template); ?>"
                             data-html="true"><?= _l('task_copy'); ?></span></a>
                     </li>
-                    <?php } ?>
+                    <?php } ?> -->
                     <?php if (staff_can('delete', 'tasks')) { ?>
                     <li>
                         <a href="<?= admin_url('tasks/delete_task/' . $task->id); ?>"
@@ -853,6 +856,7 @@ echo $comments;
                 <span class="task-single-menu task-menu-status">
                     <span class="trigger pointer manual-popover text-has-action tw-text-neutral-800">
                         <?= e(format_task_status($task->status, true, true)); ?>
+                        <i class="fa fa-pencil tw-ml-1 tw-text-xs tw-opacity-60"></i>
                     </span>
                     <span class="content-menu hide">
                         <ul>
@@ -901,10 +905,13 @@ echo $comments;
                     <?= _l('task_single_start_date'); ?>:
                 </div>
                 <?php if (staff_can('edit', 'tasks') && $task->status != 5) { ?>
-                <input name="startdate" tabindex="-1"
-                    value="<?= e(_d($task->startdate)); ?>"
-                    id="task-single-startdate"
-                    class="task-info-inline-input-edit datepicker pointer task-single-inline-field tw-text-neutral-800">
+                <span class="tw-inline-flex tw-items-center tw-space-x-1">
+                    <input name="startdate" tabindex="-1"
+                        value="<?= e(_d($task->startdate)); ?>"
+                        id="task-single-startdate"
+                        class="task-info-inline-input-edit datepicker pointer task-single-inline-field tw-text-neutral-800">
+                    <i class="fa fa-pencil tw-text-xs tw-opacity-60"></i>
+                </span>
                 <?php } else { ?>
                 <span class="tw-text-neutral-800">
                     <?= e(_d($task->startdate)); ?>
@@ -921,12 +928,15 @@ echo $comments;
                     <?= _l('task_single_due_date'); ?>:
                 </div>
                 <?php if (staff_can('edit', 'tasks') && $task->status != 5) { ?>
-                <input name="duedate" tabindex="-1"
-                    value="<?= e(_d($task->duedate)); ?>"
-                    id="task-single-duedate"
-                    class="task-info-inline-input-edit datepicker pointer task-single-inline-field tw-text-neutral-800"
-                    autocomplete="off"
-                    <?= $project_deadline ? ' data-date-end-date="' . e($project_deadline) . '"' : ''; ?>>
+                <span class="tw-inline-flex tw-items-center tw-space-x-1">
+                    <input name="duedate" tabindex="-1"
+                        value="<?= e(_d($task->duedate)); ?>"
+                        id="task-single-duedate"
+                        class="task-info-inline-input-edit datepicker pointer task-single-inline-field tw-text-neutral-800"
+                        autocomplete="off"
+                        <?= $project_deadline ? ' data-date-end-date="' . e($project_deadline) . '"' : ''; ?>>
+                    <i class="fa fa-pencil tw-text-xs tw-opacity-60"></i>
+                </span>
                 <?php } else { ?>
                 <span class="tw-text-neutral-800">
                     <?= e(_d($task->duedate)); ?>
@@ -943,6 +953,7 @@ echo $comments;
                     <span class="trigger pointer manual-popover text-has-action"
                         style="color:<?= e(task_priority_color($task->priority)); ?>;">
                         <?= e(task_priority($task->priority)); ?>
+                        <i class="fa fa-pencil tw-ml-1 tw-text-xs tw-opacity-60"></i>
                     </span>
                     <span class="content-menu hide">
                         <ul>
@@ -986,14 +997,47 @@ echo $comments;
             <h5 class="tw-inline-flex tw-items-center tw-space-x-1.5">
                 <i class="fa-solid fa-dollar-sign fa-fw fa-lg task-info-icon pull-left"></i>
                 <?= _l('task_billable'); ?>:
+                <?php 
+                // Check permissions - same logic as Priority
+                $can_edit_task_billable = false;
+                if ($task->rel_type == 'project' && isset($task->rel_id)) {
+                    $can_edit_task_billable = can_user_task_action('edit', $task->rel_id);
+                } else {
+                    $can_edit_task_billable = staff_can('edit', 'tasks');
+                }
+                // Don't allow editing if task is complete or already billed
+                $can_edit_billable = $can_edit_task_billable 
+                    && $task->status != Tasks_model::STATUS_COMPLETE
+                    && $task->billed == 0;
+                ?>
+                <?php if ($can_edit_billable) { ?>
+                <span class="task-single-menu task-menu-billable">
+                    <span class="trigger pointer manual-popover text-has-action tw-text-neutral-800">
+                        <?= $task->billable == 1 ? _l('task_billable_yes') : _l('task_billable_no') ?>
+                        <i class="fa fa-pencil tw-ml-1 tw-text-xs tw-opacity-60"></i>
+                    </span>
+                    <span class="content-menu hide">
+                        <ul>
+                            <li>
+                                <a href="#"
+                                    onclick="task_change_billable(<?= $task->billable == 1 ? 0 : 1; ?>,<?= e($task->id); ?>); return false;"
+                                    class="tw-block">
+                                    <?= $task->billable == 1 ? _l('task_billable_no') : _l('task_billable_yes') ?>
+                                </a>
+                            </li>
+                        </ul>
+                    </span>
+                </span>
+                <?php } else { ?>
                 <span class="tw-text-neutral-800">
                     <?= $task->billable == 1 ? _l('task_billable_yes') : _l('task_billable_no') ?>
                     <?php if ($task->billable == 1) { ?>
                     <b>(<?= $task->billed == 1 ? _l('task_billed_yes') : _l('task_billed_no') ?>)</b>
                     <?php } ?>
                 </span>
+                <?php } ?>
             </h5>
-            <?php if ($task->rel_type == 'project' && $task->project_data->billing_type == 1) { ?>
+            <?php if ($task->rel_type == 'project' && isset($task->project_data) && isset($task->project_data->billing_type) && $task->project_data->billing_type == 1) { ?>
             <br />
             <span class="tw-ml-5 tw-text-sm">
                 (<?= _l('project') . ' ' . _l('project_billing_type_fixed_cost'); ?>)
@@ -1318,6 +1362,10 @@ echo $_followers;
                 title: "<?= _l('task_single_priority'); ?>",
             },
             {
+                selector: '.task-menu-billable',
+                title: "<?= _l('task_billable'); ?>",
+            },
+            {
                 selector: '.task-menu-milestones',
                 title: "<?= _l('task_milestone'); ?>",
             },
@@ -1329,6 +1377,25 @@ echo $_followers;
             title: taskPopoverMenus[i].title,
             content: $('body').find(taskPopoverMenus[i].selector + ' .content-menu').html()
         }));
+    }
+    
+    // Ensure task_change_billable is available globally
+    if (typeof task_change_billable === 'undefined') {
+        window.task_change_billable = function(billable, task_id) {
+            var url = admin_url + "tasks/change_billable/" + billable + "/" + task_id;
+            var taskModalVisible = $("#task-modal").is(":visible");
+            url += "?single_task=" + taskModalVisible;
+            requestGetJSON(url).done(function (response) {
+                if (response.success === true || response.success == "true") {
+                    reload_tasks_tables();
+                    if (taskModalVisible) {
+                        _task_append_html(response.taskHtml);
+                    }
+                } else if (response.message) {
+                    alert_float("danger", response.message);
+                }
+            });
+        };
     }
 
     if (typeof(Dropbox) != 'undefined') {
@@ -1413,4 +1480,18 @@ echo $_followers;
             $('.edit-timesheet-submit').prop('disabled', false);
         });
     });
+    function copyTaskLink(taskLink) {
+        // Create a temporary input element
+        const tempInput = document.createElement("input");
+        tempInput.value = taskLink; // Set the value to the task link
+        document.body.appendChild(tempInput);
+        tempInput.select(); // Select the input text
+        tempInput.setSelectionRange(0, 99999); // For mobile devices
+        document.execCommand("copy"); // Copy the text to the clipboard
+        document.body.removeChild(tempInput); // Remove the temporary input element
+
+        // Notify the user
+        // alert("Task link copied to clipboard!");
+        alert_float('success', "Task link copied to clipboard!");
+    }
 </script>

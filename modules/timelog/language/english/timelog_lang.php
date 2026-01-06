@@ -2,8 +2,8 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
-$lang['timelog_title'] = 'Timelog';
-$lang['timelog_menu'] = 'Timelog';
+$lang['timelog_title'] = 'Timelogs';
+$lang['timelog_menu'] = 'Timelogs';
 $lang['add_time_log'] = 'Add Time Log';
 $lang['group_by_date'] = 'Group By Date';
 $lang['group_by_user'] = 'Group By User';
@@ -31,7 +31,7 @@ $lang['total_billable_hours'] = 'Total Billable Hours';
 $lang['total_non_billable_hours'] = 'Total Non-Billable Hours';
 $lang['total_hours'] = 'Total Hours';
 $lang['total_records'] = 'Total Records';
-$lang['no_timelogs_found'] = 'No timelog available for this week';
+$lang['no_timelogs_found'] = 'No timelogs available for this week';
 $lang['approval_status'] = 'Approval Status';
 $lang['notes'] = 'Notes';
 $lang['created_by'] = 'Created By';

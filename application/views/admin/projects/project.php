@@ -47,10 +47,12 @@ if (isset($project)) {
                             <div class="form-group select-placeholder">
                                 <label for="clientid"
                                     class="control-label"><?= _l('project_customer'); ?></label>
-                                <select id="clientid" name="clientid" data-live-search="true" data-width="100%"
-                                    class="ajax-search"
-                                    data-none-selected-text="<?= _l('dropdown_non_selected_tex'); ?>">
-                                    <?php $selected = (isset($project) ? $project->clientid : '');
+                                <div class="tw-flex tw-gap-2 tw-items-end">
+                                    <div class="tw-flex-1">
+                                        <select id="clientid" name="clientid" data-live-search="true" data-width="100%"
+                                            class="ajax-search"
+                                            data-none-selected-text="<?= _l('dropdown_non_selected_tex'); ?>">
+                                            <?php $selected = (isset($project) ? $project->clientid : '');
 if ($selected == '') {
     $selected = ($customer_id ?? '');
 }
@@ -59,7 +61,17 @@ if ($selected != '') {
     $rel_val  = get_relation_values($rel_data, 'customer');
     echo '<option value="' . $rel_val['id'] . '" selected>' . $rel_val['name'] . '</option>';
 } ?>
-                                </select>
+                                        </select>
+                                    </div>
+                                    <?php if (staff_can('create', 'customers')) { ?>
+                                    <button type="button" id="add-customer-btn" class="btn btn-default" 
+                                        onclick="open_add_customer_modal(); return false;" 
+                                        data-toggle="tooltip" 
+                                        data-title="<?= _l('new_client'); ?>">
+                                        <i class="fa-regular fa-plus"></i>
+                                    </button>
+                                    <?php } ?>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <div class="checkbox">
@@ -104,12 +116,12 @@ if ($selected != '') {
                                                 echo 'selected';
                                             } ?>><?= _l('project_billing_type_project_hours'); ?>
                                             </option>
-                                            <option value="3"
+                                            <!-- <option value="3"
                                                 data-subtext="<?= _l('project_billing_type_project_task_hours_hourly_rate'); ?>"
                                                 <?php if (isset($project) && $project->billing_type == 3 || ! isset($project) && $auto_select_billing_type && $auto_select_billing_type->billing_type == 3) {
                                                     echo 'selected';
                                                 } ?>><?= _l('project_billing_type_project_task_hours'); ?>
-                                            </option>
+                                            </option> -->
                                         </select>
                                         <?php if ($disable_type_edit != '') {
                                             echo '<p class="text-danger tw-mt-1">' . _l('cant_change_billing_type_billed_tasks_found') . '</p>';
@@ -671,8 +683,170 @@ foreach ($options as $option) { ?>
         <?php if (! isset($project)) { ?>
         $('#available_features').trigger('change');
         <?php } ?>
-    });
+      });
+  </script>
+<?php if (staff_can('create', 'customers')) { ?>
+<?php if (is_admin() || get_option('staff_members_create_inline_customer_groups') == '1') { ?>
+<?php $this->load->view('admin/clients/client_group'); ?>
+<?php } ?>
+<script>
+    function open_add_customer_modal() {
+        if ($('#client-modal').length === 0) {
+            requestGet('clients/form_client').done(function(response) {
+                $('body').append(response);
+                
+                // Initialize form elements
+                init_selectpicker();
+                init_datepicker();
+                custom_fields_hyperlink();
+                
+                // Set up validation immediately after form is added
+                setTimeout(function() {
+                    validate_client_form();
+                }, 100);
+                
+                // Reset form when modal is hidden
+                $('#client-modal').on('hidden.bs.modal', function() {
+                    $('#client-form')[0].reset();
+                    $('#client-form').find('.has-error').removeClass('has-error');
+                    $('#client-form').find('.text-danger').remove();
+                    $('#client-form').find('.alert-danger').remove();
+                });
+                
+                $('#client-modal').modal('show');
+            });
+        } else {
+            // Clear any previous errors
+            $('#client-form').find('.alert-danger').remove();
+            // Re-initialize validation
+            validate_client_form();
+            $('#client-modal').modal('show');
+        }
+    }
+
+    function validate_client_form() {
+        var $form = $('#client-form');
+        
+        // Remove any existing validation to avoid duplicates
+        if ($form.data('validator')) {
+            $form.data('validator').destroy();
+        }
+        
+        var vRules = {};
+        if (app.options.company_is_required == 1) {
+            vRules = {
+                company: 'required',
+            }
+        }
+        
+        // Set up validation with submit handler
+        appValidateForm($form, vRules, clientFormHandler);
+    }
+
+    function clientFormHandler(form) {
+        var $form = $(form);
+        var formURL = $form.attr("action");
+        var formData = new FormData(form);
+
+        // Show loading state on submit button
+        $form.find('button[type="submit"]').button('loading');
+
+        $.ajax({
+            type: 'POST',
+            data: formData,
+            mimeType: "multipart/form-data",
+            contentType: false,
+            cache: false,
+            processData: false,
+            url: formURL
+        }).done(function(response) {
+            try {
+                response = typeof response === 'string' ? JSON.parse(response) : response;
+            } catch(e) {
+                alert_float('danger', 'Invalid response from server');
+                return;
+            }
+            
+            if (response.success) {
+                // Auto-select the newly created customer first
+                if (response.client_id && response.client_name) {
+                    var $clientSelect = $('#clientid');
+                    
+                    // Check if it's an ajax-search select
+                    if ($clientSelect.hasClass('ajax-search')) {
+                        // For ajax-search, we need to add the option and trigger the select
+                        var option = new Option(response.client_name, response.client_id, true, true);
+                        $clientSelect.append(option);
+                        $clientSelect.val(response.client_id).trigger('change');
+                    } else {
+                        // For regular selectpicker
+                        var option = new Option(response.client_name, response.client_id, true, true);
+                        $clientSelect.append(option);
+                        $clientSelect.selectpicker('val', response.client_id);
+                        $clientSelect.selectpicker('refresh');
+                        $clientSelect.trigger('change');
+                    }
+                }
+                
+                // Close popup automatically after a short delay to ensure selection is set
+                setTimeout(function() {
+                    $('#client-modal').modal('hide');
+                }, 100);
+            } else {
+                // Display validation errors inline like standard form
+                if (response.message) {
+                    // Remove any previous error alerts
+                    $('#client-form').find('.alert-danger').remove();
+                    
+                    // Parse validation errors and display them inline
+                    var errorHtml = response.message;
+                    if (errorHtml.indexOf('<') !== -1 || errorHtml.indexOf('<p>') !== -1) {
+                        // HTML errors from validation_errors()
+                        $('#client-form .modal-body').prepend('<div class="alert alert-danger">' + errorHtml + '</div>');
+                    } else {
+                        alert_float('danger', response.message);
+                    }
+                }
+            }
+        }).fail(function(xhr) {
+            var errorMsg = 'An error occurred';
+            try {
+                var errorResponse = typeof xhr.responseText === 'string' ? JSON.parse(xhr.responseText) : xhr.responseText;
+                if (errorResponse && errorResponse.message) {
+                    errorMsg = errorResponse.message;
+                    // Remove any previous error alerts
+                    $('#client-form').find('.alert-danger').remove();
+                    // Display validation errors inline
+                    if (errorResponse.message.indexOf('<') !== -1 || errorResponse.message.indexOf('<p>') !== -1) {
+                        $('#client-form .modal-body').prepend('<div class="alert alert-danger">' + errorResponse.message + '</div>');
+                    } else {
+                        alert_float('danger', errorMsg);
+                    }
+                } else {
+                    // Show full error response for debugging
+                    console.error('Server Error:', xhr.status, xhr.responseText);
+                    if (xhr.status === 500) {
+                        errorMsg = 'Server error occurred. Please check the console for details.';
+                    }
+                    alert_float('danger', errorMsg);
+                }
+            } catch(e) {
+                console.error('Error parsing response:', e, xhr.responseText);
+                if (xhr.responseText) {
+                    errorMsg = 'Server error: ' + xhr.responseText.substring(0, 200);
+                }
+                alert_float('danger', errorMsg);
+            }
+        }).always(function() {
+            // Re-enable submit button
+            $('#client-form').find('button[type="submit"]').button('reset');
+        });
+        
+        // Always return false to prevent form submission
+        return false;
+    }
 </script>
+<?php } ?>
 </body>
 
 </html>

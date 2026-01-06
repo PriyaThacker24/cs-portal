@@ -1150,10 +1150,31 @@ $(function () {
 
   // On task single modal shown perform few actions
   $("body").on("shown.bs.modal", "#task-modal", function () {
+    var $taskModal = $("#task-modal");
     do_task_checklist_items_height();
     init_tags_inputs();
     fix_task_modal_left_col_height();
     $(document).off("focusin.modal");
+    
+    // Initialize popovers for task-single-menu elements (priority, billable, etc.)
+    $taskModal.find('.task-single-menu .manual-popover').each(function() {
+      var $this = $(this);
+      var $menu = $this.closest('.task-single-menu');
+      // Destroy existing popover if any
+      if ($this.data('bs.popover') || $this.data('popover')) {
+        $this.popover('destroy');
+      }
+      // Initialize new popover
+      $this.popover({
+        html: true,
+        placement: 'bottom',
+        trigger: 'click',
+        content: function() {
+          return $menu.find('.content-menu').html();
+        }
+      });
+    });
+    
     var current_url = window.location.href;
     if (current_url.indexOf("#comment_") > -1) {
       var task_comment_id = current_url.split("#comment_");
@@ -6152,6 +6173,23 @@ function task_change_priority(priority_id, task_id) {
   });
 }
 
+// Change task billable status from single modal
+window.task_change_billable = function(billable, task_id) {
+  url = "tasks/change_billable/" + billable + "/" + task_id;
+  var taskModalVisible = $("#task-modal").is(":visible");
+  url += "?single_task=" + taskModalVisible;
+  requestGetJSON(url).done(function (response) {
+    if (response.success === true || response.success == "true") {
+      reload_tasks_tables();
+      if (taskModalVisible) {
+        _task_append_html(response.taskHtml);
+      }
+    } else if (response.message) {
+      alert_float("danger", response.message);
+    }
+  });
+};
+
 // Change task milestone from single modal
 function task_change_milestone(milestone_id, task_id) {
   url = "tasks/change_milestone/" + milestone_id + "/" + task_id;
@@ -6548,6 +6586,25 @@ function _task_append_html(html) {
     }
     init_form_reminder("task");
     fix_task_modal_left_col_height();
+    
+    // Initialize popovers for task-single-menu elements (priority, billable, etc.)
+    $taskModal.find('.task-single-menu .manual-popover').each(function() {
+      var $this = $(this);
+      var $menu = $this.closest('.task-single-menu');
+      // Destroy existing popover if any
+      if ($this.data('bs.popover') || $this.data('popover')) {
+        $this.popover('destroy');
+      }
+      // Initialize new popover
+      $this.popover({
+        html: true,
+        placement: 'bottom',
+        trigger: 'click',
+        content: function() {
+          return $menu.find('.content-menu').html();
+        }
+      });
+    });
 
     // Show the comment area on mobile when task modal is opened
     // Because the user may want only to upload file, but if the comment textarea is not focused the dropzone won't be shown

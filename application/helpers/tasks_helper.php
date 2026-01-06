@@ -392,7 +392,7 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
         </div>
 
         <div class="checkbox checkbox-inline">
-        <input type="checkbox" value="project" id="ts_rel_to_project" name="tasks_related_to[]">
+        <input type="checkbox" checked value="project" id="ts_rel_to_project" name="tasks_related_to[]">
         <label for="ts_rel_to_project">' . _l('projects') . '</label>
         </div>
 
@@ -425,7 +425,7 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
         <input type="checkbox" value="proposal" id="ts_rel_to_proposal" name="tasks_related_to[]">
         <label for="ts_rel_to_proposal">' . _l('proposals') . '</label>
         </div>';
-        echo form_hidden('tasks_related_to');
+        echo form_hidden('tasks_related_to', 'customer,project');
         echo '</div>';
     }
     echo "<div class='clearfix'></div>";

@@ -158,7 +158,6 @@ class CustomerProfileBadges
             $this->CI->db->where(db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . $this->staffId . ')');
         }
 
-        $this->CI->db->where('status', 2);
         $this->CI->db->where('clientid', $this->customerId);
 
         return $this->CI->db->count_all_results('projects');

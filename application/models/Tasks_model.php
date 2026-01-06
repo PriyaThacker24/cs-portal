@@ -1522,7 +1522,7 @@ class Tasks_model extends App_Model
      */
     public function mark_as($status, $task_id)
     {
-        $this->db->select('rel_type,rel_id,name,visible_to_client,status');
+        $this->db->select('rel_type,rel_id,name,visible_to_client,status,billed');
         $this->db->where('id', $task_id);
         $task = $this->db->get(db_prefix() . 'tasks')->row();
 
@@ -1534,6 +1534,12 @@ class Tasks_model extends App_Model
 
         if ($status == static::STATUS_COMPLETE) {
             $update['datefinished'] = date('Y-m-d H:i:s');
+        }
+
+        // Automatically set billable = 1 when status is Not Started or In Progress
+        // Only if task is not already billed
+        if (($status == static::STATUS_NOT_STARTED || $status == static::STATUS_IN_PROGRESS) && $task->billed == 0) {
+            $update['billable'] = 1;
         }
 
         $this->db->where('id', $task_id);

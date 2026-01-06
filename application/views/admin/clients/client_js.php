@@ -41,12 +41,21 @@ $(function() {
         $('#profile-save-section').removeClass('hide');
     });
 
+    // Initialize tasks_related_to filter with default values (customer and project)
+    if ($('#tasks_related_filter').length > 0) {
+        var tasks_related_values = [];
+        $('#tasks_related_filter :checkbox:checked').each(function(i) {
+            tasks_related_values[i] = $(this).val();
+        });
+        $('input[name="tasks_related_to"]').val(tasks_related_values.join(','));
+    }
+
     $("input[name='tasks_related_to[]']").on('change', function() {
         var tasks_related_values = []
         $('#tasks_related_filter :checkbox:checked').each(function(i) {
             tasks_related_values[i] = $(this).val();
         });
-        $('input[name="tasks_related_to"]').val(tasks_related_values.join());
+        $('input[name="tasks_related_to"]').val(tasks_related_values.join(','));
         $('.table-rel-tasks').DataTable().ajax.reload();
     });
 
