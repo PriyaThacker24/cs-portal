@@ -24,15 +24,14 @@
 
             <?= form_open($this->uri->uri_string()); ?>
 
-            <?= validation_errors('<div class="alert alert-danger text-center">', '</div>'); ?>
-
             <?php hooks()->do_action('after_admin_login_form_start'); ?>
 
             <div class="form-group">
                 <label for="email" class="control-label !tw-mb-3">
                     <?= _l('admin_auth_login_email'); ?>
                 </label>
-                <input type="email" id="email" name="email" class="form-control" autofocus="1">
+                <input type="email" id="email" name="email" class="form-control<?= form_error('email') ? ' is-invalid' : ''; ?>" autofocus="1" value="<?= set_value('email'); ?>">
+                <?= form_error('email', '<div class="text-danger tw-mt-1 tw-text-sm">', '</div>'); ?>
             </div>
 
             <div class="form-group tw-mt-8">
@@ -46,12 +45,16 @@
                     </a>
                 </span>
 
-                <input type="password" id="password" name="password" class="form-control">
+                <input type="password" id="password" name="password" class="form-control<?= form_error('password') ? ' is-invalid' : ''; ?>">
+                <?= form_error('password', '<div class="text-danger tw-mt-1 tw-text-sm">', '</div>'); ?>
             </div>
 
             <?php if (show_recaptcha()) { ?>
-            <div class="g-recaptcha tw-mb-4"
-                data-sitekey="<?= get_option('recaptcha_site_key'); ?>">
+            <div class="form-group">
+                <div class="g-recaptcha tw-mb-4"
+                    data-sitekey="<?= get_option('recaptcha_site_key'); ?>">
+                </div>
+                <?= form_error('g-recaptcha-response', '<div class="text-danger tw-mt-1 tw-text-sm">', '</div>'); ?>
             </div>
             <?php } ?>
 

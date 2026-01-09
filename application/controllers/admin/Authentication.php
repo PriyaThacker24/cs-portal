@@ -148,7 +148,7 @@ class Authentication extends App_Controller
         if (is_staff_logged_in()) {
             redirect(admin_url());
         }
-        $this->form_validation->set_rules('email', _l('admin_auth_login_email'), 'trim|required|valid_email|callback_email_exists');
+        $this->form_validation->set_rules('email', _l('admin_auth_login_email'), 'trim|required|valid_email');
         if ($this->input->post()) {
             if ($this->form_validation->run() !== false) {
                 $success = $this->Authentication_model->forgot_password($this->input->post('email'), true);

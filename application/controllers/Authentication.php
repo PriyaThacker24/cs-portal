@@ -268,7 +268,7 @@ class Authentication extends ClientsController
         $this->form_validation->set_rules(
             'email',
             _l('customer_forgot_password_email'),
-            'trim|required|valid_email|callback_contact_email_exists'
+            'trim|required|valid_email'
         );
 
         if ($this->input->post()) {

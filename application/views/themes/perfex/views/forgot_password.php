@@ -9,13 +9,18 @@
         <div class="panel_s">
             <div class="panel-body">
                 <?= form_open($this->uri->uri_string(), ['id' => 'forgot-password-form']); ?>
-                <?= validation_errors('<div class="alert alert-danger text-center">', '</div>'); ?>
                 <?php if ($this->session->flashdata('message-danger')) { ?>
                 <div class="alert alert-danger">
                     <?= $this->session->flashdata('message-danger'); ?>
                 </div>
                 <?php } ?>
-                <?= render_input('email', 'customer_forgot_password_email', '', 'email'); ?>
+                <div class="form-group">
+                    <label for="email" class="control-label">
+                        <?= _l('customer_forgot_password_email'); ?>
+                    </label>
+                    <input type="email" id="email" name="email" class="form-control<?= form_error('email') ? ' is-invalid' : ''; ?>" value="<?= set_value('email'); ?>">
+                    <?= form_error('email', '<div class="text-danger tw-mt-1 tw-text-sm">', '</div>'); ?>
+                </div>
                 <div class="form-group">
                     <button type="submit"
                         class="btn btn-primary btn-block"><?= _l('customer_forgot_password_submit'); ?></button>
