@@ -2063,6 +2063,7 @@ $lang['project_customer']                                    = 'Customer';
 $lang['project_start_date']                                  = 'Start Date';
 $lang['project_datecreated']                                 = 'Date Created';
 $lang['project_deadline']                                    = 'Deadline';
+$lang['project_deadline_must_be_after_start_date']           = 'Deadline must be on or after the start date';
 $lang['project_billing_type']                                = 'Billing Type';
 $lang['project_billing_type_fixed_cost']                     = 'Fixed Rate';
 $lang['project_billing_type_project_hours']                  = 'Hourly Rate';

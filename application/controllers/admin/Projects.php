@@ -163,7 +163,10 @@ class Projects extends AdminController
                     access_denied('Projects');
                 }
                 $id = $this->projects_model->add($data);
-                if ($id) {
+                if (is_array($id) && isset($id['error']) && $id['error']) {
+                    set_alert('danger', $id['message']);
+                    redirect(admin_url('projects/project'));
+                } elseif ($id) {
                     set_alert('success', _l('added_successfully', _l('project')));
                     redirect(admin_url('projects/view/' . $id));
                 }
@@ -184,7 +187,10 @@ class Projects extends AdminController
                 }
                 
                 $success = $this->projects_model->update($data, $id);
-                if ($success) {
+                if (is_array($success) && isset($success['error']) && $success['error']) {
+                    set_alert('danger', $success['message']);
+                    redirect(admin_url('projects/project/' . $id));
+                } elseif ($success) {
                     set_alert('success', _l('updated_successfully', _l('project')));
                 }
                 redirect(admin_url('projects/view/' . $id));

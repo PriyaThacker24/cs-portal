@@ -239,8 +239,12 @@ echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastn
                                     <?= render_date_input('start_date', 'project_start_date', $value); ?>
                                 </div>
                                 <div class="col-md-6">
-                                    <?php $value = (isset($project) ? _d($project->deadline) : ''); ?>
-                                    <?= render_date_input('deadline', 'project_deadline', $value); ?>
+                                    <?php 
+                                    $value = (isset($project) ? _d($project->deadline) : '');
+                                    $start_date_value = (isset($project) ? $project->start_date : date('Y-m-d'));
+                                    $deadline_attrs = ['data-date-min-date' => $start_date_value, 'data-date-start-date-ref' => 'start_date'];
+                                    ?>
+                                    <?= render_date_input('deadline', 'project_deadline', $value, $deadline_attrs); ?>
                                 </div>
                             </div>
                             <?php if (isset($project) && $project->date_finished != null && $project->status == 4) { ?>
@@ -556,11 +560,114 @@ foreach ($options as $option) { ?>
             }
         });
 
+        // Update deadline min date when start date changes
+        var $startDate = $('#start_date');
+        var $deadline = $('#deadline');
+        
+        function updateDeadlineMinDate() {
+            var startDateValue = $startDate.val();
+            if (startDateValue) {
+                // Convert to YYYY-MM-DD format if needed
+                var dateParts = startDateValue.split(/[-\/]/);
+                if (dateParts.length === 3) {
+                    // Handle different date formats
+                    var year = dateParts[0].length === 4 ? dateParts[0] : dateParts[2];
+                    var month = dateParts[0].length === 4 ? dateParts[1] : dateParts[0];
+                    var day = dateParts[0].length === 4 ? dateParts[2] : dateParts[1];
+                    var formattedDate = year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
+                    
+                    // Update the data attribute and reinitialize datepicker
+                    $deadline.attr('data-date-min-date', formattedDate);
+                    
+                    // Destroy and reinitialize datepicker with new min date
+                    if ($deadline.data('xdsoft_datetimepicker')) {
+                        $deadline.data('xdsoft_datetimepicker').destroy();
+                    }
+                    
+                    var deadlineOpts = {
+                        timepicker: false,
+                        scrollInput: false,
+                        lazyInit: true,
+                        format: app.options.date_format,
+                        dayOfWeekStart: app.options.calendar_first_day,
+                        minDate: formattedDate
+                    };
+                    
+                    $deadline.datetimepicker(deadlineOpts);
+                }
+            }
+        }
+        
+        // Initialize deadline min date on page load
+        if ($startDate.val()) {
+            updateDeadlineMinDate();
+        }
+        
+        // Update deadline min date when start date changes
+        $startDate.on('change', function() {
+            updateDeadlineMinDate();
+            
+            // If deadline is set and is before new start date, clear it
+            var deadlineValue = $deadline.val();
+            if (deadlineValue) {
+                var startDateValue = $startDate.val();
+                if (startDateValue && deadlineValue) {
+                    var startDateObj = new Date(startDateValue);
+                    var deadlineObj = new Date(deadlineValue);
+                    if (deadlineObj < startDateObj) {
+                        $deadline.val('');
+                    }
+                }
+            }
+        });
+
+        // Add custom validation method for deadline date
+        $.validator.addMethod("deadlineAfterStartDate", function(value, element) {
+            if (!value) {
+                return true; // Allow empty deadline
+            }
+            var startDateValue = $startDate.val();
+            if (!startDateValue) {
+                return true; // Start date is required separately
+            }
+            
+            // Get date objects from datetimepicker if available
+            var startDateObj = $startDate.data('xdsoft_datetimepicker') ? $startDate.data('xdsoft_datetimepicker').getValue() : null;
+            var deadlineDateObj = $deadline.data('xdsoft_datetimepicker') ? $deadline.data('xdsoft_datetimepicker').getValue() : null;
+            
+            // If we have date objects from datetimepicker, use them
+            if (startDateObj && deadlineDateObj) {
+                // Compare dates (ignore time)
+                startDateObj.setHours(0, 0, 0, 0);
+                deadlineDateObj.setHours(0, 0, 0, 0);
+                return deadlineDateObj >= startDateObj;
+            }
+            
+            // Fallback: parse date strings
+            // Try to parse dates - datetimepicker uses standard Date parsing
+            var startDate = new Date(startDateValue);
+            var deadlineDate = new Date(value);
+            
+            // Check if dates are valid
+            if (isNaN(startDate.getTime()) || isNaN(deadlineDate.getTime())) {
+                return true; // If parsing fails, let other validators handle it
+            }
+            
+            // Compare dates (ignore time)
+            startDate.setHours(0, 0, 0, 0);
+            deadlineDate.setHours(0, 0, 0, 0);
+            
+            return deadlineDate >= startDate;
+        }, "<?= _l('project_deadline_must_be_after_start_date') ?: 'Deadline must be on or after the start date'; ?>");
+
         appValidateForm($('form'), {
             name: 'required',
             clientid: 'required',
             start_date: 'required',
             billing_type: 'required',
+            deadline: {
+                deadlineAfterStartDate: true
+            },
             'notify_contacts[]': {
                 required: {
                     depends: function() {

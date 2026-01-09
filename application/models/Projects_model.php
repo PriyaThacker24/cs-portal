@@ -730,6 +730,14 @@ class Projects_model extends App_Model
 
         if (! empty($data['deadline'])) {
             $data['deadline'] = to_sql_date($data['deadline']);
+            
+            // Validate that deadline is not before start date
+            if ($data['deadline'] && $data['start_date'] && $data['deadline'] < $data['start_date']) {
+                return [
+                    'error' => true,
+                    'message' => _l('project_deadline_must_be_after_start_date')
+                ];
+            }
         } else {
             unset($data['deadline']);
         }
@@ -983,6 +991,14 @@ class Projects_model extends App_Model
         }
 
         $data['start_date'] = to_sql_date($data['start_date']);
+        
+        // Validate that deadline is not before start date
+        if ($data['deadline'] && $data['start_date'] && $data['deadline'] < $data['start_date']) {
+            return [
+                'error' => true,
+                'message' => _l('project_deadline_must_be_after_start_date')
+            ];
+        }
         if ($data['billing_type'] == 1) {
             $data['project_rate_per_hour'] = 0;
         } elseif ($data['billing_type'] == 2) {
