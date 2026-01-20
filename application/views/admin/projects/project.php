@@ -104,16 +104,20 @@ if ($selected != '') {
                                             for="owner_id"><?= _l('owner'); ?></label>
                                         <div class="clearfix"></div>
                                         <?php
-                                        // Find Nirav Mehta in staff array
-                                        $nirav_mehta_id = '';
-                                        foreach ($staff as $staff_member) {
-                                            $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
-                                            if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
-                                                $nirav_mehta_id = $staff_member['staffid'];
-                                                break;
+                                        // Get owner_id from project if it exists and is not empty
+                                        $owner_selected = '';
+                                        if (isset($project) && property_exists($project, 'owner_id') && !empty($project->owner_id) && $project->owner_id > 0) {
+                                            $owner_selected = $project->owner_id;
+                                        } else {
+                                            // Find Nirav Mehta in staff array as default only if no owner is set
+                                            foreach ($staff as $staff_member) {
+                                                $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
+                                                if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
+                                                    $owner_selected = $staff_member['staffid'];
+                                                    break;
+                                                }
                                             }
                                         }
-                                        $owner_selected = isset($project) && isset($project->owner_id) ? $project->owner_id : ($nirav_mehta_id ?: '');
                                         echo render_select('owner_id', $staff, ['staffid', ['firstname', 'lastname']], '', $owner_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
                                         ?>
                                     </div>
@@ -124,16 +128,20 @@ if ($selected != '') {
                                             for="manager_id">Manager</label>
                                         <div class="clearfix"></div>
                                         <?php
-                                        // Find Nirav Mehta in staff array
-                                        $nirav_mehta_id = '';
-                                        foreach ($staff as $staff_member) {
-                                            $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
-                                            if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
-                                                $nirav_mehta_id = $staff_member['staffid'];
-                                                break;
+                                        // Get manager_id from project if it exists and is not empty
+                                        $manager_selected = '';
+                                        if (isset($project) && property_exists($project, 'manager_id') && !empty($project->manager_id) && $project->manager_id > 0) {
+                                            $manager_selected = $project->manager_id;
+                                        } else {
+                                            // Find Nirav Mehta in staff array as default only if no manager is set
+                                            foreach ($staff as $staff_member) {
+                                                $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
+                                                if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
+                                                    $manager_selected = $staff_member['staffid'];
+                                                    break;
+                                                }
                                             }
                                         }
-                                        $manager_selected = isset($project) && isset($project->manager_id) ? $project->manager_id : ($nirav_mehta_id ?: '');
                                         echo render_select('manager_id', $staff, ['staffid', ['firstname', 'lastname']], '', $manager_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
                                         ?>
                                     </div>
@@ -295,8 +303,34 @@ echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastn
                             <div class="form-group">
                                 <label for="tags" class="control-label"><i class="fa fa-tag" aria-hidden="true"></i>
                                     <?= _l('tags'); ?></label>
+                                <?php
+                                $tags_value = '';
+                                if (isset($project)) {
+                                    // Format: Project name – Customer name – Sales person name
+                                    // Use first project member, fallback to addedfrom
+                                    $sales_person_id = $project->addedfrom; // Default fallback
+                                    if (isset($project_members) && !empty($project_members) && is_array($project_members)) {
+                                        // Use first member from form data
+                                        $first_member_id = reset($project_members);
+                                        if (!empty($first_member_id) && is_numeric($first_member_id)) {
+                                            $sales_person_id = (int) $first_member_id;
+                                        }
+                                    } else {
+                                        // Get first member from database
+                                        $members = $this->projects_model->get_project_members($project->id);
+                                        if (!empty($members) && isset($members[0]['staff_id'])) {
+                                            $sales_person_id = (int) $members[0]['staff_id'];
+                                        }
+                                    }
+                                    $format_tag = $project->name . ' – ' . get_company_name($project->clientid) . ' – ' . get_staff_full_name($sales_person_id);
+                                    $existing_tags = get_tags_in($project->id, 'project');
+                                    $existing_tags = array_values(array_filter($existing_tags, function($t) use ($format_tag) { return $t !== $format_tag; }));
+                                    array_unshift($existing_tags, $format_tag);
+                                    $tags_value = prep_tags_input($existing_tags);
+                                }
+                                ?>
                                 <input type="text" class="tagsinput" id="tags" name="tags"
-                                    value="<?= isset($project) ? prep_tags_input(get_tags_in($project->id, 'project')) : ''; ?>"
+                                    value="<?= $tags_value; ?>"
                                     data-role="tagsinput">
                             </div>
                             <?php $rel_id_custom_field = (isset($project) ? $project->id : false); ?>

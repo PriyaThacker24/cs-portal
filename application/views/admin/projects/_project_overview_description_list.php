@@ -125,6 +125,29 @@
             <?= e(seconds_to_time_format($project_total_logged_time)); ?>
         </dd>
     </div>
+
+    <?php if (property_exists($project, 'owner_id') && !empty($project->owner_id) && $project->owner_id > 0) { ?>
+    <div class="sm:tw-col-span-1 project-overview-owner">
+        <dt class="tw-text-sm tw-font-normal tw-text-neutral-500">
+            <?= _l('owner'); ?>
+        </dt>
+        <dd class="tw-mt-1 tw-text-sm tw-text-neutral-700 tw-font-medium">
+            <?= e(get_staff_full_name($project->owner_id)); ?>
+        </dd>
+    </div>
+    <?php } ?>
+
+    <?php if (property_exists($project, 'manager_id') && !empty($project->manager_id) && $project->manager_id > 0) { ?>
+    <div class="sm:tw-col-span-1 project-overview-manager">
+        <dt class="tw-text-sm tw-font-normal tw-text-neutral-500">
+            Manager
+        </dt>
+        <dd class="tw-mt-1 tw-text-sm tw-text-neutral-700 tw-font-medium">
+            <?= e(get_staff_full_name($project->manager_id)); ?>
+        </dd>
+    </div>
+    <?php } ?>
+
     <?php $custom_fields = get_custom_fields('projects'); ?>
     <?php if (count($custom_fields) > 0) { ?>
     <?php foreach ($custom_fields as $field) { ?>

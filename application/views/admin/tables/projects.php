@@ -73,10 +73,28 @@ return App_table::find('projects')
             @$this->ci->db->query('SET SQL_BIG_SELECTS=1');
         }
 
-        $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, [
+        // Check if owner_id and manager_id columns exist before adding them to query
+        $additionalSelect = [
             'clientid',
             '(SELECT GROUP_CONCAT(staff_id SEPARATOR ",") FROM ' . db_prefix() . 'project_members WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members_ids',
-        ]);
+            db_prefix() . 'projects.addedfrom as addedfrom',
+        ];
+        
+        // Try to add owner_id and manager_id if columns exist
+        $CI = &get_instance();
+        try {
+            $fields = $CI->db->list_fields(db_prefix() . 'projects');
+            if (in_array('owner_id', $fields)) {
+                $additionalSelect[] = db_prefix() . 'projects.owner_id as owner_id';
+            }
+            if (in_array('manager_id', $fields)) {
+                $additionalSelect[] = db_prefix() . 'projects.manager_id as manager_id';
+            }
+        } catch (Exception $e) {
+            // If there's an error checking fields, just continue without owner_id/manager_id
+        }
+        
+        $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, $additionalSelect);
 
         $output  = $result['output'];
         $rResult = $result['rResult'];
@@ -117,7 +135,38 @@ return App_table::find('projects')
 
             $row[] = '<a href="' . admin_url('clients/client/' . $aRow['clientid']) . '">' . e($aRow['company']) . '</a>';
 
-            $row[] = render_tags($aRow['tags']);
+            // Format: Project name – Customer name – Sales person name
+            // Use first project member, fallback to addedfrom
+            $projectName = e($aRow['name']);
+            $customerName = e($aRow['company']);
+            $salesPersonName = '';
+            
+            // Get first member from members list (members are already in the query)
+            if (isset($aRow['members']) && !empty($aRow['members'])) {
+                $members = explode(',', $aRow['members']);
+                if (!empty($members[0])) {
+                    // Get the first member's ID from members_ids
+                    if (isset($aRow['members_ids']) && !empty($aRow['members_ids'])) {
+                        $members_ids = explode(',', $aRow['members_ids']);
+                        if (!empty($members_ids[0])) {
+                            $first_member_id = (int) $members_ids[0];
+                            $salesPersonName = get_staff_full_name($first_member_id);
+                        }
+                    }
+                }
+            }
+            
+            // Fallback to addedfrom if no members
+            if (empty($salesPersonName) && isset($aRow['addedfrom']) && !empty($aRow['addedfrom'])) {
+                $salesPersonName = get_staff_full_name($aRow['addedfrom']);
+            }
+            
+            if (empty($salesPersonName)) {
+                $salesPersonName = 'N/A';
+            }
+            $formattedTag = $projectName . ' – ' . $customerName . ' – ' . $salesPersonName;
+            // Display as plain text without tag styling
+            $row[] = '<span class="tw-text-neutral-700">' . e($formattedTag) . '</span>';
 
             $row[] = e(_d($aRow['start_date']));
 

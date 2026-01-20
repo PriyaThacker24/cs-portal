@@ -747,6 +747,8 @@ class Projects_model extends App_Model
             $project_members = $data['project_members'];
             unset($data['project_members']);
         }
+        // Save owner_id and manager_id if they exist in the data
+        // Note: These columns should exist in tblprojects table
         if ($data['billing_type'] == 1) {
             $data['project_rate_per_hour'] = 0;
         } elseif ($data['billing_type'] == 2) {
@@ -768,6 +770,41 @@ class Projects_model extends App_Model
 
         $data = hooks()->apply_filters('before_add_project', $data);
 
+        // Check if owner_id and manager_id columns exist and normalize values before saving
+        try {
+            $fields = $this->db->list_fields(db_prefix() . 'projects');
+            if (!in_array('owner_id', $fields)) {
+                if (isset($data['owner_id'])) {
+                    unset($data['owner_id']);
+                }
+            } else {
+                // Normalize: empty string to null, ensure int when valid (same as update)
+                if (isset($data['owner_id']) && ($data['owner_id'] === '' || $data['owner_id'] === null)) {
+                    $data['owner_id'] = null;
+                } elseif (isset($data['owner_id']) && is_numeric($data['owner_id']) && $data['owner_id'] > 0) {
+                    $data['owner_id'] = (int) $data['owner_id'];
+                }
+            }
+            if (!in_array('manager_id', $fields)) {
+                if (isset($data['manager_id'])) {
+                    unset($data['manager_id']);
+                }
+            } else {
+                if (isset($data['manager_id']) && ($data['manager_id'] === '' || $data['manager_id'] === null)) {
+                    $data['manager_id'] = null;
+                } elseif (isset($data['manager_id']) && is_numeric($data['manager_id']) && $data['manager_id'] > 0) {
+                    $data['manager_id'] = (int) $data['manager_id'];
+                }
+            }
+        } catch (Exception $e) {
+            if (isset($data['owner_id'])) {
+                unset($data['owner_id']);
+            }
+            if (isset($data['manager_id'])) {
+                unset($data['manager_id']);
+            }
+        }
+
         $tags = '';
         if (isset($data['tags'])) {
             $tags = $data['tags'];
@@ -777,8 +814,6 @@ class Projects_model extends App_Model
         $this->db->insert(db_prefix() . 'projects', $data);
         $insert_id = $this->db->insert_id();
         if ($insert_id) {
-            handle_tags_save($tags, $insert_id, 'project');
-
             if (isset($custom_fields)) {
                 handle_custom_fields_post($insert_id, $custom_fields);
             }
@@ -787,6 +822,30 @@ class Projects_model extends App_Model
                 $_pm['project_members'] = $project_members;
                 $this->add_edit_members($_pm, $insert_id);
             }
+
+            // Determine sales person ID for format tag: Use first project member, fallback to addedfrom
+            $salesPersonId = $data['addedfrom']; // Default fallback
+            if (isset($project_members) && !empty($project_members) && is_array($project_members)) {
+                // Use first project member
+                $first_member_id = reset($project_members);
+                if (!empty($first_member_id) && is_numeric($first_member_id)) {
+                    $salesPersonId = (int) $first_member_id;
+                }
+            } else {
+                // If no members in form data, check if members were already added
+                $members = $this->get_project_members($insert_id);
+                if (!empty($members) && isset($members[0]['staff_id'])) {
+                    $salesPersonId = (int) $members[0]['staff_id'];
+                }
+            }
+
+            // Prepend format tag: Project name – Customer name – Sales person name
+            $format_tag = ($data['name'] ?? '') . ' – ' . get_company_name($data['clientid'] ?? '') . ' – ' . get_staff_full_name($salesPersonId);
+            $tags_arr = is_string($tags) && $tags !== '' ? array_map('trim', explode(',', $tags)) : [];
+            $tags_arr = array_values(array_filter($tags_arr, function ($t) use ($format_tag) { return $t !== $format_tag; }));
+            array_unshift($tags_arr, $format_tag);
+            $tags_to_save = implode(',', $tags_arr);
+            handle_tags_save($tags_to_save, $insert_id, 'project');
 
             $original_settings = $this->get_settings();
             if (isset($project_settings)) {
@@ -1011,6 +1070,8 @@ class Projects_model extends App_Model
             $project_members = $data['project_members'];
             unset($data['project_members']);
         }
+        // Save owner_id and manager_id if they exist in the data
+        // Note: These columns should exist in tblprojects table
         $_pm = [];
         if (isset($project_members)) {
             $_pm['project_members'] = $project_members;
@@ -1023,10 +1084,10 @@ class Projects_model extends App_Model
             unset($data['mark_all_tasks_as_completed']);
         }
 
+        // Store tags - will determine sales person after members are updated
+        $tags_to_process = null;
         if (isset($data['tags'])) {
-            if (handle_tags_save($data['tags'], $id, 'project')) {
-                $affectedRows++;
-            }
+            $tags_to_process = $data['tags'];
             unset($data['tags']);
         }
 
@@ -1045,8 +1106,85 @@ class Projects_model extends App_Model
 
         $data = hooks()->apply_filters('before_update_project', $data, $id);
 
+        // Check if owner_id and manager_id columns exist before trying to save them
+        // Also convert empty strings to NULL for proper database handling
+        try {
+            $fields = $this->db->list_fields(db_prefix() . 'projects');
+            if (!in_array('owner_id', $fields)) {
+                if (isset($data['owner_id'])) {
+                    unset($data['owner_id']);
+                }
+            } else {
+                // Convert empty string to NULL for owner_id if column exists
+                if (isset($data['owner_id']) && ($data['owner_id'] === '' || $data['owner_id'] === null)) {
+                    $data['owner_id'] = null;
+                } elseif (isset($data['owner_id']) && is_numeric($data['owner_id']) && $data['owner_id'] > 0) {
+                    $data['owner_id'] = (int)$data['owner_id'];
+                }
+            }
+            if (!in_array('manager_id', $fields)) {
+                if (isset($data['manager_id'])) {
+                    unset($data['manager_id']);
+                }
+            } else {
+                // Convert empty string to NULL for manager_id if column exists
+                if (isset($data['manager_id']) && ($data['manager_id'] === '' || $data['manager_id'] === null)) {
+                    $data['manager_id'] = null;
+                } elseif (isset($data['manager_id']) && is_numeric($data['manager_id']) && $data['manager_id'] > 0) {
+                    $data['manager_id'] = (int)$data['manager_id'];
+                }
+            }
+        } catch (Exception $e) {
+            // If there's an error checking fields, remove owner_id and manager_id to be safe
+            if (isset($data['owner_id'])) {
+                unset($data['owner_id']);
+            }
+            if (isset($data['manager_id'])) {
+                unset($data['manager_id']);
+            }
+        }
+
         $this->db->where('id', $id);
         $this->db->update(db_prefix() . 'projects', $data);
+
+        // Determine sales person ID for format tag: Use first project member, fallback to addedfrom
+        $sales_person_id_for_tag = $original_project->addedfrom; // Default fallback
+        if (isset($project_members) && !empty($project_members) && is_array($project_members)) {
+            // Use first project member from form data
+            $first_member_id = reset($project_members);
+            if (!empty($first_member_id) && is_numeric($first_member_id)) {
+                $sales_person_id_for_tag = (int) $first_member_id;
+            }
+        } else {
+            // Get first member from database (members may have been updated by add_edit_members)
+            $members = $this->get_project_members($id);
+            if (!empty($members) && isset($members[0]['staff_id'])) {
+                $sales_person_id_for_tag = (int) $members[0]['staff_id'];
+            }
+        }
+
+        // Always update format tag
+        $projectName = $data['name'] ?? $original_project->name ?? '';
+        $clientId = $data['clientid'] ?? $original_project->clientid ?? '';
+        $format_tag = $projectName . ' – ' . get_company_name($clientId) . ' – ' . get_staff_full_name($sales_person_id_for_tag);
+        
+        // Get current tags if tags weren't submitted
+        if ($tags_to_process === null) {
+            $current_tags = get_tags_in($id, 'project');
+            $tags_to_process = prep_tags_input($current_tags);
+        }
+        
+        $tags_arr = is_string($tags_to_process) && $tags_to_process !== '' ? array_map('trim', explode(',', $tags_to_process)) : [];
+        // Remove any existing format tags (match by pattern to catch old ones)
+        $tags_arr = array_values(array_filter($tags_arr, function ($t) use ($projectName, $clientId) { 
+            // Remove tags that match the format pattern (project name – customer name – ...)
+            return !preg_match('/^' . preg_quote($projectName, '/') . '\s*–\s*' . preg_quote(get_company_name($clientId), '/') . '\s*–\s*/', $t);
+        }));
+        array_unshift($tags_arr, $format_tag);
+        $tags_to_save = implode(',', $tags_arr);
+        if (handle_tags_save($tags_to_save, $id, 'project')) {
+            $affectedRows++;
+        }
 
         if ($this->db->affected_rows() > 0) {
             if (isset($mark_all_tasks_as_completed)) {
