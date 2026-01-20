@@ -85,9 +85,35 @@
 <script src="<?= base_url('assets/js/projects-filter.js'); ?>"></script>
 <script>
     $(function() {
-        initDataTable('.table-projects', admin_url + 'projects/table', undefined, undefined, {},
+        var table = initDataTable('.table-projects', admin_url + 'projects/table', undefined, undefined, {},
             <?= hooks()->apply_filters('projects_table_default_order', json_encode([5, 'asc'])); ?>
         );
+
+        // Override language settings to use "projects" instead of "entries"
+        if (table) {
+            // Update language settings
+            var settings = table.settings()[0];
+            if (settings && settings.oLanguage) {
+                var originalInfo = settings.oLanguage.sInfo;
+                var originalInfoEmpty = settings.oLanguage.sInfoEmpty;
+                var originalInfoFiltered = settings.oLanguage.sInfoFiltered;
+                
+                settings.oLanguage.sInfo = originalInfo.replace(/entries/g, 'projects');
+                settings.oLanguage.sInfoEmpty = originalInfoEmpty.replace(/entries/g, 'projects');
+                settings.oLanguage.sInfoFiltered = originalInfoFiltered.replace(/entries/g, 'projects');
+            }
+            
+            // Update the info text in the DOM whenever table is drawn
+            table.on('draw.dt', function() {
+                var infoElement = $('.table-projects').closest('.dataTables_wrapper').find('.dataTables_info');
+                if (infoElement.length) {
+                    var currentText = infoElement.text();
+                    if (currentText.indexOf('entries') !== -1) {
+                        infoElement.text(currentText.replace(/entries/g, 'projects'));
+                    }
+                }
+            });
+        }
 
         init_ajax_search('customer', '#clientid_copy_project.ajax-search');
     });

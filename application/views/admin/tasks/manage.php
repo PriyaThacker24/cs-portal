@@ -106,6 +106,41 @@
     taskid = '<?= e($taskid); ?>';
     $(function() {
         tasks_kanban();
+        
+        // Override language settings for tasks table to use "tasks" instead of "entries"
+        function applyTasksLanguageOverride() {
+            if ($('.table-tasks').length > 0) {
+                var table = $('.table-tasks').DataTable();
+                if (table && table.settings && table.settings().length > 0) {
+                    var settings = table.settings()[0];
+                    if (settings && settings.oLanguage) {
+                        var originalInfo = settings.oLanguage.sInfo;
+                        var originalInfoEmpty = settings.oLanguage.sInfoEmpty;
+                        var originalInfoFiltered = settings.oLanguage.sInfoFiltered;
+                        
+                        settings.oLanguage.sInfo = originalInfo.replace(/entries/g, 'tasks');
+                        settings.oLanguage.sInfoEmpty = originalInfoEmpty.replace(/entries/g, 'tasks');
+                        settings.oLanguage.sInfoFiltered = originalInfoFiltered.replace(/entries/g, 'tasks');
+                    }
+                    
+                    // Update the info text in the DOM whenever table is drawn
+                    table.on('draw.dt', function() {
+                        var infoElement = $('.table-tasks').closest('.dataTables_wrapper').find('.dataTables_info');
+                        if (infoElement.length) {
+                            var currentText = infoElement.text();
+                            if (currentText.indexOf('entries') !== -1) {
+                                infoElement.text(currentText.replace(/entries/g, 'tasks'));
+                            }
+                        }
+                    });
+                    // Trigger initial update
+                    table.draw(false);
+                }
+            }
+        }
+        
+        // Try to apply override after a short delay to ensure table is initialized
+        setTimeout(applyTasksLanguageOverride, 500);
     });
 </script>
 </body>

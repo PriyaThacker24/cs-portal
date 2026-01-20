@@ -231,6 +231,32 @@ $table_data = hooks()->apply_filters('customers_table_columns', $table_data);
         var tAPI = initDataTable('.table-clients', admin_url + 'clients/table', [0], [0], {},
             <?= hooks()->apply_filters('customers_table_default_order', json_encode([2, 'asc'])); ?>
         );
+
+        // Override language settings to use "customers" instead of "entries"
+        if (tAPI) {
+            // Update language settings
+            var settings = tAPI.settings()[0];
+            if (settings && settings.oLanguage) {
+                var originalInfo = settings.oLanguage.sInfo;
+                var originalInfoEmpty = settings.oLanguage.sInfoEmpty;
+                var originalInfoFiltered = settings.oLanguage.sInfoFiltered;
+                
+                settings.oLanguage.sInfo = originalInfo.replace(/entries/g, 'customers');
+                settings.oLanguage.sInfoEmpty = originalInfoEmpty.replace(/entries/g, 'customers');
+                settings.oLanguage.sInfoFiltered = originalInfoFiltered.replace(/entries/g, 'customers');
+            }
+            
+            // Update the info text in the DOM whenever table is drawn
+            tAPI.on('draw.dt', function() {
+                var infoElement = $('.table-clients').closest('.dataTables_wrapper').find('.dataTables_info');
+                if (infoElement.length) {
+                    var currentText = infoElement.text();
+                    if (currentText.indexOf('entries') !== -1) {
+                        infoElement.text(currentText.replace(/entries/g, 'customers'));
+                    }
+                }
+            });
+        }
     });
 
     function customers_bulk_action(event) {

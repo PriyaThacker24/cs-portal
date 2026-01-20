@@ -101,6 +101,48 @@ if ($selected != '') {
                                 <div class="col-md-6">
                                     <div class="form-group select-placeholder">
                                         <label
+                                            for="owner_id"><?= _l('owner'); ?></label>
+                                        <div class="clearfix"></div>
+                                        <?php
+                                        // Find Nirav Mehta in staff array
+                                        $nirav_mehta_id = '';
+                                        foreach ($staff as $staff_member) {
+                                            $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
+                                            if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
+                                                $nirav_mehta_id = $staff_member['staffid'];
+                                                break;
+                                            }
+                                        }
+                                        $owner_selected = isset($project) && isset($project->owner_id) ? $project->owner_id : ($nirav_mehta_id ?: '');
+                                        echo render_select('owner_id', $staff, ['staffid', ['firstname', 'lastname']], '', $owner_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group select-placeholder">
+                                        <label
+                                            for="manager_id">Manager</label>
+                                        <div class="clearfix"></div>
+                                        <?php
+                                        // Find Nirav Mehta in staff array
+                                        $nirav_mehta_id = '';
+                                        foreach ($staff as $staff_member) {
+                                            $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
+                                            if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
+                                                $nirav_mehta_id = $staff_member['staffid'];
+                                                break;
+                                            }
+                                        }
+                                        $manager_selected = isset($project) && isset($project->manager_id) ? $project->manager_id : ($nirav_mehta_id ?: '');
+                                        echo render_select('manager_id', $staff, ['staffid', ['firstname', 'lastname']], '', $manager_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group select-placeholder">
+                                        <label
                                             for="billing_type"><?= _l('project_billing_type'); ?></label>
                                         <div class="clearfix"></div>
                                         <select name="billing_type" class="selectpicker" id="billing_type"
@@ -790,6 +832,7 @@ foreach ($options as $option) { ?>
         <?php if (! isset($project)) { ?>
         $('#available_features').trigger('change');
         <?php } ?>
+
       });
   </script>
 <?php if (staff_can('create', 'customers')) { ?>

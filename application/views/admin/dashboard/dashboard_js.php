@@ -205,6 +205,41 @@ $(function() {
         }
 
     });
+
+    // Override language settings for ticket reports table on page load
+    function applyProjectsLanguageOverride() {
+        if ($('.table-ticket-reports').length > 0) {
+            var table = $('.table-ticket-reports').DataTable();
+            if (table && table.settings && table.settings().length > 0) {
+                var settings = table.settings()[0];
+                if (settings && settings.oLanguage) {
+                    var originalInfo = settings.oLanguage.sInfo;
+                    var originalInfoEmpty = settings.oLanguage.sInfoEmpty;
+                    var originalInfoFiltered = settings.oLanguage.sInfoFiltered;
+                    
+                    settings.oLanguage.sInfo = originalInfo.replace(/entries/g, 'projects');
+                    settings.oLanguage.sInfoEmpty = originalInfoEmpty.replace(/entries/g, 'projects');
+                    settings.oLanguage.sInfoFiltered = originalInfoFiltered.replace(/entries/g, 'projects');
+                }
+                
+                // Update the info text in the DOM whenever table is drawn
+                table.on('draw.dt', function() {
+                    var infoElement = $('.table-ticket-reports').closest('.dataTables_wrapper').find('.dataTables_info');
+                    if (infoElement.length) {
+                        var currentText = infoElement.text();
+                        if (currentText.indexOf('entries') !== -1) {
+                            infoElement.text(currentText.replace(/entries/g, 'projects'));
+                        }
+                    }
+                });
+                // Trigger initial update
+                table.draw(false);
+            }
+        }
+    }
+    
+    // Try to apply override after a short delay to ensure table is initialized
+    setTimeout(applyProjectsLanguageOverride, 500);
 });
 
 function fix_user_data_widget_tabs() {
@@ -318,6 +353,36 @@ function update_tickets_report_table(el) {
     $('#tickets-report-table-wrapper').load(admin_url + 'dashboard/ticket_widget/' + type, function(data) {
         $('.table-ticket-reports').dataTable().fnDestroy()
         initDataTableInline('.table-ticket-reports')
+        
+        // Override language settings to use "projects" instead of "entries"
+        setTimeout(function() {
+            var table = $('.table-ticket-reports').DataTable();
+            if (table && table.settings && table.settings().length > 0) {
+                var settings = table.settings()[0];
+                if (settings && settings.oLanguage) {
+                    var originalInfo = settings.oLanguage.sInfo;
+                    var originalInfoEmpty = settings.oLanguage.sInfoEmpty;
+                    var originalInfoFiltered = settings.oLanguage.sInfoFiltered;
+                    
+                    settings.oLanguage.sInfo = originalInfo.replace(/entries/g, 'projects');
+                    settings.oLanguage.sInfoEmpty = originalInfoEmpty.replace(/entries/g, 'projects');
+                    settings.oLanguage.sInfoFiltered = originalInfoFiltered.replace(/entries/g, 'projects');
+                }
+                
+                // Update the info text in the DOM whenever table is drawn
+                table.on('draw.dt', function() {
+                    var infoElement = $('.table-ticket-reports').closest('.dataTables_wrapper').find('.dataTables_info');
+                    if (infoElement.length) {
+                        var currentText = infoElement.text();
+                        if (currentText.indexOf('entries') !== -1) {
+                            infoElement.text(currentText.replace(/entries/g, 'projects'));
+                        }
+                    }
+                });
+                // Trigger initial update
+                table.draw(false);
+            }
+        }, 100);
     });
     return false
 }
