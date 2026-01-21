@@ -87,6 +87,16 @@ class Clients extends AdminController
 
                 $data = $this->input->post();
 
+                // Drop any UI-only fields that shouldn't be saved (safety for customized forms)
+                unset(
+                    $data['customer_name'],
+                    $data['customer_email'],
+                    $data['address_line_2'],
+                    $data['formatted_address'],
+                    $data['billing_street_2'],
+                    $data['login_password']
+                );
+
                 $save_and_add_contact = false;
                 if (isset($data['save_and_add_contact'])) {
                     unset($data['save_and_add_contact']);
@@ -112,7 +122,44 @@ class Clients extends AdminController
                         access_denied('customers');
                     }
                 }
-                $success = $this->clients_model->update($this->input->post(), $id);
+
+                // Handle UI-only fields we added for the existing-customer profile view
+                $data = $this->input->post();
+                $customerName  = isset($data['customer_name']) ? trim($data['customer_name']) : '';
+                $customerEmail = isset($data['customer_email']) ? trim($data['customer_email']) : '';
+                unset(
+                    $data['customer_name'],
+                    $data['customer_email'],
+                    $data['address_line_2'],
+                    $data['formatted_address'],
+                    $data['billing_street_2'],
+                    $data['login_password']
+                );
+
+                // If Name/Email provided, update primary contact
+                if ($customerName !== '' || $customerEmail !== '') {
+                    $primary_id = get_primary_contact_user_id($id);
+                    if ($primary_id) {
+                        $nameParts  = explode(' ', $customerName, 2);
+                        $first_name = $nameParts[0] ?? '';
+                        $last_name  = $nameParts[1] ?? '';
+                        $updateContact = [];
+                        if ($first_name !== '') {
+                            $updateContact['firstname'] = $first_name;
+                        }
+                        if ($last_name !== '') {
+                            $updateContact['lastname'] = $last_name;
+                        }
+                        if ($customerEmail !== '') {
+                            $updateContact['email'] = $customerEmail;
+                        }
+                        if (!empty($updateContact)) {
+                            $this->clients_model->update_contact($updateContact, $primary_id);
+                        }
+                    }
+                }
+
+                $success = $this->clients_model->update($data, $id);
                 if ($success == true) {
                     set_alert('success', _l('updated_successfully', _l('client')));
                 }
@@ -218,6 +265,8 @@ class Clients extends AdminController
             }
         }
 
+        // Load staff list for assigning salesperson / customer admins
+        $this->load->model('staff_model');
         $this->load->model('currencies_model');
         $data['currencies'] = $this->currencies_model->get();
 

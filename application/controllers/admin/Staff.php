@@ -214,6 +214,36 @@ class Staff extends AdminController
         hooks()->do_action('edit_logged_in_staff_profile');
 
         if ($this->input->post()) {
+            // If client-side pixelated image was provided, convert it to a temporary file
+            $pixelated = $this->input->post('pixelated_image_data', false);
+            if (!empty($pixelated) && strpos($pixelated, 'data:image') === 0) {
+                $parts = explode(',', $pixelated);
+                if (count($parts) === 2) {
+                    $meta = $parts[0]; // data:image/png;base64
+                    $content = $parts[1];
+
+                    $metaParts = explode(';', $meta);
+                    $mime = 'image/png';
+                    if (isset($metaParts[0]) && strpos($metaParts[0], ':') !== false) {
+                        $mime = substr($metaParts[0], strpos($metaParts[0], ':') + 1);
+                    }
+
+                    $imageData = base64_decode($content);
+                    if ($imageData !== false) {
+                        $tmpFile = tempnam(sys_get_temp_dir(), 'staff_pix_');
+                        file_put_contents($tmpFile, $imageData);
+
+                        $_FILES['profile_image'] = [
+                            'name'     => 'profile_pixelated.png',
+                            'type'     => $mime,
+                            'tmp_name' => $tmpFile,
+                            'error'    => 0,
+                            'size'     => strlen($imageData),
+                        ];
+                    }
+                }
+            }
+
             handle_staff_profile_image_upload();
             $data = $this->input->post();
             // Don't do XSS clean here.
