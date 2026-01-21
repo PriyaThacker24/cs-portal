@@ -18,9 +18,26 @@
                     <li role="presentation"
                         class="<?= ! $this->input->get('tab') ? 'active' : ''; ?>">
                         <a href="#contact_info" aria-controls="contact_info" role="tab" data-toggle="tab">
-                            <?= isset($client) ? 'Basic Information' : _l('customer_profile_details'); ?>
+                            <?= isset($client) ? _l('customer_profile_details') : 'Basic Information'; ?>
                         </a>
                     </li>
+                    <?php if (!isset($client)) { ?>
+                    <li role="presentation">
+                        <a href="#address_tab" aria-controls="address_tab" role="tab" data-toggle="tab">
+                            Address
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#billing_tab" aria-controls="billing_tab" role="tab" data-toggle="tab">
+                            Billing
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#login_account_tab" aria-controls="login_account_tab" role="tab" data-toggle="tab">
+                            Login Account
+                        </a>
+                    </li>
+                    <?php } else { ?>
                     <?php
                   $customer_custom_fields = false;
 if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active' => 1]) > 0) {
@@ -28,21 +45,20 @@ if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active'
                     <li role="presentation"
                         class="<?= $this->input->get('tab') == 'custom_fields' ? 'active' : ''; ?>">
                         <a href="#custom_fields" aria-controls="custom_fields" role="tab" data-toggle="tab">
-                            <?= isset($client) ? 'Address' : hooks()->apply_filters('customer_profile_tab_custom_fields_text', _l('custom_fields')); ?>
+                            <?= hooks()->apply_filters('customer_profile_tab_custom_fields_text', _l('custom_fields')); ?>
                         </a>
                     </li>
                     <?php } ?>
                     <li role="presentation">
                         <a href="#billing_and_shipping" aria-controls="billing_and_shipping" role="tab"
                             data-toggle="tab">
-                            <?= isset($client) ? 'Billing' : _l('billing_shipping'); ?>
+                            <?= _l('billing_shipping'); ?>
                         </a>
                     </li>
                     <?php hooks()->do_action('after_customer_billing_and_shipping_tab', $client ?? false); ?>
-                    <?php if (isset($client)) { ?>
                     <li role="presentation">
                         <a href="#customer_admins" aria-controls="customer_admins" role="tab" data-toggle="tab">
-                            <?= isset($client) ? 'Login Account' : _l('customer_admins'); ?>
+                            <?= _l('customer_admins'); ?>
                             <?php if (count($customer_admins) > 0) { ?>
                             <span
                                 class="badge bg-default"><?= count($customer_admins) ?></span>
@@ -56,28 +72,14 @@ if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active'
         </div>
         <div class="tab-content mtop15">
             <?php hooks()->do_action('after_custom_profile_tab_content', $client ?? false); ?>
-<?php if ($customer_custom_fields) { ?>
+            <?php if ($customer_custom_fields) { ?>
             <div role="tabpanel"
                 class="tab-pane<?= $this->input->get('tab') == 'custom_fields' ? ' active' : ''; ?>"
                 id="custom_fields">
                 <div class="row">
                     <div class="col-md-8">
-                        <?php if (isset($client)) { ?>
-                        <?= render_textarea('address', 'Address Line 1', $client->address ?? ''); ?>
-                        <?= render_input('address_line_2', 'Address Line 2', $client->address_line_2 ?? ''); ?>
-                        <?= render_input('city', 'City', $client->city ?? ''); ?>
-                        <?= render_input('state', 'State', $client->state ?? ''); ?>
-                        <?php
-                        $countries = get_all_countries();
-                        $selectedCountry = $client->country ?? get_option('customer_default_country');
-                        echo render_select('country', $countries, ['country_id', ['short_name']], 'Country', $selectedCountry, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]);
-                        ?>
-                        <?= render_input('zip', 'Postal Code', $client->zip ?? ''); ?>
-                        <?= render_textarea('formatted_address', 'Formatted address', '', ['readonly' => true]); ?>
-                        <?php } else { ?>
-                        <?php $rel_id = false; ?>
+                        <?php $rel_id = (isset($client) ? $client->userid : false); ?>
                         <?= render_custom_fields('customers', $rel_id); ?>
-                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -98,59 +100,51 @@ if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active'
                     </div>
                     <div
                         class="col-md-<?= ! isset($client) ? 12 : 8; ?>">
-                        <?php hooks()->do_action('before_customer_profile_company_field', $client ?? null); ?>
-                        <?php if (isset($client)) {
-                            // Only show these fields for existing customers
-                            $primary_name  = '';
-                            $primary_email = '';
-                            $primary_id = get_primary_contact_user_id($client->userid);
-                            if ($primary_id) {
-                                $primary_contact = $this->clients_model->get_contact($primary_id);
-                                if ($primary_contact) {
-                                    $primary_name  = trim(($primary_contact->firstname ?? '') . ' ' . ($primary_contact->lastname ?? ''));
-                                    $primary_email = $primary_contact->email ?? '';
-                                }
-                            }
-                            echo render_input('customer_name', 'Name', $primary_name);
-                            echo render_input('company', 'Company Name', $client->company ?? '', 'text', ['autofocus' => true]);
-                            echo render_input('phonenumber', 'Phone Number', $client->phonenumber ?? '');
-                            // Website field
-                            if (empty($client->website)) {
-                                echo render_input('website', 'Website', '');
-                            } else { ?>
-                        <div class="form-group">
-                            <label for="website">Website</label>
-                            <div class="input-group">
-                                <input type="text" name="website" id="website"
-                                    value="<?= e($client->website); ?>"
-                                    class="form-control">
-                                <span class="input-group-btn">
-                                    <a href="<?= e(maybe_add_http($client->website)); ?>"
-                                        class="btn btn-default" target="_blank" tabindex="-1">
-                                        <i class="fa fa-globe"></i></a>
-                                </span>
-                            </div>
+                        <?php if (!isset($client)) { ?>
+                        <?php // Basic Information tab fields for new customer ?>
+                        <?php echo render_input('customer_name', 'Name', ''); ?>
+                        <?php $value = (isset($client) ? $client->company : ''); ?>
+                        <?php $attrs = (isset($client) ? [] : ['autofocus' => true]); ?>
+                        <?= render_input('company', 'Company Name', $value, 'text', $attrs); ?>
+                        <div id="company_exists_info" class="hide"></div>
+                        <?php $value = (isset($client) ? $client->phonenumber : ''); ?>
+                        <?= render_input('phonenumber', 'Phone Number', $value); ?>
+                        <?php $value = (isset($client) ? $client->website : ''); ?>
+                        <?= render_input('website', 'Website', $value); ?>
+                        <?php echo render_input('customer_email', 'Email Address', '', 'email'); ?>
+                        
+                        <?php // Assign Admin field for new customers ?>
+                        <?php if (!isset($client)) { ?>
+                        <div class="form-group select-placeholder">
+                            <label for="customer_admins" class="control-label"><?= _l('assign_admin'); ?></label>
+                            <?php
+                            $selected = [];
+                            echo render_select('customer_admins[]', $staff ?? [], ['staffid', ['firstname', 'lastname']], '', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
+                            ?>
                         </div>
-                        <?php }
-                            echo render_input('customer_email', 'Email Address', $primary_email, 'email');
-                        } else { ?>
-                        <?php // keep original fields for new customer form ?>
+                        <?php } ?>
+                        <?php } else { ?>
+                        <?php hooks()->do_action('before_customer_profile_company_field', $client ?? null); ?>
                         <?php $value = (isset($client) ? $client->company : ''); ?>
                         <?php $attrs = (isset($client) ? [] : ['autofocus' => true]); ?>
                         <?= render_input('company', 'client_company', $value, 'text', $attrs); ?>
                         <div id="company_exists_info" class="hide"></div>
+                        <?php hooks()->do_action('after_customer_profile_company_field', $client ?? null); ?>
                         <?php if (get_option('company_requires_vat_number_field') == 1) {
                             $value = (isset($client) ? $client->vat : '');
                             echo render_input('vat', 'client_vat_number', $value);
                         } ?>
+                        <?php hooks()->do_action('before_customer_profile_phone_field', $client ?? null); ?>
                         <?php $value = (isset($client) ? $client->phonenumber : ''); ?>
                         <?= render_input('phonenumber', 'client_phonenumber', $value); ?>
+                        <?php hooks()->do_action('after_customer_profile_company_phone', $client ?? null); ?>
                         <?php if ((isset($client) && empty($client->website)) || ! isset($client)) {
                             $value = (isset($client) ? $client->website : '');
                             echo render_input('website', 'client_website', $value);
                         } else { ?>
                         <div class="form-group">
-                            <label for="website"><?= _l('client_website'); ?></label>
+                            <label
+                                for="website"><?= _l('client_website'); ?></label>
                             <div class="input-group">
                                 <input type="text" name="website" id="website"
                                     value="<?= e($client->website); ?>"
@@ -160,12 +154,10 @@ if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active'
                                         class="btn btn-default" target="_blank" tabindex="-1">
                                         <i class="fa fa-globe"></i></a>
                                 </span>
+
                             </div>
                         </div>
-                        <?php } ?>
-                        <?php } // end existing vs new ?>
-                        <?php if (!isset($client)) { ?>
-                        <?php
+                        <?php }
                         $selected = [];
 if (isset($customer_groups)) {
     foreach ($customer_groups as $group) {
@@ -252,9 +244,98 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
                     </div>
                 </div>
             </div>
+            <?php if (!isset($client)) { ?>
+            <div role="tabpanel" class="tab-pane" id="address_tab">
+                <div class="row">
+                    <div class="col-md-12">
+                        <?php $countries = get_all_countries();
+                        $customer_default_country = get_option('customer_default_country');
+                        $selectedCountry = $customer_default_country; ?>
+                        <?= render_textarea('address', 'Address Line 1', ''); ?>
+                        <?= render_input('address_line_2', 'Address Line 2', ''); ?>
+                        <?= render_input('city', 'City', ''); ?>
+                        <?= render_input('state', 'State', ''); ?>
+                        <?php echo render_select('country', $countries, ['country_id', ['short_name']], 'Country', $selectedCountry, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
+                        <?= render_input('zip', 'Postal Code', ''); ?>
+                        <?= render_textarea('formatted_address', 'Formatted Address', '', ['readonly' => true]); ?>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="billing_tab">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4 class="tw-font-semibold tw-text-base tw-text-neutral-700 tw-flex tw-justify-between tw-items-center tw-mt-0 tw-mb-6">
+                            Billing Address
+                            <a href="#" class="billing-copy-from-address tw-text-sm tw-text-neutral-500 hover:tw-text-neutral-700 active:tw-text-neutral-700">
+                                Copy from Address
+                            </a>
+                        </h4>
+                        <?php $countries = get_all_countries();
+                        $selected = ''; ?>
+                        <?= render_textarea('billing_street', 'Address Line 1', ''); ?>
+                        <?= render_input('billing_street_2', 'Address Line 2', ''); ?>
+                        <?= render_input('billing_city', 'City', ''); ?>
+                        <?= render_input('billing_state', 'State', ''); ?>
+                        <?php echo render_select('billing_country', $countries, ['country_id', ['short_name']], 'Country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
+                        <?= render_input('billing_zip', 'Postal Code', ''); ?>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="login_account_tab">
+                <div class="row">
+                    <div class="col-md-12">
+                        <?php echo render_input('login_password', 'Password', '', 'password'); ?>
+                    </div>
+                </div>
+            </div>
+            <?php } ?>
             <?php if (isset($client)) { ?>
             <div role="tabpanel" class="tab-pane" id="customer_admins">
-                <?php echo render_input('login_password', 'Password', '', 'password'); ?>
+                <?php if (staff_can('create', 'customers') || staff_can('edit', 'customers')) { ?>
+                <a href="#" data-toggle="modal" data-target="#customer_admins_assign"
+                    class="btn btn-primary mbot30"><?= _l('assign_admin'); ?></a>
+                <?php } ?>
+                <table class="table dt-table">
+                    <thead>
+                        <tr>
+                            <th><?= _l('staff_member'); ?>
+                            </th>
+                            <th><?= _l('customer_admin_date_assigned'); ?>
+                            </th>
+                            <?php if (staff_can('create', 'customers') || staff_can('edit', 'customers')) { ?>
+                            <th class="options">
+                                <?= _l('options'); ?>
+                            </th>
+                            <?php } ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($customer_admins as $c_admin) { ?>
+                        <tr>
+                            <td><a
+                                    href="<?= admin_url('profile/' . $c_admin['staff_id']); ?>">
+                                    <?= staff_profile_image($c_admin['staff_id'], [
+                                        'staff-profile-image-small',
+                                        'mright5',
+                                    ]);
+                            echo e(get_staff_full_name($c_admin['staff_id'])); ?></a>
+                            </td>
+                            <td
+                                data-order="<?= e($c_admin['date_assigned']); ?>">
+                                <?= e(_dt($c_admin['date_assigned'])); ?>
+                            </td>
+                            <?php if (staff_can('create', 'customers') || staff_can('edit', 'customers')) { ?>
+                            <td>
+                                <a href="<?= admin_url('clients/delete_customer_admin/' . $client->userid . '/' . $c_admin['staff_id']); ?>"
+                                    class="tw-text-neutral-500 hover:tw-text-neutral-700 focus:tw-text-neutral-700 _delete">
+                                    <i class="fa-regular fa-trash-can fa-lg"></i>
+                                </a>
+                            </td>
+                            <?php } ?>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
             </div>
             <?php } ?>
             <div role="tabpanel" class="tab-pane" id="billing_and_shipping">
@@ -264,16 +345,15 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
                             <div class="col-md-6">
                                 <h4
                                     class="tw-font-semibold tw-text-base tw-text-neutral-700 tw-flex tw-justify-between tw-items-center tw-mt-0 tw-mb-6">
-                                    <?= isset($client) ? 'Billing (copy from Address)' : _l('billing_address'); ?>
+                                    <?= _l('billing_address'); ?>
                                     <a href="#"
                                         class="billing-same-as-customer tw-text-sm tw-text-neutral-500 hover:tw-text-neutral-700 active:tw-text-neutral-700">
-                                        <?= isset($client) ? 'Copy from Address' : _l('customer_billing_same_as_profile'); ?>
+                                        <?= _l('customer_billing_same_as_profile'); ?>
                                     </a>
                                 </h4>
 
                                 <?php $value = (isset($client) ? $client->billing_street : ''); ?>
                                 <?= render_textarea('billing_street', 'billing_street', $value); ?>
-                                <?= render_input('billing_street_2', 'Billing Line 2', ''); ?>
                                 <?php $value = (isset($client) ? $client->billing_city : ''); ?>
                                 <?= render_input('billing_city', 'billing_city', $value); ?>
                                 <?php $value = (isset($client) ? $client->billing_state : ''); ?>
@@ -283,7 +363,6 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
                                 <?php $selected = (isset($client) ? $client->billing_country : ''); ?>
                                 <?= render_select('billing_country', $countries, ['country_id', ['short_name']], 'billing_country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
                             </div>
-                            <?php if (!isset($client)) { ?>
                             <div class="col-md-6">
                                 <h4
                                     class="tw-font-semibold tw-text-base tw-text-neutral-700 tw-flex tw-justify-between tw-items-center tw-mt-0 tw-mb-6">
@@ -310,7 +389,6 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
                                 <?php $selected = (isset($client) ? $client->shipping_country : ''); ?>
                                 <?= render_select('shipping_country', $countries, ['country_id', ['short_name']], 'shipping_country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
                             </div>
-                            <?php } ?>
                             <?php if (isset($client)
                         && (total_rows(db_prefix() . 'invoices', ['clientid' => $client->userid]) > 0 || total_rows(db_prefix() . 'estimates', ['clientid' => $client->userid]) > 0 || total_rows(db_prefix() . 'creditnotes', ['clientid' => $client->userid]) > 0)) { ?>
                             <div class="col-md-12">
@@ -381,38 +459,47 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
 <?php } ?>
 <?php } ?>
 <?php $this->load->view('admin/clients/client_group'); ?>
-<?php if (isset($client)) { ?>
+<?php if (!isset($client)) { ?>
 <script>
     (function() {
+        // Auto-generate formatted address
         function updateFormattedAddress() {
             var parts = [];
             var a1 = $('textarea[name="address"]').val();
             var a2 = $('input[name="address_line_2"]').val();
             var city = $('input[name="city"]').val();
             var state = $('input[name="state"]').val();
-            var country = $('input[name="country"]').val();
+            var country = $('select[name="country"]').val();
             var zip = $('input[name="zip"]').val();
+            
             if (a1) parts.push(a1);
             if (a2) parts.push(a2);
             if (city) parts.push(city);
             if (state) parts.push(state);
-            if (country) parts.push(country);
             if (zip) parts.push(zip);
+            if (country) {
+                var countryText = $('select[name="country"] option:selected').text();
+                if (countryText) parts.push(countryText);
+            }
+            
             $('textarea[name="formatted_address"]').val(parts.join(', '));
         }
 
         $(function() {
+            // Update formatted address on input changes
             $('body').on('input change', 'textarea[name="address"], input[name="address_line_2"], input[name="city"], input[name="state"], select[name="country"], input[name="zip"]', updateFormattedAddress);
             updateFormattedAddress();
 
-            $('.billing-same-as-customer').on('click', function(e) {
+            // Copy from Address to Billing
+            $('.billing-copy-from-address').on('click', function(e) {
                 e.preventDefault();
                 $('textarea[name="billing_street"]').val($('textarea[name="address"]').val());
                 $('input[name="billing_street_2"]').val($('input[name="address_line_2"]').val());
                 $('input[name="billing_city"]').val($('input[name="city"]').val());
                 $('input[name="billing_state"]').val($('input[name="state"]').val());
                 $('input[name="billing_zip"]').val($('input[name="zip"]').val());
-                $('select[name="billing_country"]').val($('input[name="country"]').val());
+                $('select[name="billing_country"]').selectpicker('val', $('select[name="country"]').selectpicker('val'));
+                $('select[name="billing_country"]').selectpicker('refresh');
             });
         });
     })();
