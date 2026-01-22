@@ -18,10 +18,9 @@
                     <li role="presentation"
                         class="<?= ! $this->input->get('tab') ? 'active' : ''; ?>">
                         <a href="#contact_info" aria-controls="contact_info" role="tab" data-toggle="tab">
-                            <?= isset($client) ? _l('customer_profile_details') : 'Basic Information'; ?>
+                            Basic Information
                         </a>
                     </li>
-                    <?php if (!isset($client)) { ?>
                     <li role="presentation">
                         <a href="#address_tab" aria-controls="address_tab" role="tab" data-toggle="tab">
                             Address
@@ -37,36 +36,6 @@
                             Login Account
                         </a>
                     </li>
-                    <?php } else { ?>
-                    <?php
-                  $customer_custom_fields = false;
-if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active' => 1]) > 0) {
-    $customer_custom_fields = true; ?>
-                    <li role="presentation"
-                        class="<?= $this->input->get('tab') == 'custom_fields' ? 'active' : ''; ?>">
-                        <a href="#custom_fields" aria-controls="custom_fields" role="tab" data-toggle="tab">
-                            <?= hooks()->apply_filters('customer_profile_tab_custom_fields_text', _l('custom_fields')); ?>
-                        </a>
-                    </li>
-                    <?php } ?>
-                    <li role="presentation">
-                        <a href="#billing_and_shipping" aria-controls="billing_and_shipping" role="tab"
-                            data-toggle="tab">
-                            <?= _l('billing_shipping'); ?>
-                        </a>
-                    </li>
-                    <?php hooks()->do_action('after_customer_billing_and_shipping_tab', $client ?? false); ?>
-                    <li role="presentation">
-                        <a href="#customer_admins" aria-controls="customer_admins" role="tab" data-toggle="tab">
-                            <?= _l('customer_admins'); ?>
-                            <?php if (count($customer_admins) > 0) { ?>
-                            <span
-                                class="badge bg-default"><?= count($customer_admins) ?></span>
-                            <?php } ?>
-                        </a>
-                    </li>
-                    <?php hooks()->do_action('after_customer_admins_tab', $client); ?>
-                    <?php } ?>
                 </ul>
             </div>
         </div>
@@ -99,52 +68,45 @@ if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active'
                         </div>
                     </div>
                     <div
-                        class="col-md-<?= ! isset($client) ? 12 : 8; ?>">
-                        <?php if (!isset($client)) { ?>
-                        <?php // Basic Information tab fields for new customer ?>
-                        <?php echo render_input('customer_name', 'Name', ''); ?>
+                        class="col-md-12">
+                        <?php // Basic Information tab fields for both new and existing customers ?>
+                        <?php
+                        $primary_name  = '';
+                        $primary_email = '';
+                        if (isset($client)) {
+                            // Prefer the primary contact if it exists
+                            $primary_id = get_primary_contact_user_id($client->userid);
+                            $primary_contact = null;
+
+                            if ($primary_id) {
+                                $primary_contact = $this->clients_model->get_contact($primary_id);
+                            }
+
+                            // Fallback: if there is no primary contact yet, use the first active contact
+                            if (!$primary_contact) {
+                                $contacts = $this->clients_model->get_contacts($client->userid);
+                                if (!empty($contacts)) {
+                                    // get_contacts returns an array of arrays
+                                    $primary_contact = (object) $contacts[0];
+                                }
+                            }
+
+                            if ($primary_contact) {
+                                $primary_name  = trim(($primary_contact->firstname ?? '') . ' ' . ($primary_contact->lastname ?? ''));
+                                $primary_email = $primary_contact->email ?? '';
+                            }
+                        }
+                        ?>
+                        <?php echo render_input('customer_name', 'Name', $primary_name); ?>
                         <?php $value = (isset($client) ? $client->company : ''); ?>
                         <?php $attrs = (isset($client) ? [] : ['autofocus' => true]); ?>
                         <?= render_input('company', 'Company Name', $value, 'text', $attrs); ?>
                         <div id="company_exists_info" class="hide"></div>
                         <?php $value = (isset($client) ? $client->phonenumber : ''); ?>
                         <?= render_input('phonenumber', 'Phone Number', $value); ?>
-                        <?php $value = (isset($client) ? $client->website : ''); ?>
-                        <?= render_input('website', 'Website', $value); ?>
-                        <?php echo render_input('customer_email', 'Email Address', '', 'email'); ?>
-                        
-                        <?php // Assign Admin field for new customers ?>
-                        <?php if (!isset($client)) { ?>
-                        <div class="form-group select-placeholder">
-                            <label for="customer_admins" class="control-label"><?= _l('assign_admin'); ?></label>
-                            <?php
-                            $selected = [];
-                            echo render_select('customer_admins[]', $staff ?? [], ['staffid', ['firstname', 'lastname']], '', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
-                            ?>
-                        </div>
-                        <?php } ?>
-                        <?php } else { ?>
-                        <?php hooks()->do_action('before_customer_profile_company_field', $client ?? null); ?>
-                        <?php $value = (isset($client) ? $client->company : ''); ?>
-                        <?php $attrs = (isset($client) ? [] : ['autofocus' => true]); ?>
-                        <?= render_input('company', 'client_company', $value, 'text', $attrs); ?>
-                        <div id="company_exists_info" class="hide"></div>
-                        <?php hooks()->do_action('after_customer_profile_company_field', $client ?? null); ?>
-                        <?php if (get_option('company_requires_vat_number_field') == 1) {
-                            $value = (isset($client) ? $client->vat : '');
-                            echo render_input('vat', 'client_vat_number', $value);
-                        } ?>
-                        <?php hooks()->do_action('before_customer_profile_phone_field', $client ?? null); ?>
-                        <?php $value = (isset($client) ? $client->phonenumber : ''); ?>
-                        <?= render_input('phonenumber', 'client_phonenumber', $value); ?>
-                        <?php hooks()->do_action('after_customer_profile_company_phone', $client ?? null); ?>
-                        <?php if ((isset($client) && empty($client->website)) || ! isset($client)) {
-                            $value = (isset($client) ? $client->website : '');
-                            echo render_input('website', 'client_website', $value);
-                        } else { ?>
+                        <?php if (isset($client) && !empty($client->website)) { ?>
                         <div class="form-group">
-                            <label
-                                for="website"><?= _l('client_website'); ?></label>
+                            <label for="website">Website</label>
                             <div class="input-group">
                                 <input type="text" name="website" id="website"
                                     value="<?= e($client->website); ?>"
@@ -154,109 +116,47 @@ if (total_rows(db_prefix() . 'customfields', ['fieldto' => 'customers', 'active'
                                         class="btn btn-default" target="_blank" tabindex="-1">
                                         <i class="fa fa-globe"></i></a>
                                 </span>
-
                             </div>
                         </div>
-                        <?php }
-                        $selected = [];
-if (isset($customer_groups)) {
-    foreach ($customer_groups as $group) {
-        array_push($selected, $group['groupid']);
-    }
-}
-if (is_admin() || get_option('staff_members_create_inline_customer_groups') == '1') {
-    echo render_select_with_input_group('groups_in[]', $groups, ['id', 'name'], 'customer_groups', $selected, '<div class="input-group-btn"><a href="#" class="btn btn-default" data-toggle="modal" data-target="#customer_group_modal"><i class="fa fa-plus"></i></a></div>', ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
-} else {
-    echo render_select('groups_in[]', $groups, ['id', 'name'], 'customer_groups', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
-}
-?>
-                        <div class="row">
-                            <div
-                                class="col-md-<?= ! is_language_disabled() ? 6 : 12; ?>">
-                                <i class="fa-regular fa-circle-question pull-left tw-mt-0.5 tw-mr-1"
-                                    data-toggle="tooltip"
-                                    data-title="<?= _l('customer_currency_change_notice'); ?>"></i>
-                                <?php
-$s_attrs  = ['data-none-selected-text' => _l('system_default_string')];
-$selected = '';
-if (isset($client) && client_have_transactions($client->userid)) {
-    $s_attrs['disabled'] = true;
-}
-
-foreach ($currencies as $currency) {
-    if (isset($client)) {
-        if ($currency['id'] == $client->default_currency) {
-            $selected = $currency['id'];
-        }
-    }
-}
-// Do not remove the currency field from the customer profile!
-echo render_select('default_currency', $currencies, ['id', 'name', 'symbol'], 'invoice_add_edit_currency', $selected, $s_attrs);
-?>
-                            </div>
-                            <?php if (! is_language_disabled()) { ?>
-                            <div class="col-md-6">
-                                <div class="form-group select-placeholder">
-                                    <label for="default_language"
-                                        class="control-label"><?= _l('localization_default_language'); ?>
-                                    </label>
-                                    <select name="default_language" id="default_language"
-                                        class="form-control selectpicker"
-                                        data-none-selected-text="<?= _l('dropdown_non_selected_tex'); ?>">
-                                        <option value="">
-                                            <?= _l('system_default_string'); ?>
-                                        </option>
-                                        <?php foreach ($this->app->get_available_languages() as $availableLanguage) {
-                                            $selected = '';
-                                            if (isset($client)) {
-                                                if ($client->default_language == $availableLanguage) {
-                                                    $selected = 'selected';
-                                                }
-                                            } ?>
-                                        <option
-                                            value="<?= e($availableLanguage); ?>"
-                                            <?= e($selected); ?>>
-                                            <?= e(ucfirst($availableLanguage)); ?>
-                                        </option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <?php } ?>
-                        </div>
-
-                        <hr />
-
-                        <?php $value = (isset($client) ? $client->address : ''); ?>
-                        <?= render_textarea('address', 'client_address', $value); ?>
-                        <?php $value = (isset($client) ? $client->city : ''); ?>
-                        <?= render_input('city', 'client_city', $value); ?>
-                        <?php $value = (isset($client) ? $client->state : ''); ?>
-                        <?= render_input('state', 'client_state', $value); ?>
-                        <?php $value = (isset($client) ? $client->zip : ''); ?>
-                        <?= render_input('zip', 'client_postal_code', $value); ?>
-                        <?php $countries = get_all_countries();
-$customer_default_country                = get_option('customer_default_country');
-$selected                                = (isset($client) ? $client->country : $customer_default_country);
-echo render_select('country', $countries, ['country_id', ['short_name']], 'clients_country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]);
-?>
+                        <?php } else { ?>
+                        <?php $value = (isset($client) ? $client->website : ''); ?>
+                        <?= render_input('website', 'Website', $value); ?>
                         <?php } ?>
+                        <?php echo render_input('customer_email', 'Email Address', $primary_email, 'email'); ?>
+                        
+                        <?php // Assign Admin field ?>
+                        <div class="form-group select-placeholder">
+                            <label for="customer_admins" class="control-label"><?= _l('assign_admin'); ?></label>
+                            <?php
+                            $selected = [];
+                            if (isset($client) && isset($customer_admins)) {
+                                foreach ($customer_admins as $c_admin) {
+                                    array_push($selected, $c_admin['staff_id']);
+                                }
+                            }
+                            echo render_select('customer_admins[]', $staff ?? [], ['staffid', ['firstname', 'lastname']], '', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
+                            ?>
+                        </div>
                     </div>
                 </div>
             </div>
-            <?php if (!isset($client)) { ?>
             <div role="tabpanel" class="tab-pane" id="address_tab">
                 <div class="row">
                     <div class="col-md-12">
                         <?php $countries = get_all_countries();
-                        $customer_default_country = get_option('customer_default_country');
-                        $selectedCountry = $customer_default_country; ?>
-                        <?= render_textarea('address', 'Address Line 1', ''); ?>
-                        <?= render_input('address_line_2', 'Address Line 2', ''); ?>
-                        <?= render_input('city', 'City', ''); ?>
-                        <?= render_input('state', 'State', ''); ?>
+                        if (isset($client)) {
+                            $selectedCountry = $client->country ?? get_option('customer_default_country');
+                        } else {
+                            $customer_default_country = get_option('customer_default_country');
+                            $selectedCountry = $customer_default_country;
+                        }
+                        ?>
+                        <?= render_textarea('address', 'Address Line 1', isset($client) ? ($client->address ?? '') : ''); ?>
+                        <?= render_input('address_line_2', 'Address Line 2', isset($client) ? ($client->address_line_2 ?? '') : ''); ?>
+                        <?= render_input('city', 'City', isset($client) ? ($client->city ?? '') : ''); ?>
+                        <?= render_input('state', 'State', isset($client) ? ($client->state ?? '') : ''); ?>
                         <?php echo render_select('country', $countries, ['country_id', ['short_name']], 'Country', $selectedCountry, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
-                        <?= render_input('zip', 'Postal Code', ''); ?>
+                        <?= render_input('zip', 'Postal Code', isset($client) ? ($client->zip ?? '') : ''); ?>
                         <?= render_textarea('formatted_address', 'Formatted Address', '', ['readonly' => true]); ?>
                     </div>
                 </div>
@@ -271,149 +171,36 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
                             </a>
                         </h4>
                         <?php $countries = get_all_countries();
-                        $selected = ''; ?>
-                        <?= render_textarea('billing_street', 'Address Line 1', ''); ?>
-                        <?= render_input('billing_street_2', 'Address Line 2', ''); ?>
-                        <?= render_input('billing_city', 'City', ''); ?>
-                        <?= render_input('billing_state', 'State', ''); ?>
+                        $selected = isset($client) ? ($client->billing_country ?? '') : ''; ?>
+                        <?= render_textarea('billing_street', 'Address Line 1', isset($client) ? ($client->billing_street ?? '') : ''); ?>
+                        <?= render_input('billing_street_2', 'Address Line 2', isset($client) ? ($client->billing_street_2 ?? '') : ''); ?>
+                        <?= render_input('billing_city', 'City', isset($client) ? ($client->billing_city ?? '') : ''); ?>
+                        <?= render_input('billing_state', 'State', isset($client) ? ($client->billing_state ?? '') : ''); ?>
                         <?php echo render_select('billing_country', $countries, ['country_id', ['short_name']], 'Country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
-                        <?= render_input('billing_zip', 'Postal Code', ''); ?>
+                        <?= render_input('billing_zip', 'Postal Code', isset($client) ? ($client->billing_zip ?? '') : ''); ?>
                     </div>
                 </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="login_account_tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <?php echo render_input('login_password', 'Password', '', 'password'); ?>
-                    </div>
-                </div>
-            </div>
-            <?php } ?>
-            <?php if (isset($client)) { ?>
-            <div role="tabpanel" class="tab-pane" id="customer_admins">
-                <?php if (staff_can('create', 'customers') || staff_can('edit', 'customers')) { ?>
-                <a href="#" data-toggle="modal" data-target="#customer_admins_assign"
-                    class="btn btn-primary mbot30"><?= _l('assign_admin'); ?></a>
-                <?php } ?>
-                <table class="table dt-table">
-                    <thead>
-                        <tr>
-                            <th><?= _l('staff_member'); ?>
-                            </th>
-                            <th><?= _l('customer_admin_date_assigned'); ?>
-                            </th>
-                            <?php if (staff_can('create', 'customers') || staff_can('edit', 'customers')) { ?>
-                            <th class="options">
-                                <?= _l('options'); ?>
-                            </th>
-                            <?php } ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($customer_admins as $c_admin) { ?>
-                        <tr>
-                            <td><a
-                                    href="<?= admin_url('profile/' . $c_admin['staff_id']); ?>">
-                                    <?= staff_profile_image($c_admin['staff_id'], [
-                                        'staff-profile-image-small',
-                                        'mright5',
-                                    ]);
-                            echo e(get_staff_full_name($c_admin['staff_id'])); ?></a>
-                            </td>
-                            <td
-                                data-order="<?= e($c_admin['date_assigned']); ?>">
-                                <?= e(_dt($c_admin['date_assigned'])); ?>
-                            </td>
-                            <?php if (staff_can('create', 'customers') || staff_can('edit', 'customers')) { ?>
-                            <td>
-                                <a href="<?= admin_url('clients/delete_customer_admin/' . $client->userid . '/' . $c_admin['staff_id']); ?>"
-                                    class="tw-text-neutral-500 hover:tw-text-neutral-700 focus:tw-text-neutral-700 _delete">
-                                    <i class="fa-regular fa-trash-can fa-lg"></i>
-                                </a>
-                            </td>
-                            <?php } ?>
-                        </tr>
-                        <?php } ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php } ?>
-            <div role="tabpanel" class="tab-pane" id="billing_and_shipping">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h4
-                                    class="tw-font-semibold tw-text-base tw-text-neutral-700 tw-flex tw-justify-between tw-items-center tw-mt-0 tw-mb-6">
-                                    <?= _l('billing_address'); ?>
-                                    <a href="#"
-                                        class="billing-same-as-customer tw-text-sm tw-text-neutral-500 hover:tw-text-neutral-700 active:tw-text-neutral-700">
-                                        <?= _l('customer_billing_same_as_profile'); ?>
-                                    </a>
-                                </h4>
-
-                                <?php $value = (isset($client) ? $client->billing_street : ''); ?>
-                                <?= render_textarea('billing_street', 'billing_street', $value); ?>
-                                <?php $value = (isset($client) ? $client->billing_city : ''); ?>
-                                <?= render_input('billing_city', 'billing_city', $value); ?>
-                                <?php $value = (isset($client) ? $client->billing_state : ''); ?>
-                                <?= render_input('billing_state', 'billing_state', $value); ?>
-                                <?php $value = (isset($client) ? $client->billing_zip : ''); ?>
-                                <?= render_input('billing_zip', 'billing_zip', $value); ?>
-                                <?php $selected = (isset($client) ? $client->billing_country : ''); ?>
-                                <?= render_select('billing_country', $countries, ['country_id', ['short_name']], 'billing_country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
-                            </div>
-                            <div class="col-md-6">
-                                <h4
-                                    class="tw-font-semibold tw-text-base tw-text-neutral-700 tw-flex tw-justify-between tw-items-center tw-mt-0 tw-mb-6">
-                                    <span>
-                                        <i class="fa-regular fa-circle-question tw-mr-1" data-toggle="tooltip"
-                                            data-title="<?= _l('customer_shipping_address_notice'); ?>"></i>
-
-                                        <?= _l('shipping_address'); ?>
-                                    </span>
-                                    <a href="#"
-                                        class="customer-copy-billing-address tw-text-sm tw-text-neutral-500 hover:tw-text-neutral-700 active:tw-text-neutral-700">
-                                        <?= _l('customer_billing_copy'); ?>
-                                    </a>
-                                </h4>
-
-                                <?php $value = (isset($client) ? $client->shipping_street : ''); ?>
-                                <?= render_textarea('shipping_street', 'shipping_street', $value); ?>
-                                <?php $value = (isset($client) ? $client->shipping_city : ''); ?>
-                                <?= render_input('shipping_city', 'shipping_city', $value); ?>
-                                <?php $value = (isset($client) ? $client->shipping_state : ''); ?>
-                                <?= render_input('shipping_state', 'shipping_state', $value); ?>
-                                <?php $value = (isset($client) ? $client->shipping_zip : ''); ?>
-                                <?= render_input('shipping_zip', 'shipping_zip', $value); ?>
-                                <?php $selected = (isset($client) ? $client->shipping_country : ''); ?>
-                                <?= render_select('shipping_country', $countries, ['country_id', ['short_name']], 'shipping_country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
-                            </div>
-                            <?php if (isset($client)
-                        && (total_rows(db_prefix() . 'invoices', ['clientid' => $client->userid]) > 0 || total_rows(db_prefix() . 'estimates', ['clientid' => $client->userid]) > 0 || total_rows(db_prefix() . 'creditnotes', ['clientid' => $client->userid]) > 0)) { ?>
-                            <div class="col-md-12">
-                                <div
-                                    class="tw-bg-neutral-50 tw-py-3 tw-px-4 tw-rounded-lg tw-border tw-border-solid tw-border-neutral-200">
-                                    <div class="checkbox checkbox-primary -tw-mb-0.5">
-                                        <input type="checkbox" name="update_all_other_transactions"
-                                            id="update_all_other_transactions">
-                                        <label for="update_all_other_transactions">
-                                            <?= _l('customer_update_address_info_on_invoices'); ?><br />
-                                        </label>
-                                    </div>
-                                    <p class="tw-ml-7 tw-mb-0">
-                                        <?= _l('customer_update_address_info_on_invoices_help'); ?>
-                                    </p>
-                                    <div class="checkbox checkbox-primary">
-                                        <input type="checkbox" name="update_credit_notes" id="update_credit_notes">
-                                        <label for="update_credit_notes">
-                                            <?= _l('customer_profile_update_credit_notes'); ?>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php } ?>
-                        </div>
+                        <?php // Password field for all customers ?>
+                        <?php 
+                        $password_value = '';
+                        if (isset($client)) {
+                            // Get password from primary contact (passwords are hashed, so we show empty but indicate if one exists)
+                            $primary_id = get_primary_contact_user_id($client->userid);
+                            if ($primary_id) {
+                                $primary_contact = $this->clients_model->get_contact($primary_id);
+                                if ($primary_contact && !empty($primary_contact->password)) {
+                                    // Password exists but is hashed, so we leave it empty
+                                    // User can set a new password if needed
+                                    $password_value = '';
+                                }
+                            }
+                        }
+                        ?>
+                        <?php echo render_input('login_password', 'Password', $password_value, 'password', ['placeholder' => 'Leave blank to keep current password']); ?>
                     </div>
                 </div>
             </div>
@@ -459,10 +246,9 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
 <?php } ?>
 <?php } ?>
 <?php $this->load->view('admin/clients/client_group'); ?>
-<?php if (!isset($client)) { ?>
 <script>
     (function() {
-        // Auto-generate formatted address
+        // Auto-generate formatted address for both new and existing customers
         function updateFormattedAddress() {
             var parts = [];
             var a1 = $('textarea[name="address"]').val();
@@ -504,4 +290,3 @@ echo render_select('country', $countries, ['country_id', ['short_name']], 'clien
         });
     })();
 </script>
-<?php } ?>

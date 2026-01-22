@@ -811,6 +811,10 @@ body.viewinvoice .alert {
 .dataTables_length select {
   padding-top: 5px;
   height: inherit;
+  padding-right: 6px !important;
+  padding-left: 6px !important;
+  background-position: right 2px center !important;
+  background-size: 10px !important;
 }
 
 [dir="rtl"] div.dataTables_wrapper div.dataTables_filter {
@@ -1740,6 +1744,35 @@ td[align="center"] {
   margin-right: auto;
   text-align: right;
   padding-right: 16px;
+}
+
+/* Project view: align dropdown arrow with project name */
+#project_view_name .bootstrap-select,
+#project_view_name .bootstrap-select .dropdown-toggle {
+  width: fit-content !important;
+}
+#project_view_name .bootstrap-select .dropdown-toggle {
+  justify-content: flex-start !important;
+  align-items: center !important;
+  display: flex !important;
+  padding-right: 0 !important;
+}
+#project_view_name .bootstrap-select .dropdown-toggle .filter-option {
+  width: auto !important;
+  padding-right: 4px !important;
+}
+#project_view_name .bootstrap-select .bs-caret,
+#project_view_name .bootstrap-select .dropdown-toggle .caret {
+  margin-left: 4px !important;
+  margin-top: 0 !important;
+  align-self: center !important;
+  vertical-align: middle !important;
+}
+#project_view_name .bootstrap-select.fit-width .dropdown-toggle .caret,
+#project_view_name .bootstrap-select.fit-width .dropdown-toggle .bs-caret {
+  margin-top: 0 !important;
+  vertical-align: middle !important;
+  align-self: center !important;
 }
 
 .task-comment .task-attachment-col-more {

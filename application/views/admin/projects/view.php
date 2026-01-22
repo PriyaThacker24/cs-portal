@@ -1,5 +1,33 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
+<style id="project-view-dropdown-fix">
+/* Project view: align dropdown arrow with project name (live override) */
+#project_view_name .bootstrap-select,
+#project_view_name .bootstrap-select .dropdown-toggle { width: fit-content !important; }
+#project_view_name .bootstrap-select .dropdown-toggle {
+  justify-content: flex-start !important;
+  align-items: center !important;
+  display: flex !important;
+  padding-right: 0 !important;
+}
+#project_view_name .bootstrap-select .dropdown-toggle .filter-option {
+  width: auto !important;
+  padding-right: 4px !important;
+}
+#project_view_name .bootstrap-select .bs-caret,
+#project_view_name .bootstrap-select .dropdown-toggle .caret {
+  margin-left: 4px !important;
+  margin-top: 0 !important;
+  align-self: center !important;
+  vertical-align: middle !important;
+}
+#project_view_name .bootstrap-select.fit-width .dropdown-toggle .caret,
+#project_view_name .bootstrap-select.fit-width .dropdown-toggle .bs-caret {
+  margin-top: 0 !important;
+  vertical-align: middle !important;
+  align-self: center !important;
+}
+</style>
 <div id="wrapper">
     <?= form_hidden('project_id', $project->id) ?>
     <div class="content">
@@ -45,9 +73,9 @@
                                     <?= e($project->name); ?>
                                 </h3>
                                 <div id="project_view_name"
-                                    class="ltr:tw-mr-5 rtl:tw-ml-5 tw-min-w-[250px] tw-max-w-[350px]">
-                                    <div class="tw-w-full">
-                                        <select class="selectpicker" id="project_top" data-width="100%"
+                                    class="ltr:tw-mr-5 rtl:tw-ml-5 tw-w-fit">
+                                    <div class="tw-w-fit">
+                                        <select class="selectpicker" id="project_top" data-width="fit"
                                             <?php if (count($other_projects) > 6) { ?>
                                             data-live-search="true"
                                             <?php } ?>>

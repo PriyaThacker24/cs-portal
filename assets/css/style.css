@@ -4108,12 +4108,35 @@ table.dataTable tbody .tags-labels .label-tag:hover {
   border: 0;
   box-shadow: none;
   padding-top: 0;
+  padding-right: 0;
   padding-left: 0;
   padding-bottom: 0;
 }
 
+/* Reduce gap between project name and dropdown arrow */
+#project_view_name .bootstrap-select {
+  width: fit-content !important;
+}
+#project_view_name .bootstrap-select .dropdown-toggle {
+  width: fit-content !important;
+  justify-content: flex-start;
+  align-items: center;
+}
+#project_view_name .bootstrap-select .dropdown-toggle .filter-option {
+  width: auto !important;
+  padding-right: 4px !important;
+}
 #project_view_name .bootstrap-select .bs-caret {
-  margin-left: 15px;
+  margin-left: 4px;
+  margin-top: 0;
+  align-self: center;
+}
+/* Fix vertical alignment: override fit-width caret margin-top: -1px */
+#project_view_name .bootstrap-select.fit-width .dropdown-toggle .caret,
+#project_view_name .bootstrap-select.fit-width .dropdown-toggle .bs-caret {
+  margin-top: 0 !important;
+  vertical-align: middle;
+  align-self: center;
 }
 
 .custom-field-inline-edit-link {

@@ -90,6 +90,7 @@ class Clients extends AdminController
                 // Capture customer_name and customer_email before unsetting for contact creation
                 $customerName  = isset($data['customer_name']) ? trim($data['customer_name']) : '';
                 $customerEmail = isset($data['customer_email']) ? trim($data['customer_email']) : '';
+                $loginPassword = isset($data['login_password']) ? trim($data['login_password']) : '';
                 
                 // Capture customer_admins before unsetting
                 $customerAdmins = isset($data['customer_admins']) && is_array($data['customer_admins']) ? $data['customer_admins'] : [];
@@ -99,11 +100,27 @@ class Clients extends AdminController
                     $data['customer_name'],
                     $data['customer_email'],
                     $data['customer_admins'],
-                    $data['address_line_2'],
                     $data['formatted_address'],
-                    $data['billing_street_2'],
                     $data['login_password']
                 );
+                
+                // Check if address_line_2 and billing_street_2 columns exist in database
+                // Create them if they don't exist, so data can be saved
+                try {
+                    $client_fields = $this->db->list_fields(db_prefix() . 'clients');
+                    if (!in_array('address_line_2', $client_fields)) {
+                        // Column doesn't exist, create it
+                        $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `address_line_2` VARCHAR(200) NULL AFTER `address`');
+                    }
+                    if (!in_array('billing_street_2', $client_fields)) {
+                        // Column doesn't exist, create it
+                        $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `billing_street_2` VARCHAR(200) NULL AFTER `billing_street`');
+                    }
+                } catch (Exception $e) {
+                    // If column creation fails, unset these fields to be safe
+                    unset($data['address_line_2']);
+                    unset($data['billing_street_2']);
+                }
 
                 $save_and_add_contact = false;
                 if (isset($data['save_and_add_contact'])) {
@@ -112,8 +129,8 @@ class Clients extends AdminController
                 }
                 $id = $this->clients_model->add($data);
                 
-                // If Name/Email provided, create a primary contact
-                if ($id && ($customerName !== '' || $customerEmail !== '')) {
+                // If Name/Email/Password provided, create a primary contact
+                if ($id && ($customerName !== '' || $customerEmail !== '' || $loginPassword !== '')) {
                     $nameParts  = explode(' ', $customerName, 2);
                     $first_name = $nameParts[0] ?? '';
                     $last_name  = $nameParts[1] ?? '';
@@ -124,6 +141,11 @@ class Clients extends AdminController
                         'email'      => $customerEmail,
                         'is_primary' => 1,
                     ];
+                    
+                    // Add password if provided
+                    if (!empty($loginPassword)) {
+                        $contactData['password'] = $loginPassword;
+                    }
                     
                     // Reuse phone number from the company profile if available
                     if (!empty($data['phonenumber'])) {
@@ -160,7 +182,157 @@ class Clients extends AdminController
                         access_denied('customers');
                     }
                 }
-                $success = $this->clients_model->update($this->input->post(), $id);
+
+                $data = $this->input->post();
+                
+                // Capture customer_name and customer_email before unsetting for contact update
+                $customerName  = isset($data['customer_name']) ? trim($data['customer_name']) : '';
+                $customerEmail = isset($data['customer_email']) ? trim($data['customer_email']) : '';
+                $loginPassword = isset($data['login_password']) ? trim($data['login_password']) : '';
+                
+                // Capture customer_admins before unsetting
+                $customerAdmins = isset($data['customer_admins']) && is_array($data['customer_admins']) ? $data['customer_admins'] : [];
+                
+                // Unset UI-only fields that shouldn't be saved to the client table
+                unset(
+                    $data['customer_name'],
+                    $data['customer_email'],
+                    $data['customer_admins'],
+                    $data['formatted_address'],
+                    $data['login_password']
+                );
+                
+                // Check if address_line_2 and billing_street_2 columns exist in database
+                // Create them if they don't exist, so data can be saved
+                try {
+                    $client_fields = $this->db->list_fields(db_prefix() . 'clients');
+                    if (!in_array('address_line_2', $client_fields)) {
+                        // Column doesn't exist, create it
+                        $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `address_line_2` VARCHAR(200) NULL AFTER `address`');
+                    }
+                    if (!in_array('billing_street_2', $client_fields)) {
+                        // Column doesn't exist, create it
+                        $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `billing_street_2` VARCHAR(200) NULL AFTER `billing_street`');
+                    }
+                } catch (Exception $e) {
+                    // If column creation fails, unset these fields to be safe
+                    unset($data['address_line_2']);
+                    unset($data['billing_street_2']);
+                }
+
+                // If Name/Email provided, ensure there is a contact that stores this info
+                if ($customerName !== '' || $customerEmail !== '') {
+                    $primary_id = get_primary_contact_user_id($id);
+
+                    // Helper to split "First Last" into parts
+                    $nameParts  = explode(' ', $customerName, 2);
+                    $first_name = $nameParts[0] ?? '';
+                    $last_name  = $nameParts[1] ?? '';
+
+                    if ($primary_id) {
+                        // Verify contact exists before updating
+                        $primary_contact = $this->clients_model->get_contact($primary_id);
+                        if ($primary_contact) {
+                            $updateContact = [];
+                            if ($first_name !== '') {
+                                $updateContact['firstname'] = $first_name;
+                            }
+                            if ($last_name !== '') {
+                                $updateContact['lastname'] = $last_name;
+                            }
+                            if ($customerEmail !== '') {
+                                $updateContact['email'] = $customerEmail;
+                            }
+                            if (!empty($updateContact)) {
+                                $this->clients_model->update_contact($updateContact, $primary_id, true);
+                            }
+                        }
+                    } else {
+                        // No primary yet – see if there is at least one active contact to reuse
+                        $contacts = $this->clients_model->get_contacts($id);
+                        if (!empty($contacts) && isset($contacts[0]['id'])) {
+                            $firstContactId = $contacts[0]['id'];
+                            // Verify contact exists before updating
+                            $first_contact = $this->clients_model->get_contact($firstContactId);
+                            if ($first_contact) {
+                                $updateContact  = [];
+                                if ($first_name !== '') {
+                                    $updateContact['firstname'] = $first_name;
+                                }
+                                if ($last_name !== '') {
+                                    $updateContact['lastname'] = $last_name;
+                                }
+                                if ($customerEmail !== '') {
+                                    $updateContact['email'] = $customerEmail;
+                                }
+                                if (!empty($updateContact)) {
+                                    $updateContact['is_primary'] = 1;
+                                    $this->clients_model->update_contact($updateContact, $firstContactId, true);
+                                }
+                            }
+                        } else {
+                            // No contacts at all, create a new primary one
+                            $contactData = [
+                                'firstname'   => $first_name,
+                                'lastname'    => $last_name,
+                                'email'       => $customerEmail,
+                                'is_primary'  => 1,
+                            ];
+
+                            if (!empty($data['phonenumber'])) {
+                                $contactData['phonenumber'] = $data['phonenumber'];
+                            }
+
+                            if (!empty($loginPassword)) {
+                                $contactData['password'] = $loginPassword;
+                            }
+
+                            $this->clients_model->add_contact($contactData, $id);
+                        }
+                    }
+                }
+                
+                // Handle password update separately if provided
+                if (!empty($loginPassword)) {
+                    $primary_id = get_primary_contact_user_id($id);
+                    if ($primary_id) {
+                        // Verify contact exists before updating
+                        $primary_contact = $this->clients_model->get_contact($primary_id);
+                        if ($primary_contact) {
+                            $this->clients_model->update_contact(['password' => $loginPassword], $primary_id, true);
+                        }
+                    } else {
+                        // No primary contact, try to find or create one
+                        $contacts = $this->clients_model->get_contacts($id);
+                        if (!empty($contacts) && isset($contacts[0]['id'])) {
+                            $firstContactId = $contacts[0]['id'];
+                            // Verify contact exists before updating
+                            $first_contact = $this->clients_model->get_contact($firstContactId);
+                            if ($first_contact) {
+                                $this->clients_model->update_contact(['password' => $loginPassword, 'is_primary' => 1], $firstContactId, true);
+                            }
+                        } else {
+                            // Create a new primary contact with password
+                            $contactData = [
+                                'firstname'  => '',
+                                'lastname'   => '',
+                                'email'      => '',
+                                'password'   => $loginPassword,
+                                'is_primary' => 1,
+                            ];
+                            $this->clients_model->add_contact($contactData, $id);
+                        }
+                    }
+                }
+                
+                $success = $this->clients_model->update($data, $id);
+                
+                // Handle customer admins assignment
+                if ($success && !empty($customerAdmins)) {
+                    $assign['customer_admins'] = $customerAdmins;
+                    $this->clients_model->assign_admins($assign, $id);
+                }
+                
                 if ($success == true) {
                     set_alert('success', _l('updated_successfully', _l('client')));
                 }
@@ -180,6 +352,8 @@ class Clients extends AdminController
 
         if ($id == '') {
             $title = _l('add_new', _l('client'));
+            // Initialize customer_admins as empty array for new customers
+            $data['customer_admins'] = [];
         } else {
             $client                = $this->clients_model->get($id);
             $data['customer_tabs'] = get_customer_profile_tabs($id);
@@ -195,10 +369,12 @@ class Clients extends AdminController
                 show_404();
             }
 
+            // Always load customer_admins for profile display
+            $data['customer_admins'] = $this->clients_model->get_admins($id);
+            
             // Fetch data based on groups
             if ($group == 'profile') {
                 $data['customer_groups'] = $this->clients_model->get_customer_groups($id);
-                $data['customer_admins'] = $this->clients_model->get_admins($id);
             } elseif ($group == 'attachments') {
                 $data['attachments'] = get_all_customer_attachments($id);
             } elseif ($group == 'vault') {
@@ -249,6 +425,10 @@ class Clients extends AdminController
                 }
             }
 
+            // Load staff model if not already loaded
+            if (!isset($this->staff_model)) {
+                $this->load->model('staff_model');
+            }
             $data['staff'] = $this->staff_model->get('', ['active' => 1]);
 
             $data['client'] = $client;
