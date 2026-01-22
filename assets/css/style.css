@@ -5052,3 +5052,89 @@ div[contenteditable]:focus {
   width: -webkit-fill-available;
   width: fill-available;
 }
+
+/* Customer Summary Cards - Prevent text truncation */
+.customer-summary-card {
+  min-width: 0;
+  overflow: visible;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.customer-summary-card span {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  min-width: 0;
+}
+
+.customer-summary-card .tw-break-words {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Ensure grid items can expand to fit content */
+.tw-grid.customer-summary-grid > div {
+  min-width: 0;
+  overflow: visible;
+}
+
+/* Responsive adjustments for all screen sizes and zoom levels */
+@media (max-width: 768px) {
+  .customer-summary-card {
+    flex-wrap: wrap;
+  }
+  
+  .customer-summary-card span {
+    width: 100%;
+  }
+}
+
+/* Ensure text doesn't get cut off at any zoom level */
+.customer-summary-card * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* General fix for all summary cards across all tabs - prevent text truncation */
+.tw-grid[class*="grid-cols"] > div,
+.tw-grid[class*="grid-cols"] > button {
+  min-width: 0;
+  overflow: visible;
+}
+
+.tw-grid[class*="grid-cols"] > div span,
+.tw-grid[class*="grid-cols"] > button span {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Override any truncate classes that might be applied */
+.tw-grid[class*="grid-cols"] .tw-truncate,
+.tw-grid[class*="grid-cols"] [class*="truncate"] {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Ensure flex containers allow wrapping */
+.tw-flex.tw-items-center {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.tw-flex.tw-items-center > span {
+  min-width: 0;
+}

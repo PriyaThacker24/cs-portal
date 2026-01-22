@@ -23,49 +23,49 @@
 
                     <div class="tw-grid tw-grid-cols-2 md:tw-grid-cols-3 lg:tw-grid-cols-6 tw-gap-2">
                         <div
-                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white">
-                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1">
+                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white customer-summary-card">
+                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1 tw-shrink-0">
                                 <?= total_rows(db_prefix() . 'clients', ($where_summary != '' ? substr($where_summary, 5) : '')); ?>
                             </span>
                             <span
-                                class="text-dark tw-truncate sm:tw-text-clip"><?= _l('customers_summary_total'); ?></span>
+                                class="text-dark tw-break-words"><?= _l('customers_summary_total'); ?></span>
                         </div>
                         <div
-                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white">
-                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1">
+                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white customer-summary-card">
+                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1 tw-shrink-0">
                                 <?= total_rows(db_prefix() . 'clients', 'active=1' . $where_summary); ?></span>
                             <span
-                                class="text-success tw-truncate sm:tw-text-clip"><?= _l('active_customers'); ?></span>
+                                class="text-success tw-break-words"><?= _l('active_customers'); ?></span>
                         </div>
                         <div
-                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white">
-                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1">
+                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white customer-summary-card">
+                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1 tw-shrink-0">
                                 <?= total_rows(db_prefix() . 'clients', 'active=0' . $where_summary); ?></span>
                             <span
-                                class="text-danger tw-truncate sm:tw-text-clip"><?= _l('inactive_active_customers'); ?></span>
+                                class="text-danger tw-break-words"><?= _l('inactive_active_customers'); ?></span>
                         </div>
                         <div
-                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white">
-                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1">
+                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white customer-summary-card">
+                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1 tw-shrink-0">
                                 <?= total_rows(db_prefix() . 'contacts', 'active=1' . $where_summary); ?>
                             </span>
                             <span
-                                class="text-info tw-truncate sm:tw-text-clip"><?= _l('customers_summary_active'); ?></span>
+                                class="text-info tw-break-words"><?= _l('customers_summary_active'); ?></span>
                         </div>
                         <div
-                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white">
-                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1">
+                            class="tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-flex tw-items-center tw-bg-white customer-summary-card">
+                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1 tw-shrink-0">
                                 <?= total_rows(db_prefix() . 'contacts', 'active=0' . $where_summary); ?>
                             </span>
                             <span
-                                class="text-danger tw-truncate sm:tw-text-clip"><?= _l('customers_summary_inactive'); ?></span>
+                                class="text-danger tw-break-words"><?= _l('customers_summary_inactive'); ?></span>
                         </div>
                         <div
-                            class="tw-flex tw-items-center tw-font-medium tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-bg-white">
-                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1">
+                            class="tw-flex tw-items-center tw-font-medium tw-border-neutral-300/80 tw-shadow-sm tw-text-sm tw-border tw-border-solid tw-rounded-lg tw-px-4 tw-py-3 text-sm tw-flex-1 tw-bg-white customer-summary-card">
+                            <span class="tw-font-semibold tw-mr-1 rtl:tw-ml-1 tw-shrink-0">
                                 <?= total_rows(db_prefix() . 'contacts', 'last_login LIKE "' . date('Y-m-d') . '%"' . $where_summary); ?>
                             </span>
-                            <span class="text-muted tw-truncate" data-toggle="tooltip"
+                            <span class="text-muted tw-break-words" data-toggle="tooltip"
                                 data-title="<?= _l('customers_summary_logged_in_today'); ?>">
                                 <?php
                                           $contactsTemplate = '';
