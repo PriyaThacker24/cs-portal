@@ -702,3 +702,787 @@
         width: 100vw;
     }
 }
+
+/* Date Picker Styles */
+.timelog-date-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-date-nav {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-date-nav:hover {
+    background: #f5f5f5;
+}
+
+.btn-date-display {
+    padding: 6px 15px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 250px;
+    justify-content: center;
+}
+
+.btn-date-display:hover {
+    background: #f5f5f5;
+}
+
+.timelog-date-display {
+    font-weight: 500;
+    color: #333;
+}
+
+.timelog-date-picker-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.date-picker-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+}
+
+.timelog-date-picker {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 10002;
+    width: 85%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Range tab needs more width for dual calendars */
+.timelog-date-picker.mode-range {
+    max-width: 750px;
+    width: 90%;
+}
+
+.date-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.btn-nav-date {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #666;
+    font-size: 16px;
+}
+
+.btn-nav-date:hover {
+    color: #333;
+}
+
+.date-picker-current-selection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    color: #333;
+}
+
+.date-picker-tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0 15px;
+    flex-shrink: 0;
+}
+
+.date-picker-tab {
+    padding: 10px 15px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    color: #666;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.date-picker-tab:hover {
+    color: #333;
+    background: #f5f5f5;
+}
+
+.date-picker-tab.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    font-weight: 500;
+}
+
+.date-picker-calendar {
+    padding: 10px 15px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.btn-nav-year,
+.btn-nav-month {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #666;
+    font-size: 16px;
+}
+
+.btn-nav-year:hover,
+.btn-nav-month:hover {
+    color: #333;
+}
+
+.calendar-month-year {
+    font-weight: 500;
+    font-size: 16px;
+    color: #333;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: auto repeat(7, 1fr);
+    gap: 2px;
+    width: 100%;
+}
+
+.calendar-week-row {
+    display: contents;
+    cursor: pointer;
+}
+
+.calendar-week-row > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 35px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    padding: 8px;
+    font-weight: 500;
+    font-size: 12px;
+    color: #666;
+    background: #f5f5f5;
+}
+
+.calendar-day-header.weekend {
+    color: #d9534f;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    font-size: 13px;
+    position: relative;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.calendar-day:hover {
+    background: #f0f0f0;
+}
+
+/* Row-wise hover effect for week mode - entire row highlights on hover */
+.timelog-date-picker.mode-week .calendar-week-row:hover .calendar-day {
+    transition: background-color 0.2s ease;
+}
+
+.timelog-date-picker.mode-week .calendar-week-row:hover .calendar-day:not(.other-month):not(.selected):not(.in-range) {
+    background: #f5f5f5;
+}
+
+.timelog-date-picker.mode-week .calendar-week-row:hover .calendar-day.selected {
+    background: #004085;
+}
+
+.timelog-date-picker.mode-week .calendar-week-row:hover .calendar-day.in-range {
+    background: #bbdefb;
+    border-color: #64b5f6;
+    color: #1565c0;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+    background: #f9f9f9;
+}
+
+.calendar-day.selected {
+    background: #007bff;
+    color: #fff;
+    border-color: #007bff;
+    font-weight: 500;
+}
+
+/* Day mode: solid blue circle (like first image) */
+.timelog-date-picker.mode-day .calendar-day.selected {
+    background: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+}
+
+/* Week mode: Each date in selected week gets its own circular blue background (like reference image) */
+.calendar-day.in-range {
+    background: #1a73e8;
+    color: #fff;
+    border-color: #1a73e8;
+}
+
+/* Week mode: First day (Monday) and last day (Sunday) have dark blue background */
+.timelog-date-picker.mode-week .calendar-day.selected {
+    background: #0056b3;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+    font-weight: 600;
+}
+
+/* Week mode: Days in between (Tue-Fri, Sat) have lighter blue/round style */
+.timelog-date-picker.mode-week .calendar-day.in-range {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 50%;
+    border: 1px solid #90caf9;
+    font-weight: 500;
+}
+
+/* Weekend days - red text when not selected */
+.calendar-day.weekend:not(.selected):not(.in-range) {
+    color: #d9534f;
+}
+
+/* Weekend days in selected week - Saturday (in-range) has lighter style, Sunday (selected) has dark */
+.timelog-date-picker.mode-week .calendar-day.weekend.selected {
+    color: #fff;
+    background: #0056b3;
+    font-weight: 600;
+}
+
+.timelog-date-picker.mode-week .calendar-day.weekend.in-range {
+    color: #1976d2;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+}
+
+/* Out of month dates - lighter grey (like reference image) */
+.calendar-day.other-month {
+    color: #999;
+    background: #f9f9f9;
+}
+
+.calendar-day.other-month.weekend {
+    color: #d4a5a5;
+}
+
+/* Out of month dates that are in selected week - should also be highlighted with blue circle */
+.timelog-date-picker.mode-week .calendar-day.other-month.selected,
+.timelog-date-picker.mode-week .calendar-day.other-month.in-range {
+    background: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+}
+
+/* Month mode: similar to week */
+.timelog-date-picker.mode-month .calendar-day.selected,
+.timelog-date-picker.mode-month .calendar-day.in-range {
+    background: #1a73e8;
+    color: #fff;
+    border-radius: 0;
+}
+
+.calendar-day.today {
+    border: 2px solid #007bff;
+    font-weight: 500;
+    background: transparent;
+}
+
+/* Today indicator - blue circular outline when not selected (like reference image) */
+.calendar-day.today:not(.selected):not(.in-range) {
+    border: 2px solid #007bff;
+    background: transparent;
+    color: inherit;
+    border-radius: 50%;
+}
+
+/* Ensure today indicator works in all modes when selected */
+.calendar-day.today.selected {
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #007bff;
+}
+
+.timelog-date-picker.mode-day .calendar-day.today.selected {
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #007bff;
+    border-radius: 50%;
+}
+
+/* Today in selected week - different styling based on if it's first/last or middle day */
+.timelog-date-picker.mode-week .calendar-day.today.selected {
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #0056b3;
+    border-radius: 50%;
+    background: #0056b3;
+    color: #fff;
+    font-weight: 600;
+}
+
+.timelog-date-picker.mode-week .calendar-day.today.in-range {
+    border: 2px solid #1976d2;
+    box-shadow: 0 0 0 1px #90caf9;
+    border-radius: 50%;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.calendar-week-number {
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 11px;
+    color: #999;
+    background: #f9f9f9;
+    border-right: 1px solid #e0e0e0;
+    min-width: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.date-picker-range {
+    padding: 10px 15px;
+    overflow: visible;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Range Calendar Header */
+.range-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+    width: 100%;
+    padding: 0 5px;
+    box-sizing: border-box;
+}
+
+.btn-nav-year-range,
+.btn-nav-month-range {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #666;
+    font-size: 16px;
+}
+
+.btn-nav-year-range:hover,
+.btn-nav-month-range:hover {
+    color: #333;
+}
+
+.range-month-year-left,
+.range-month-year-right {
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+    flex: 1;
+    text-align: center;
+    min-width: 120px;
+    white-space: nowrap;
+}
+
+/* Range Dual Calendars Container */
+.range-calendars-container {
+    display: flex;
+    gap: 15px;
+    flex: 1;
+    min-height: 0;
+    overflow: visible;
+    width: 100%;
+    align-items: flex-start;
+}
+
+.range-calendar-left,
+.range-calendar-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 50%;
+}
+
+.range-calendar-grid {
+    display: grid;
+    grid-template-columns: 30px repeat(7, 1fr);
+    gap: 3px;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    grid-auto-rows: minmax(32px, auto);
+}
+
+.range-calendar-grid > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 2px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: visible;
+}
+
+
+.range-calendar-day-header {
+    text-align: center;
+    padding: 6px 4px;
+    font-weight: 500;
+    font-size: 11px;
+    color: #666;
+    background: #f5f5f5;
+}
+
+.range-calendar-day-header.weekend {
+    color: #d9534f;
+}
+
+.range-calendar-week-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    font-size: 11px;
+    color: #999;
+    background: #f9f9f9;
+}
+
+.range-calendar-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    background: transparent;
+    color: #333;
+    border-radius: 50%;
+    margin: 0 auto;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.range-calendar-day:hover:not(.today) {
+    background: #f0f0f0;
+}
+
+.range-calendar-day.other-month:not(.today) {
+    color: #ccc;
+}
+
+.range-calendar-day.weekend:not(.today) {
+    color: #d9534f;
+}
+
+.range-calendar-day.in-range {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 50%;
+    border: none;
+    font-weight: 500;
+    width: 28px;
+    height: 28px;
+}
+
+.range-calendar-day.weekend.in-range {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.range-calendar-day.other-month.in-range {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.range-calendar-day.selected {
+    background: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    font-weight: 600;
+    border: none;
+    width: 28px;
+    height: 28px;
+}
+
+.range-calendar-day.weekend.selected {
+    background: #007bff;
+    color: #fff;
+}
+
+.range-calendar-day.other-month.selected {
+    background: #007bff;
+    color: #fff;
+}
+
+/* Only highlight today's date in dark blue (same as other tabs) */
+.range-calendar-day.today {
+    background: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    font-weight: 600;
+    border: none;
+    width: 28px;
+    height: 28px;
+}
+
+.range-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.date-picker-quick {
+    padding: 10px 15px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Project Span Content */
+.project-span-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 20px 0;
+}
+
+.project-span-calendar-illustration {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.project-span-calendar-illustration svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.project-span-text {
+    color: #333;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Month View Styles */
+.date-picker-month-view {
+    padding: 8px 15px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.month-year-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.btn-nav-year-month {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #666;
+    font-size: 16px;
+}
+
+.btn-nav-year-month:hover {
+    color: #333;
+}
+
+.month-year-display {
+    font-weight: 500;
+    font-size: 16px;
+    color: #666;
+    min-width: 60px;
+    text-align: center;
+}
+
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 6px;
+    padding: 5px 0;
+    justify-items: center;
+    align-items: center;
+    flex: 1;
+    min-height: 0;
+}
+
+.month-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 50%;
+    transition: all 0.2s;
+    background: transparent;
+    border: none;
+    margin: 0 auto;
+}
+
+.month-item:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.month-item.selected {
+    background: #007bff;
+    color: #fff;
+    font-weight: 600;
+}
+
+.month-item.selected:hover {
+    background: #0056b3;
+}
+
+.quick-filter-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.btn-quick-filter {
+    padding: 10px 15px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn-quick-filter:hover {
+    background: #f5f5f5;
+    border-color: #007bff;
+}
+
+.date-picker-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-top: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.btn-link-current {
+    background: transparent;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
+.btn-link-current:hover {
+    color: #0056b3;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .timelog-date-picker {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .range-inputs {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-filter-buttons {
+        grid-template-columns: 1fr;
+    }
+}

@@ -258,8 +258,16 @@ var TimelogModule = (function() {
             advancedFilters = JSON.stringify(filterData);
         }
         
+        // Get date range from hidden inputs (supports day, week, month, range)
+        var dateStart = $('#current_week_start').val() || currentWeekStart;
+        var dateEnd = $('#current_week_end').val();
+        var dateRangeType = $('#current_date_range_type').val() || 'week';
+        
         var data = {
-            week_start: currentWeekStart,
+            date_start: dateStart,
+            date_end: dateEnd || dateStart,
+            date_range_type: dateRangeType,
+            week_start: dateStart, // Keep for backward compatibility
             group_by: currentGroupBy,
             project_id: projectIdFromInput || currentFilters.project_id || '',
             staff_id: currentFilters.staff_id || '',

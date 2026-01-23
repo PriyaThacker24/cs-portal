@@ -59,9 +59,27 @@ class Timelog extends AdminController
             show_404();
         }
 
-        $weekStart = $this->input->post('week_start');
-        if (empty($weekStart)) {
-            $weekStart = date('Y-m-d', strtotime('monday this week'));
+        // Get date range (supports day, week, month, range)
+        $dateStart = $this->input->post('date_start') ?: $this->input->post('week_start');
+        $dateEnd = $this->input->post('date_end');
+        $dateRangeType = $this->input->post('date_range_type') ?: 'week';
+        
+        if (empty($dateStart)) {
+            $dateStart = date('Y-m-d', strtotime('monday this week'));
+        }
+        
+        // If no end date provided, calculate based on range type
+        if (empty($dateEnd)) {
+            if ($dateRangeType === 'day') {
+                $dateEnd = $dateStart;
+            } elseif ($dateRangeType === 'week') {
+                $dateEnd = date('Y-m-d', strtotime('sunday this week', strtotime($dateStart)));
+            } elseif ($dateRangeType === 'month') {
+                $dateEnd = date('Y-m-t', strtotime($dateStart));
+            } else {
+                // Default to week
+                $dateEnd = date('Y-m-d', strtotime('sunday this week', strtotime($dateStart)));
+            }
         }
 
         // Get advanced filters JSON
@@ -72,14 +90,23 @@ class Timelog extends AdminController
             'staff_id' => $this->input->post('staff_id'),
             'billing_type' => $this->input->post('billing_type'),
             'group_by' => $this->input->post('group_by') ?: 'date',
+            'date_start' => $dateStart,
+            'date_end' => $dateEnd,
+            'date_range_type' => $dateRangeType,
             'advanced_filters' => $advancedFiltersJson, // Pass advanced filters JSON
         ];
 
-        $timelogData = $this->timelog_model->get_timelogs($weekStart, $filters);
+        $timelogData = $this->timelog_model->get_timelogs($dateStart, $filters);
         
         // Render the list view
         $data['timelog_data'] = $timelogData;
         $html = $this->load->view('timelog_list', $data, true);
+        
+        // Calculate week number for display (if week type)
+        $weekNumber = null;
+        if ($dateRangeType === 'week') {
+            $weekNumber = date('W', strtotime($dateStart));
+        }
         
         $response = [
             'html' => $html,
@@ -89,9 +116,12 @@ class Timelog extends AdminController
                 'total_hours' => 0,
                 'total_records' => 0
             ],
-            'week_start' => isset($timelogData['week_start']) ? $timelogData['week_start'] : $weekStart,
-            'week_end' => isset($timelogData['week_end']) ? $timelogData['week_end'] : date('Y-m-d', strtotime('sunday this week', strtotime($weekStart))),
-            'week_number' => isset($timelogData['week_number']) ? $timelogData['week_number'] : date('W', strtotime($weekStart))
+            'week_start' => $dateStart, // Keep for backward compatibility
+            'week_end' => $dateEnd,
+            'week_number' => $weekNumber,
+            'date_start' => $dateStart,
+            'date_end' => $dateEnd,
+            'date_range_type' => $dateRangeType
         ];
         
         $this->output

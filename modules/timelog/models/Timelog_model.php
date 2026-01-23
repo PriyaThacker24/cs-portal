@@ -18,8 +18,20 @@ class Timelog_model extends App_Model
      */
     public function get_timelogs($weekStart, $filters = [])
     {
-        $weekEnd = date('Y-m-d', strtotime('sunday this week', strtotime($weekStart)));
-        $weekNumber = date('W', strtotime($weekStart));
+        // Support both date_start/date_end and legacy week_start
+        $dateStart = isset($filters['date_start']) ? $filters['date_start'] : $weekStart;
+        $dateEnd = isset($filters['date_end']) ? $filters['date_end'] : date('Y-m-d', strtotime('sunday this week', strtotime($weekStart)));
+        $dateRangeType = isset($filters['date_range_type']) ? $filters['date_range_type'] : 'week';
+        
+        // Calculate week number for display (if week type)
+        $weekNumber = null;
+        if ($dateRangeType === 'week') {
+            $weekNumber = date('W', strtotime($dateStart));
+        }
+        
+        // Use dateStart and dateEnd for query
+        $weekStart = $dateStart; // Keep for backward compatibility in return data
+        $weekEnd = $dateEnd;
         
         // Check if status and bill_type columns exist
         $columns = $this->db->list_fields(db_prefix() . 'taskstimers');
@@ -61,11 +73,11 @@ class Timelog_model extends App_Model
         $this->db->join(db_prefix() . 'staff', db_prefix() . 'staff.staffid = ' . db_prefix() . 'taskstimers.staff_id', 'left');
         $this->db->join(db_prefix() . 'staff as created_by_staff', 'created_by_staff.staffid = ' . db_prefix() . 'tasks.addedfrom', 'left');
         
-        // Filter by week
-        $weekStartTimestamp = strtotime($weekStart . ' 00:00:00');
-        $weekEndTimestamp = strtotime($weekEnd . ' 23:59:59');
-        $this->db->where(db_prefix() . 'taskstimers.start_time >=', $weekStartTimestamp);
-        $this->db->where(db_prefix() . 'taskstimers.start_time <=', $weekEndTimestamp);
+        // Filter by date range (supports day, week, month, range)
+        $dateStartTimestamp = strtotime($dateStart . ' 00:00:00');
+        $dateEndTimestamp = strtotime($dateEnd . ' 23:59:59');
+        $this->db->where(db_prefix() . 'taskstimers.start_time >=', $dateStartTimestamp);
+        $this->db->where(db_prefix() . 'taskstimers.start_time <=', $dateEndTimestamp);
         $this->db->where(db_prefix() . 'taskstimers.end_time IS NOT NULL', null, false);
         
         // Apply advanced filters using ProjectTimelogAdvancedFilters class

@@ -69,4 +69,17 @@ $lang['invalid_time_format'] = 'Invalid time format. Please use HH:MM format (e.
 $lang['task_heading'] = 'Task Heading';
 $lang['enter_task_heading'] = 'Enter task heading';
 $lang['select_task'] = 'Select Task';
+$lang['current_month'] = 'Current Month';
+$lang['current_week'] = 'Current Week';
+$lang['day'] = 'Day';
+$lang['month'] = 'Month';
+$lang['range'] = 'Range';
+$lang['quick_filters'] = 'Project Span';
+$lang['project_span'] = 'Project Span';
+$lang['ok'] = 'OK';
+$lang['previous'] = 'Previous';
+$lang['next'] = 'Next';
+$lang['from_date'] = 'From Date';
+$lang['to_date'] = 'To Date';
+$lang['select_date_range'] = 'Select Date Range';
 

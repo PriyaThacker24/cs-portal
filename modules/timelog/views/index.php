@@ -21,21 +21,24 @@
                             
                            
                         </div>
-                         <!-- Week Navigation -->
+                         <!-- Date Range Navigation -->
                          <div class="timelog-header-center">
-                         <div class="timelog-week-nav">
-                                <button type="button" class="btn btn-default btn-week-nav" id="btn_prev_week" title="<?= _l('previous_week'); ?>">
+                            <div class="timelog-date-nav">
+                                <button type="button" class="btn btn-default btn-date-nav" id="btn_prev_range" title="<?= _l('previous'); ?>">
                                     <i class="fa fa-chevron-left"></i>
                                 </button>
-                                <span class="timelog-week-display" id="week_display">
-                                    <?= date('d/m/Y', strtotime($week_start)); ?> - <?= date('d/m/Y', strtotime($week_end)); ?> 
-                                    (<?= _l('week'); ?> <?= date('W', strtotime($week_start)); ?>)
-                                </span>
-                                <button type="button" class="btn btn-default btn-week-nav" id="btn_next_week" title="<?= _l('next_week'); ?>">
+                                <button type="button" class="btn btn-default btn-date-display" id="btn_open_date_picker" title="<?= _l('select_date_range'); ?>">
+                                    <i class="fa fa-calendar"></i>
+                                    <span class="timelog-date-display" id="date_display">
+                                        <?= date('d/m/Y', strtotime($week_start)); ?> - <?= date('d/m/Y', strtotime($week_end)); ?> 
+                                        (<?= _l('week'); ?> <?= date('W', strtotime($week_start)); ?>)
+                                    </span>
+                                </button>
+                                <button type="button" class="btn btn-default btn-date-nav" id="btn_next_range" title="<?= _l('next'); ?>">
                                     <i class="fa fa-chevron-right"></i>
                                 </button>
                             </div>
-</div>
+                        </div>
                         <div class="timelog-header-right">
                             <?php if (staff_can('create', 'timesheets') || is_admin()) { ?>
                             <button type="button" class="btn btn-primary" id="btn_add_timelog">
@@ -71,6 +74,9 @@
                         </div>
                     </div>
                     
+                    <!-- Date Picker Component -->
+                    <?php $this->load->view('timelog/date_picker'); ?>
+                    
                     <!-- Advanced Filter Panel (Included via view) -->
                     <?php $this->load->view('timelog/timelog_filter_panel'); ?>
                     
@@ -98,6 +104,8 @@
 
 <!-- Hidden inputs for current state -->
 <input type="hidden" id="current_week_start" value="<?= $week_start; ?>">
+<input type="hidden" id="current_week_end" value="<?= $week_end; ?>">
+<input type="hidden" id="current_date_range_type" value="week">
 <input type="hidden" id="current_group_by" value="<?= $filters['group_by']; ?>">
 
 <?php init_tail(); ?>
@@ -110,12 +118,21 @@
 <!-- Timelog Filter JavaScript -->
 <script src="<?= module_dir_url('timelog', 'assets/js/timelog-filter.js'); ?>"></script>
 
+<!-- Timelog Date Picker JavaScript -->
+<script src="<?= module_dir_url('timelog', 'assets/js/timelog-date-picker.js'); ?>"></script>
+
 <!-- Timelog JavaScript -->
 <script src="<?= module_dir_url('timelog', 'assets/js/timelog.js'); ?>"></script>
 
 <script>
     $(document).ready(function() {
         TimelogModule.init();
+        TimelogDatePicker.init();
+        
+        // Initialize datepickers for range inputs
+        if (typeof appDatepicker !== 'undefined') {
+            appDatepicker();
+        }
     });
 </script>
 
