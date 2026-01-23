@@ -292,7 +292,11 @@ echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastn
                                     <?php 
                                     $value = (isset($project) ? _d($project->deadline) : '');
                                     $start_date_value = (isset($project) ? $project->start_date : date('Y-m-d'));
-                                    $deadline_attrs = ['data-date-min-date' => $start_date_value, 'data-date-start-date-ref' => 'start_date'];
+                                    $deadline_attrs = [
+                                        'data-date-min-date' => $start_date_value, 
+                                        'data-date-start-date-ref' => 'start_date',
+                                        'placeholder' => _l('project_deadline')
+                                    ];
                                     ?>
                                     <?= render_date_input('deadline', 'project_deadline', $value, $deadline_attrs); ?>
                                 </div>
