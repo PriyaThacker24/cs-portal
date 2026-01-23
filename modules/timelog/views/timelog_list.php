@@ -30,17 +30,18 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                     <th><?= _l('daily_log_hours'); ?></th>
                     <th><?= _l('time_period'); ?></th>
                     <th><?= _l('user'); ?></th>
-                    <th><?= _l('billing_type'); ?></th>
-                    <th><?= _l('approval_status'); ?></th>
-                    <th><?= _l('notes'); ?></th>
-                    <!-- <th><?= _l('created_by'); ?></th> -->
+                            <th><?= _l('billing_type'); ?></th>
+                            <th><?= _l('approval_status'); ?></th>
+                            <th><?= _l('notes'); ?></th>
+                            <th width="100"><?= _l('actions'); ?></th>
+                            <!-- <th><?= _l('created_by'); ?></th> -->
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($timelog_data['groups'] as $group) { ?>
                     <!-- Group Header Row -->
                     <tr class="timelog-group-header-row">
-                        <td colspan="<?= ($groupBy == 'user') ? '11' : '10'; ?>" class="timelog-group-header-cell" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
+                        <td colspan="<?= ($groupBy == 'user') ? '12' : '11'; ?>" class="timelog-group-header-cell" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
                             <?php if ($groupBy == 'date') { ?>
                                 <!-- Date Group Header -->
                                 <div class="timelog-group-header" data-date="<?= $group['date']; ?>">
@@ -178,12 +179,34 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                             </td>
                             <td class="notes">
                                 <?php if (!empty($log['note'])) { ?>
-                                    <span data-toggle="tooltip" data-title="">
+                                    <span data-toggle="tooltip" data-title="<?= e(strip_tags($log['note'])); ?>">
                                         <i class="fa fa-info-circle"></i>
                                     </span>
                                 <?php } else { ?>
                                     -
                                 <?php } ?>
+                            </td>
+                            <td class="actions">
+                                <?php
+                                // Check if user can edit this timelog
+                                $can_edit_timelog = false;
+                                if ($log['staff_id'] == get_staff_user_id()) {
+                                    $can_edit_timelog = true;
+                                } elseif (staff_can('edit', 'timesheets') || is_admin()) {
+                                    $can_edit_timelog = true;
+                                }
+                                
+                                if ($can_edit_timelog) {
+                                    ?>
+                                    <button type="button" 
+                                            class="btn btn-default btn-sm edit-timelog-btn" 
+                                            data-timelog-id="<?= $log['id']; ?>"
+                                            title="<?= _l('edit'); ?>">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <?php
+                                }
+                                ?>
                             </td>
                             <!-- <td class="created-by">
                                 <?= !empty($log['created_by_name']) ? e($log['created_by_name']) : '-'; ?>

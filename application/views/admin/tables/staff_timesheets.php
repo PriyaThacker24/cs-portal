@@ -2,6 +2,11 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+// Initialize view_all if not set (default to false)
+if (!isset($view_all)) {
+    $view_all = false;
+}
+
 // 5.6 mysql version don't have the ANY_VALUE function implemented.
 $v = $this->ci->db->query('SELECT VERSION() as version')->row();
 
@@ -74,7 +79,7 @@ if (! $isMariaDB && isset($supportsAnyValue) && $supportsAnyValue) {
 $time_h_column = 6;
 $time_d_column = 7;
 
-if ($view_all == true) {
+if (isset($view_all) && $view_all == true) {
     array_unshift($aColumns, $staffIdSelect);
     $time_h_column++;
     $time_d_column++;
@@ -108,7 +113,7 @@ $staff_id = false;
 
 if ($this->ci->input->post('staff_id')) {
     $staff_id = $this->ci->input->post('staff_id');
-} elseif ($view_all == false) {
+} elseif (!isset($view_all) || $view_all == false) {
     $staff_id = get_staff_user_id();
 }
 
@@ -158,6 +163,11 @@ OR
 array_push($where, 'AND task_id != 0');
 
 $filter = $this->ci->input->post('range');
+// Default to 'today' if no filter is provided
+if (empty($filter)) {
+    $filter = 'today';
+}
+
 if ($filter != 'period') {
     if ($filter == 'today') {
         $beginOfDay = strtotime('midnight');
@@ -183,21 +193,57 @@ if ($filter != 'period') {
 } else {
     $start_date = to_sql_date($this->ci->input->post('period-from'));
     $end_date   = to_sql_date($this->ci->input->post('period-to'));
-    array_push($where, ' AND start_time BETWEEN ' . strtotime($start_date . ' 00:00:00') . ' AND ' . strtotime($end_date . ' 23:59:00'));
+    // Only add period filter if both dates are provided
+    if ($start_date && $end_date) {
+        array_push($where, ' AND start_time BETWEEN ' . strtotime($start_date . ' 00:00:00') . ' AND ' . strtotime($end_date . ' 23:59:00'));
+    } else {
+        // If period dates are not provided, default to today
+        $filter = 'today';
+        $beginOfDay = strtotime('midnight');
+        $endOfDay   = strtotime('tomorrow', $beginOfDay) - 1;
+        array_push($where, ' AND start_time BETWEEN ' . $beginOfDay . ' AND ' . $endOfDay);
+    }
 }
 
-$result = data_tables_init(
-    $aColumns,
-    $sIndexColumn,
-    $sTable,
-    $join,
-    $where,
-    $additionalSelect,
-    ($this->ci->input->post('group_by_task') ? 'GROUP BY task_id' : '')
-);
+// Initialize output array to prevent errors
+if (!isset($output)) {
+    $output = [
+        'aaData' => [],
+        'iTotalRecords' => 0,
+        'iTotalDisplayRecords' => 0,
+    ];
+}
 
-$output  = $result['output'];
-$rResult = $result['rResult'];
+try {
+    $result = data_tables_init(
+        $aColumns,
+        $sIndexColumn,
+        $sTable,
+        $join,
+        $where,
+        $additionalSelect,
+        ($this->ci->input->post('group_by_task') ? 'GROUP BY task_id' : '')
+    );
+
+    $output  = $result['output'];
+    $rResult = $result['rResult'];
+} catch (Exception $e) {
+    // Log error
+    log_activity('Timesheets table error: ' . $e->getMessage());
+    // Return empty result set
+    $output = [
+        'aaData' => [],
+        'iTotalRecords' => 0,
+        'iTotalDisplayRecords' => 0,
+        'chart' => ['labels' => [], 'data' => []],
+        'chart_type' => 'today',
+        'logged_time' => [
+            'total_logged_time_h' => '00:00',
+            'total_logged_time_d' => '0.00'
+        ]
+    ];
+    $rResult = [];
+}
 
 $footer_data['total_logged_time_h'] = 0;
 $footer_data['total_logged_time_d'] = 0;
@@ -211,6 +257,7 @@ $temp_months_data             = [];
 $chart_type                   = 'today';
 $chart_type_month_from_filter = false;
 $weekDay                      = date('w', strtotime(date('Y-m-d H:i:s')));
+$weeks                        = []; // Initialize weeks array
 if ($filter == 'today') {
     $footer_data['chart']['labels'] = [_l('today')];
 } elseif ($filter == 'this_week' || $filter == 'last_week') {
@@ -249,17 +296,31 @@ if ($filter == 'today') {
         }
     }
     $chart_type = 'month';
-} else {
-    $_start_time = new DateTime(date('Y-m-d', strtotime($start_date)));
-    $_end_time   = new DateTime(date('Y-m-d', strtotime($end_date)));
+} elseif ($filter == 'period') {
+    $start_date = to_sql_date($this->ci->input->post('period-from'));
+    $end_date   = to_sql_date($this->ci->input->post('period-to'));
+    
+    // Only process period chart if dates are provided
+    if ($start_date && $end_date) {
+        $_start_time = new DateTime(date('Y-m-d', strtotime($start_date)));
+        $_end_time   = new DateTime(date('Y-m-d', strtotime($end_date)));
 
-    $chart_type  = 'weeks_split';
-    $weeks       = get_weekdays_between_dates($_start_time, $_end_time);
-    $total_weeks = count($weeks);
+        $chart_type  = 'weeks_split';
+        $weeks       = get_weekdays_between_dates($_start_time, $_end_time);
+        $total_weeks = count($weeks);
 
-    for ($i = 1; $i <= $total_weeks; $i++) {
-        array_push($footer_data['chart']['labels'], split_weeks_chart_label($weeks, $i));
+        for ($i = 1; $i <= $total_weeks; $i++) {
+            array_push($footer_data['chart']['labels'], split_weeks_chart_label($weeks, $i));
+        }
+    } else {
+        // Default to today if period dates not provided
+        $footer_data['chart']['labels'] = [_l('today')];
+        $chart_type = 'today';
     }
+} else {
+    // Fallback: default to today
+    $footer_data['chart']['labels'] = [_l('today')];
+    $chart_type = 'today';
 }
 
 $chartWhere = implode(' ', $where);
@@ -295,7 +356,7 @@ foreach ($chartData as $timer) {
         }
 
         $temp_months_data[$month] += $total_logged_time_d;
-    } elseif ($chart_type == 'weeks_split') {
+    } elseif ($chart_type == 'weeks_split' && !empty($weeks)) {
         $w = 1;
 
         foreach ($weeks as $week) {
@@ -304,7 +365,7 @@ foreach ($chartData as $timer) {
             if (! isset($weeks[$w]['total'])) {
                 $weeks[$w]['total'] = 0;
             }
-            if (in_array($start_time_date, $week)) {
+            if (is_array($week) && in_array($start_time_date, $week)) {
                 $weeks[$w]['total'] += $total_logged_time_d;
             }
             $w++;
@@ -316,7 +377,7 @@ foreach ($chartData as $timer) {
 foreach ($rResult as $aRow) {
     $row = [];
 
-    if ($view_all === true) {
+    if (isset($view_all) && $view_all === true) {
         $row[] = '<a href="' . admin_url('staff/member/' . $aRow['staff_id']) . '" target="_blank">' . e(get_staff_full_name($aRow['staff_id'])) . '</a>';
     }
 
@@ -404,7 +465,7 @@ if ($chart_type == 'today') {
         }
         array_push($footer_data['chart']['data'], sec2qty($total_logged_time));
     }
-} elseif ($chart_type == 'weeks_split') {
+} elseif ($chart_type == 'weeks_split' && !empty($weeks)) {
     foreach ($weeks as $week) {
         $total = 0;
         if (isset($week['total'])) {
@@ -423,3 +484,20 @@ $footer_data['total_logged_time_h'] = e(seconds_to_time_format($footer_data['tot
 $footer_data['total_logged_time_d'] = e(sec2qty($footer_data['total_logged_time_d']));
 
 $output['logged_time'] = $footer_data;
+
+// Ensure output is always valid
+if (!isset($output['aaData'])) {
+    $output['aaData'] = [];
+}
+if (!isset($output['chart'])) {
+    $output['chart'] = ['labels' => [], 'data' => []];
+}
+if (!isset($output['chart_type'])) {
+    $output['chart_type'] = 'today';
+}
+if (!isset($output['logged_time'])) {
+    $output['logged_time'] = [
+        'total_logged_time_h' => '00:00',
+        'total_logged_time_d' => '0.00'
+    ];
+}

@@ -212,14 +212,21 @@
         };
 
         var timesheetsTable = $('.table-timesheets-report');
+        var timesheetsTableApi = null;
+        
         $('#apply_filters_timesheets').on('click', function(e) {
             e.preventDefault();
-            timesheetsTable.DataTable().ajax.reload();
+            if (timesheetsTableApi) {
+                timesheetsTableApi.ajax.reload();
+            }
         });
 
         $('body').on('change', '#group_by_task', function() {
+            if (!timesheetsTableApi) {
+                timesheetsTableApi = timesheetsTable.DataTable();
+            }
             <?php if (get_option('round_off_task_timer_option') == 0) { ?>
-            var tApi = timesheetsTable.DataTable();
+            var tApi = timesheetsTableApi;
             var visible = $(this).prop('checked') == false;
             var tEndTimeIndex = $('.t-end-time').index();
             var tStartTimeIndex = $('.t-start-time').index();
@@ -234,7 +241,7 @@
             tApi.column(tStartTimeIndex).visible(visible, false).columns.adjust();
             tApi.ajax.reload();
             <?php } else { ?>
-            timesheetsTable.DataTable().ajax.reload();
+            timesheetsTableApi.ajax.reload();
             <?php } ?>
         });
 
@@ -247,7 +254,67 @@
         Timesheets_ServerParams['project_id'] = 'select#project_id';
         Timesheets_ServerParams['clientid'] = 'select#clientid';
         Timesheets_ServerParams['group_by_task'] = '[name="group_by_task"]:checked';
-        initDataTable('.table-timesheets-report', window.location.href, undefined, undefined,
+        
+        // Ensure range has a default value before DataTable initialization
+        // Wait for selectpicker to initialize if it exists
+        var rangeSelect = $('select[name="range"]');
+        var rangeValue = rangeSelect.val();
+        
+        // If selectpicker is used, get value from selectpicker
+        if (rangeSelect.hasClass('selectpicker') || typeof rangeSelect.selectpicker !== 'undefined') {
+            try {
+                rangeValue = rangeSelect.selectpicker('val');
+            } catch(e) {
+                rangeValue = rangeSelect.val();
+            }
+        }
+        
+        if (!rangeValue || rangeValue === '' || rangeValue === null) {
+            rangeSelect.val('today');
+            if (typeof rangeSelect.selectpicker !== 'undefined') {
+                try {
+                    rangeSelect.selectpicker('refresh');
+                } catch(e) {
+                    // Selectpicker might not be initialized yet
+                }
+            }
+        }
+        
+        // Add error handler before initialization
+        timesheetsTable.on('error.dt', function(e, settings, techNote, message) {
+            console.error('DataTable AJAX error:', message);
+            console.error('Technical details:', techNote);
+            // Hide loading indicator
+            $('.dataTables_processing').hide();
+            // Show error message
+            var tbody = timesheetsTable.find('tbody');
+            if (tbody.length && (tbody.html().trim() === '' || tbody.find('tr').length === 0)) {
+                var colCount = timesheetsTable.find('thead th').length;
+                tbody.html('<tr><td colspan="' + colCount + '" class="text-center text-danger">Error loading timesheet data. Please refresh the page.</td></tr>');
+            }
+        });
+        
+        // Add timeout to prevent infinite loading
+        var loadingTimeout = setTimeout(function() {
+            if ($('.dataTables_processing').is(':visible')) {
+                console.warn('DataTable loading timeout - forcing reload');
+                $('.dataTables_processing').hide();
+                if (timesheetsTableApi) {
+                    timesheetsTableApi.ajax.reload(null, false);
+                }
+            }
+        }, 30000); // 30 second timeout
+        
+        // Add preDraw event to handle loading
+        timesheetsTable.on('preDraw.dt', function() {
+            // Clear timeout on successful draw
+            clearTimeout(loadingTimeout);
+            // Ensure loading indicator is visible
+            $('.dataTables_processing').show();
+        });
+        
+        // Initialize DataTable
+        timesheetsTableApi = initDataTable('.table-timesheets-report', window.location.href, undefined, undefined,
             Timesheets_ServerParams, [
                 <?php if (isset($view_all)) {
                     echo 3;
@@ -256,6 +323,24 @@
                 } ?>
                 , 'desc'
             ]);
+        
+        // Store reference for later use
+        if (timesheetsTableApi) {
+            // Add AJAX error handler
+            timesheetsTableApi.on('xhr.dt', function(e, settings, json, xhr) {
+                clearTimeout(loadingTimeout);
+                if (xhr.status !== 200) {
+                    console.error('AJAX request failed with status:', xhr.status);
+                    console.error('Response:', xhr.responseText);
+                    $('.dataTables_processing').hide();
+                }
+            });
+            
+            // Clear timeout on successful draw
+            timesheetsTableApi.on('draw.dt', function() {
+                clearTimeout(loadingTimeout);
+            });
+        }
 
         init_ajax_project_search_by_customer_id();
 
@@ -282,51 +367,84 @@
         });
 
         timesheetsTable.on('draw.dt', function() {
-            var TimesheetsTable = $(this).DataTable();
-            var logged_time = TimesheetsTable.ajax.json().logged_time;
-            var chartResponse = TimesheetsTable.ajax.json().chart;
-            var chartType = TimesheetsTable.ajax.json().chart_type;
-            $(this).find('tfoot').addClass('bold');
-            $(this).find('tfoot td.total_logged_time_timesheets_staff_h').html(
-                "<?= _l('total_logged_hours_by_staff'); ?>: " +
-                logged_time.total_logged_time_h);
-            $(this).find('tfoot td.total_logged_time_timesheets_staff_d').html(
-                "<?= _l('total_logged_hours_by_staff'); ?>: " +
-                logged_time.total_logged_time_d);
-            if (typeof(timesheetsChart) !== 'undefined') {
-                timesheetsChart.destroy();
-            }
-            if (chartType != 'month') {
-                chartOptions.data.labels = chartResponse.labels;
-            } else {
-                chartOptions.data.labels = [];
-                for (var i in chartResponse.labels) {
-                    chartOptions.data.labels.push(moment(chartResponse.labels[i]).format("MMM Do YY"));
+            try {
+                var TimesheetsTable = $(this).DataTable();
+                var ajaxJson = TimesheetsTable.ajax.json();
+                
+                // Check if AJAX response is valid
+                if (!ajaxJson) {
+                    console.error('No AJAX response from timesheets table');
+                    return;
                 }
-            }
-            chartOptions.data.datasets[0].data = [];
-            chartOptions.data.datasets[0].backgroundColor = [];
-            chartOptions.data.datasets[0].borderColor = [];
-            for (var i in chartResponse.data) {
-                chartOptions.data.datasets[0].data.push(chartResponse.data[i]);
-                if (chartResponse.data[i] == 0) {
-                    chartOptions.data.datasets[0].backgroundColor.push('rgba(167, 167, 167, 0.6)');
-                    chartOptions.data.datasets[0].borderColor.push('rgba(167, 167, 167, 1)');
-                } else {
-                    chartOptions.data.datasets[0].backgroundColor.push('rgba(132, 197, 41, 0.6)');
-                    chartOptions.data.datasets[0].borderColor.push('rgba(132, 197, 41, 1)');
+                
+                // Update footer with logged time data
+                if (ajaxJson.logged_time) {
+                    var logged_time = ajaxJson.logged_time;
+                    $(this).find('tfoot').addClass('bold');
+                    $(this).find('tfoot td.total_logged_time_timesheets_staff_h').html(
+                        "<?= _l('total_logged_hours_by_staff'); ?>: " +
+                        (logged_time.total_logged_time_h || '00:00'));
+                    $(this).find('tfoot td.total_logged_time_timesheets_staff_d').html(
+                        "<?= _l('total_logged_hours_by_staff'); ?>: " +
+                        (logged_time.total_logged_time_d || '0.00'));
                 }
-            }
+                
+                // Update chart if chart data is available
+                if (ajaxJson.chart && ajaxJson.chart_type) {
+                    var chartResponse = ajaxJson.chart;
+                    var chartType = ajaxJson.chart_type;
+                    
+                    if (typeof(timesheetsChart) !== 'undefined') {
+                        timesheetsChart.destroy();
+                    }
+                    
+                    if (chartType != 'month') {
+                        chartOptions.data.labels = chartResponse.labels || [];
+                    } else {
+                        chartOptions.data.labels = [];
+                        if (chartResponse.labels && chartResponse.labels.length > 0) {
+                            for (var i in chartResponse.labels) {
+                                chartOptions.data.labels.push(moment(chartResponse.labels[i]).format("MMM Do YY"));
+                            }
+                        }
+                    }
+                    chartOptions.data.datasets[0].data = [];
+                    chartOptions.data.datasets[0].backgroundColor = [];
+                    chartOptions.data.datasets[0].borderColor = [];
+                    
+                    if (chartResponse.data && chartResponse.data.length > 0) {
+                        for (var i in chartResponse.data) {
+                            chartOptions.data.datasets[0].data.push(chartResponse.data[i]);
+                            if (chartResponse.data[i] == 0) {
+                                chartOptions.data.datasets[0].backgroundColor.push('rgba(167, 167, 167, 0.6)');
+                                chartOptions.data.datasets[0].borderColor.push('rgba(167, 167, 167, 1)');
+                            } else {
+                                chartOptions.data.datasets[0].backgroundColor.push('rgba(132, 197, 41, 0.6)');
+                                chartOptions.data.datasets[0].borderColor.push('rgba(132, 197, 41, 1)');
+                            }
+                        }
+                    }
 
-            var selected_staff_member = staff_member_select.val();
-            var selected_staff_member_name = staff_member_select.find('option:selected').text();
-            chartOptions.data.datasets[0].label = $('select[name="range"] option:selected').text() + (
-                selected_staff_member != '' && selected_staff_member != undefined ? ' - ' +
-                selected_staff_member_name : '');
-            setTimeout(function() {
-                timesheetsChart = new Chart(ctx, chartOptions);
-            }, 30);
-            do_timesheets_title();
+                    var selected_staff_member = staff_member_select.val();
+                    var selected_staff_member_name = staff_member_select.find('option:selected').text();
+                    chartOptions.data.datasets[0].label = $('select[name="range"] option:selected').text() + (
+                        selected_staff_member != '' && selected_staff_member != undefined ? ' - ' +
+                        selected_staff_member_name : '');
+                    setTimeout(function() {
+                        timesheetsChart = new Chart(ctx, chartOptions);
+                    }, 30);
+                }
+                
+                do_timesheets_title();
+            } catch (e) {
+                console.error('Error in timesheets table draw event:', e);
+            }
+        });
+        
+        // Add error handler for DataTable AJAX requests
+        timesheetsTable.on('error.dt', function(e, settings, techNote, message) {
+            console.error('DataTable AJAX error:', message);
+            console.error('Technical details:', techNote);
         });
     });
 

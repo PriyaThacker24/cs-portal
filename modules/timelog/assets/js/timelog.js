@@ -214,6 +214,12 @@ var TimelogModule = (function() {
     function loadTimelogs() {
         var $loading = $('#timelog_loading');
         var $content = $('#timelog_content');
+        
+        // Ensure elements exist
+        if ($loading.length === 0 || $content.length === 0) {
+            console.error('Timelog content elements not found');
+            return;
+        }
 
         $loading.show();
         $content.hide();
@@ -263,9 +269,48 @@ var TimelogModule = (function() {
         var dateEnd = $('#current_week_end').val();
         var dateRangeType = $('#current_date_range_type').val() || 'week';
         
+        // Validate and set default dates if needed
+        if (!dateStart) {
+            // Default to current week
+            var today = new Date();
+            var dayOfWeek = today.getDay();
+            var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            var monday = new Date(today);
+            monday.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+            
+            function pad(num) {
+                return String(num).padStart(2, '0');
+            }
+            
+            dateStart = monday.getFullYear() + '-' + pad(monday.getMonth() + 1) + '-' + pad(monday.getDate());
+            $('#current_week_start').val(dateStart);
+            currentWeekStart = dateStart;
+        }
+        
+        // Calculate week end if not provided
+        if (!dateEnd && dateRangeType === 'week') {
+            var dateParts = dateStart.split('-');
+            if (dateParts.length === 3) {
+                var weekStartDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                var weekEndDate = new Date(weekStartDate);
+                weekEndDate.setDate(weekStartDate.getDate() + 6);
+                
+                function pad(num) {
+                    return String(num).padStart(2, '0');
+                }
+                
+                dateEnd = weekEndDate.getFullYear() + '-' + pad(weekEndDate.getMonth() + 1) + '-' + pad(weekEndDate.getDate());
+                $('#current_week_end').val(dateEnd);
+            } else {
+                dateEnd = dateStart;
+            }
+        } else if (!dateEnd) {
+            dateEnd = dateStart;
+        }
+        
         var data = {
             date_start: dateStart,
-            date_end: dateEnd || dateStart,
+            date_end: dateEnd,
             date_range_type: dateRangeType,
             week_start: dateStart, // Keep for backward compatibility
             group_by: currentGroupBy,
@@ -279,43 +324,123 @@ var TimelogModule = (function() {
             data.advanced_filters = advancedFilters;
         }
 
+        console.log('Loading timelogs with data:', JSON.stringify(data));
+        
         $.ajax({
             url: admin_url + 'timelog/get_data',
             type: 'POST',
             data: data,
             dataType: 'json',
             success: function(response) {
+                console.log('Timelogs loaded. Response received:', {
+                    hasHtml: !!response.html,
+                    htmlLength: response.html ? response.html.length : 0,
+                    week_start: response.week_start,
+                    week_end: response.week_end,
+                    summary: response.summary
+                });
                 $loading.hide();
                 
-                if (response && response.html) {
-                    $content.html(response.html).show();
-                    
-                    // Initialize status dropdown colors
-                    initializeStatusDropdownColors();
-                    
-                    // Always update week display and summary from response
-                    if (response.week_start && response.week_end && response.week_number) {
-                        updateWeekDisplay(response.week_start, response.week_end, response.week_number);
+                try {
+                    // Validate response
+                    if (!response) {
+                        console.error('Empty response from server');
+                        $content.html('<div class="alert alert-danger">Empty response from server. Please refresh the page.</div>').show();
+                        return;
                     }
-                    if (response.summary) {
-                        updateSummary(response.summary);
-                    }
-                } else {
-                    // Show empty state message
-                    var emptyMessage = (typeof _l !== 'undefined' && typeof _l('no_timelogs_found') !== 'undefined') ? _l('no_timelogs_found') : 'No timelog available for this week';
-                    $content.html('<div class="timelog-empty-state text-center" style="padding: 40px;"><i class="fa fa-clock-o fa-3x" style="color: #ccc;"></i><p style="margin-top: 20px; color: #999;">' + emptyMessage + '</p></div>').show();
                     
-                    // Still update week display
-                    if (response && response.week_start && response.week_end && response.week_number) {
-                        updateWeekDisplay(response.week_start, response.week_end, response.week_number);
+                    // Check for error in response
+                    if (response.error) {
+                        console.error('Server error:', response.error_message || 'Unknown error');
+                        $content.html('<div class="alert alert-danger">' + (response.error_message || 'Error loading timelogs. Please refresh the page.') + '</div>').show();
+                        return;
                     }
+                    
+                    // Always show content, even if empty
+                    if (response.html) {
+                        $content.html(response.html).show();
+                        
+                        // Initialize status dropdown colors
+                        try {
+                            initializeStatusDropdownColors();
+                        } catch (e) {
+                            console.warn('Error initializing status dropdown colors:', e);
+                        }
+                        
+                        // Always update week display and summary from response
+                        try {
+                            if (response.week_start && response.week_end) {
+                                var weekNumber = response.week_number;
+                                if (!weekNumber && response.date_range_type === 'week') {
+                                    // Calculate week number if not provided
+                                    var dateParts = response.week_start.split('-');
+                                    if (dateParts.length === 3) {
+                                        var weekStartDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                                        weekNumber = getWeekNumber(weekStartDate);
+                                    }
+                                }
+                                updateWeekDisplay(response.week_start, response.week_end, weekNumber);
+                            }
+                            if (response.summary) {
+                                updateSummary(response.summary);
+                            }
+                        } catch (e) {
+                            console.warn('Error updating week display/summary:', e);
+                        }
+                    } else {
+                        // Show empty state message if no HTML provided
+                        var emptyMessage = (typeof _l !== 'undefined' && typeof _l('no_timelogs_found') !== 'undefined') ? _l('no_timelogs_found') : 'No timelog available for this week';
+                        $content.html('<div class="timelog-empty-state text-center" style="padding: 40px;"><i class="fa fa-clock-o fa-3x" style="color: #ccc;"></i><p style="margin-top: 20px; color: #999;">' + emptyMessage + '</p></div>').show();
+                        
+                        // Still update week display if available
+                        try {
+                            if (response.week_start && response.week_end) {
+                                updateWeekDisplay(response.week_start, response.week_end, response.week_number);
+                            }
+                            if (response.summary) {
+                                updateSummary(response.summary);
+                            }
+                        } catch (e) {
+                            console.warn('Error updating week display/summary:', e);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error processing timelog response:', e);
+                    console.error('Response:', response);
+                    $content.html('<div class="alert alert-warning">Error displaying timelogs. Please refresh the page.</div>').show();
                 }
             },
             error: function(xhr, status, error) {
                 $loading.hide();
-                $content.html('<div class="alert alert-danger">Error loading timelogs: ' + error + '</div>').show();
                 console.error('Error loading timelogs:', error);
+                console.error('Status:', status);
+                console.error('HTTP Status:', xhr.status);
                 console.error('Response:', xhr.responseText);
+                console.error('Request data:', JSON.stringify(data));
+                
+                // Try to parse error response if it's JSON
+                var errorMessage = 'Error loading timelogs. ';
+                try {
+                    var errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse.error_message) {
+                        errorMessage = errorResponse.error_message;
+                    } else if (errorResponse.message) {
+                        errorMessage = errorResponse.message;
+                    }
+                } catch (e) {
+                    // Not JSON, use default messages
+                    if (xhr.status === 0) {
+                        errorMessage += 'Network error. Please check your connection.';
+                    } else if (xhr.status === 404) {
+                        errorMessage += 'Page not found.';
+                    } else if (xhr.status === 500) {
+                        errorMessage += 'Server error. Please try again.';
+                    } else {
+                        errorMessage += error || 'Unknown error occurred.';
+                    }
+                }
+                
+                $content.html('<div class="alert alert-danger">' + errorMessage + '</div>').show();
             }
         });
     }
@@ -417,7 +542,13 @@ var TimelogModule = (function() {
     /**
      * Open timelog drawer
      */
-    function openTimelogDrawer() {
+    function openTimelogDrawer(editMode) {
+        editMode = editMode || false;
+        
+        // Reset form if not in edit mode
+        if (!editMode) {
+            resetTimelogForm();
+        }
         $('#timelog_drawer_overlay').fadeIn(300);
         $('#timelog_drawer').addClass('open');
         
@@ -432,6 +563,24 @@ var TimelogModule = (function() {
      * Close timelog drawer
      */
     function closeTimelogDrawer() {
+        // Reset edit mode
+        $('#timelog_drawer').data('edit-mode', false);
+        $('#timelog_drawer').data('timelog-id', null);
+        
+        // Reset form
+        resetTimelogForm();
+        
+        // Reset drawer title
+        var $title = $('#timelog_drawer').find('h3').first();
+        if ($title.length === 0) {
+            $title = $('#timelog_drawer').find('.timelog-drawer-header h3').first();
+        }
+        if ($title.length > 0) {
+            $title.text(typeof _l !== 'undefined' ? _l('new_time_log') : 'New Time Log');
+        }
+        
+        // Reset submit button
+        $('#btn_add_timelog_submit').text(typeof _l !== 'undefined' ? _l('add') : 'Add');
         // Reset button text before closing
         $('#btn_add_timelog_submit').prop('disabled', false).data('submitting', false).html(typeof _l !== 'undefined' ? _l('add') : 'Add');
         
@@ -807,7 +956,7 @@ var TimelogModule = (function() {
             task_id: isGeneralLog ? '' : $('#timelog_task').val(),
             task_heading: isGeneralLog ? $('#timelog_task_heading').val() : '',
             is_general_log: isGeneralLog ? '1' : '0',
-            date: $('#timelog_date').val(),
+            date: convertDateToYYYYMMDD($('#timelog_date').val()),
             staff_id: $('#timelog_user').val(),
             daily_log: $('#timelog_daily_log').val(),
             billing_type: $('#timelog_billing_type').val(),
@@ -880,17 +1029,181 @@ var TimelogModule = (function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
+                    console.log('Timelog added successfully. Response:', response);
+                    
                     // Reset button text and clear submitting flag before closing drawer
                     $submitBtn.prop('disabled', false).data('submitting', false).html(typeof _l !== 'undefined' ? _l('add') : 'Add');
                     
-                    // Close drawer and reload (no success toast)
+                    // Close drawer
                     closeTimelogDrawer();
                     
-                    // Reload timelog list
-                    if (response.week_start) {
-                        $('#current_week_start').val(response.week_start);
+                    // Update date range to match the newly added timelog's date
+                    try {
+                        var weekStart = null;
+                        var weekEnd = null;
+                        
+                        // Always use week_start and week_end from response if available (most reliable)
+                        if (response.week_start && response.week_end) {
+                            weekStart = response.week_start;
+                            weekEnd = response.week_end;
+                            console.log('Using week_start and week_end from response:', weekStart, weekEnd);
+                        } else if (response.week_start) {
+                            weekStart = response.week_start;
+                            // Calculate week end if not provided
+                            var dateParts = weekStart.split('-');
+                            if (dateParts.length === 3) {
+                                var weekStartDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                                var weekEndDate = new Date(weekStartDate);
+                                weekEndDate.setDate(weekStartDate.getDate() + 6);
+                                
+                                function pad(num) {
+                                    return String(num).padStart(2, '0');
+                                }
+                                
+                                weekEnd = weekEndDate.getFullYear() + '-' + 
+                                         pad(weekEndDate.getMonth() + 1) + '-' + 
+                                         pad(weekEndDate.getDate());
+                                console.log('Calculated week_end from week_start:', weekEnd);
+                            }
+                        } else if (response.date) {
+                            // Fallback: calculate week start/end from date
+                            var dateParts = response.date.split('-');
+                            if (dateParts.length === 3) {
+                                var logDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                                var dayOfWeek = logDate.getDay();
+                                var diff = logDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                                var weekStartDate = new Date(logDate);
+                                weekStartDate.setDate(diff);
+                                var weekEndDate = new Date(weekStartDate);
+                                weekEndDate.setDate(weekStartDate.getDate() + 6);
+                                
+                                function pad(num) {
+                                    return String(num).padStart(2, '0');
+                                }
+                                
+                                weekStart = weekStartDate.getFullYear() + '-' + 
+                                           pad(weekStartDate.getMonth() + 1) + '-' + 
+                                           pad(weekStartDate.getDate());
+                                weekEnd = weekEndDate.getFullYear() + '-' + 
+                                         pad(weekEndDate.getMonth() + 1) + '-' + 
+                                         pad(weekEndDate.getDate());
+                                console.log('Calculated week_start and week_end from date:', weekStart, weekEnd);
+                            }
+                        }
+                        
+                        // Update hidden inputs and variable
+                        if (weekStart) {
+                            $('#current_week_start').val(weekStart);
+                            currentWeekStart = weekStart;
+                            console.log('Updated current_week_start to:', weekStart);
+                        }
+                        if (weekEnd) {
+                            $('#current_week_end').val(weekEnd);
+                            console.log('Updated current_week_end to:', weekEnd);
+                        }
+                        
+                        // Ensure date range type is set
+                        if (!$('#current_date_range_type').val()) {
+                            $('#current_date_range_type').val('week');
+                        }
+                        
+                        // Verify the values were set correctly
+                        var verifyWeekStart = $('#current_week_start').val();
+                        var verifyWeekEnd = $('#current_week_end').val();
+                        console.log('Verified date range after update:', verifyWeekStart, 'to', verifyWeekEnd);
+                        
+                        if (!verifyWeekStart) {
+                            console.warn('Warning: week_start was not set correctly. Using fallback.');
+                            // Fallback: use response.date if available
+                            if (response.date) {
+                                var dateParts = response.date.split('-');
+                                if (dateParts.length === 3) {
+                                    var logDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                                    var dayOfWeek = logDate.getDay();
+                                    var diff = logDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                                    var fallbackWeekStart = new Date(logDate);
+                                    fallbackWeekStart.setDate(diff);
+                                    var fallbackWeekEnd = new Date(fallbackWeekStart);
+                                    fallbackWeekEnd.setDate(fallbackWeekStart.getDate() + 6);
+                                    
+                                    function pad(num) {
+                                        return String(num).padStart(2, '0');
+                                    }
+                                    
+                                    verifyWeekStart = fallbackWeekStart.getFullYear() + '-' + 
+                                                    pad(fallbackWeekStart.getMonth() + 1) + '-' + 
+                                                    pad(fallbackWeekStart.getDate());
+                                    verifyWeekEnd = fallbackWeekEnd.getFullYear() + '-' + 
+                                                  pad(fallbackWeekEnd.getMonth() + 1) + '-' + 
+                                                  pad(fallbackWeekEnd.getDate());
+                                    
+                                    $('#current_week_start').val(verifyWeekStart);
+                                    $('#current_week_end').val(verifyWeekEnd);
+                                    currentWeekStart = verifyWeekStart;
+                                    console.log('Set fallback date range:', verifyWeekStart, 'to', verifyWeekEnd);
+                                }
+                            }
+                        }
+                        
+                        // Force reload immediately (no delay needed since we're updating DOM directly)
+                        console.log('Reloading timelogs with date range:', verifyWeekStart, 'to', verifyWeekEnd);
+                        try {
+                            // Call loadTimelogs - it's available in the module scope
+                            loadTimelogs();
+                        } catch (loadError) {
+                            console.error('Error in loadTimelogs:', loadError);
+                            console.error('Stack trace:', loadError.stack);
+                            // Try alternative: use TimelogModule if available
+                            try {
+                                if (typeof TimelogModule !== 'undefined' && typeof TimelogModule.loadTimelogs === 'function') {
+                                    console.log('Trying TimelogModule.loadTimelogs()');
+                                    TimelogModule.loadTimelogs();
+                                } else {
+                                    throw new Error('TimelogModule.loadTimelogs not available');
+                                }
+                            } catch (moduleError) {
+                                console.error('Error calling TimelogModule.loadTimelogs:', moduleError);
+                                // Show error but don't leave page blank
+                                var $content = $('#timelog_content');
+                                if ($content.length) {
+                                    $content.html('<div class="alert alert-warning">Error reloading timelogs. <a href="javascript:location.reload();">Click here to refresh the page</a>.</div>').show();
+                                } else {
+                                    // If content element doesn't exist, reload the page
+                                    console.error('Content element not found, reloading page');
+                                    window.location.reload();
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error updating date range:', e);
+                        console.error('Stack trace:', e.stack);
+                        console.error('Response:', response);
+                        // Still try to reload with current date range
+                        try {
+                            console.log('Attempting to reload with current date range');
+                            loadTimelogs();
+                        } catch (loadError) {
+                            console.error('Error in loadTimelogs:', loadError);
+                            console.error('Stack trace:', loadError.stack);
+                            // Try alternative: use TimelogModule if available
+                            try {
+                                if (typeof TimelogModule !== 'undefined' && typeof TimelogModule.loadTimelogs === 'function') {
+                                    console.log('Trying TimelogModule.loadTimelogs()');
+                                    TimelogModule.loadTimelogs();
+                                } else {
+                                    throw new Error('TimelogModule.loadTimelogs not available');
+                                }
+                            } catch (moduleError) {
+                                console.error('Error calling TimelogModule.loadTimelogs:', moduleError);
+                                var $content = $('#timelog_content');
+                                if ($content.length) {
+                                    $content.html('<div class="alert alert-warning">Error reloading timelogs. <a href="javascript:location.reload();">Click here to refresh the page</a>.</div>').show();
+                                } else {
+                                    window.location.reload();
+                                }
+                            }
+                        }
                     }
-                    loadTimelogs();
                 } else {
                     // Show errors below fields
                     if (response.errors) {
@@ -918,17 +1231,326 @@ var TimelogModule = (function() {
     }
     
     /**
+     * Format date to YYYY-MM-DD
+     */
+    function formatDateYYYYMMDD(date) {
+        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+            console.error('Invalid date passed to formatDateYYYYMMDD:', date);
+            return '';
+        }
+        var year = date.getFullYear();
+        var month = String(date.getMonth() + 1).padStart(2, '0');
+        var day = String(date.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+    }
+    
+    /**
+     * Get week number from date
+     */
+    function getWeekNumber(date) {
+        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+            return null;
+        }
+        var d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        var dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+    
+    /**
+     * Convert date from d/m/Y format to Y-m-d format
+     */
+    function convertDateToYYYYMMDD(dateString) {
+        if (!dateString) return '';
+        
+        // Check if already in Y-m-d format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString;
+        }
+        
+        // Parse d/m/Y format
+        var parts = dateString.split(/[\/\-\.]/);
+        if (parts.length === 3) {
+            var day = parts[0];
+            var month = parts[1];
+            var year = parts[2];
+            
+            // Handle 2-digit year
+            if (year.length === 2) {
+                year = '20' + year;
+            }
+            
+            return year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
+        }
+        
+        return dateString;
+    }
+    
+    /**
+     * Handle edit timelog button click
+     */
+    $(document).on('click', '.edit-timelog-btn', function() {
+        var timelogId = $(this).data('timelog-id');
+        
+        if (!timelogId) {
+            console.error('Timelog ID not found');
+            return;
+        }
+        
+        // Show loading
+        var $btn = $(this);
+        var originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+        
+        // Get timelog data
+        $.ajax({
+            url: admin_url + 'timelog/get_timelog',
+            type: 'POST',
+            data: { timelog_id: timelogId },
+            dataType: 'json',
+            success: function(response) {
+                $btn.prop('disabled', false).html(originalHtml);
+                
+                if (response.success && response.data) {
+                    var data = response.data;
+                    
+                    // Open drawer in edit mode
+                    openTimelogDrawer(true);
+                    
+                    // Set edit mode
+                    $('#timelog_drawer').data('edit-mode', true);
+                    $('#timelog_drawer').data('timelog-id', timelogId);
+                    
+                    // Update drawer title
+                    var $title = $('#timelog_drawer').find('h3').first();
+                    if ($title.length === 0) {
+                        $title = $('#timelog_drawer').find('.timelog-drawer-header h3').first();
+                    }
+                    if ($title.length > 0) {
+                        $title.text(typeof _l !== 'undefined' ? _l('edit_timelog') : 'Edit Time Log');
+                    }
+                    
+                    // Populate form fields
+                    $('#timelog_project').val(data.project_id).trigger('change');
+                    
+                    // Wait for project change to complete, then set task
+                    setTimeout(function() {
+                        if (data.is_general_log === '1') {
+                            // Show general log fields
+                            $('#timelog_task_group').hide();
+                            $('#timelog_task_heading_group').show();
+                            $('#timelog_task_heading').val(data.task_heading);
+                        } else {
+                            // Show task field
+                            $('#timelog_task_heading_group').hide();
+                            $('#timelog_task_group').show();
+                            $('#timelog_task').val(data.task_id).trigger('change');
+                        }
+                        
+                        // Convert date from Y-m-d to d/m/Y format for datepicker
+                        if (data.date) {
+                            var dateParts = data.date.split('-');
+                            if (dateParts.length === 3) {
+                                $('#timelog_date').val(dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]);
+                            } else {
+                                $('#timelog_date').val(data.date);
+                            }
+                        }
+                        $('#timelog_user').val(data.staff_id).trigger('change');
+                        $('#timelog_daily_log').val(data.daily_log);
+                        $('#timelog_billing_type').val(data.billing_type).trigger('change');
+                        $('#timelog_notes').val(data.notes);
+                        
+                        // Update submit button
+                        $('#btn_add_timelog_submit').text(typeof _l !== 'undefined' ? _l('update') : 'Update');
+                    }, 500);
+                } else {
+                    alert(response.message || 'Error loading timelog data');
+                }
+            },
+            error: function(xhr, status, error) {
+                $btn.prop('disabled', false).html(originalHtml);
+                alert('Error loading timelog data. Please try again.');
+            }
+        });
+    });
+    
+    /**
+     * Update submit function to handle edit mode
+     */
+    var originalSubmitTimelogForm = submitTimelogForm;
+    submitTimelogForm = function() {
+        var isEditMode = $('#timelog_drawer').data('edit-mode') === true;
+        var timelogId = $('#timelog_drawer').data('timelog-id');
+        
+        if (isEditMode && timelogId) {
+            // Edit mode - call update function
+            submitUpdateTimelogForm(timelogId);
+            return false;
+        } else {
+            // Add mode - call original function
+            return originalSubmitTimelogForm();
+        }
+    };
+    
+    /**
+     * Submit update timelog form
+     */
+    function submitUpdateTimelogForm(timelogId) {
+        var $submitBtn = $('#btn_add_timelog_submit');
+        if ($submitBtn.prop('disabled') || $submitBtn.data('submitting')) {
+            return false;
+        }
+        
+        $submitBtn.data('submitting', true);
+        
+        // Clear previous errors
+        $('.form-group').removeClass('has-error');
+        $('.help-block .error-message').remove();
+        
+        // Check if general log mode
+        var isGeneralLog = $('#timelog_task_heading_group').is(':visible');
+        
+        // Get form data
+        var formData = {
+            timelog_id: timelogId,
+            project_id: $('#timelog_project').val(),
+            task_id: isGeneralLog ? '' : $('#timelog_task').val(),
+            task_heading: isGeneralLog ? $('#timelog_task_heading').val() : '',
+            is_general_log: isGeneralLog ? '1' : '0',
+            date: convertDateToYYYYMMDD($('#timelog_date').val()),
+            staff_id: $('#timelog_user').val(),
+            daily_log: $('#timelog_daily_log').val(),
+            billing_type: $('#timelog_billing_type').val(),
+            notes: $('#timelog_notes').val()
+        };
+        
+        // Client-side validation (same as add)
+        var isValid = true;
+        if (!formData.project_id) {
+            isValid = false;
+            showFieldError('timelog_project', typeof _l !== 'undefined' ? _l('project') + ' is required' : 'Project is required');
+        }
+        
+        if (isGeneralLog) {
+            if (!formData.task_heading || formData.task_heading.trim() === '') {
+                isValid = false;
+                showFieldError('timelog_task_heading', typeof _l !== 'undefined' ? _l('task_heading') + ' is required' : 'Task heading is required');
+            }
+        } else {
+            if (!formData.task_id) {
+                isValid = false;
+                showFieldError('timelog_task', typeof _l !== 'undefined' ? _l('tasks_feedback') + ' is required' : 'Task is required');
+            }
+        }
+        
+        if (!formData.date) {
+            isValid = false;
+            showFieldError('timelog_date', typeof _l !== 'undefined' ? _l('date') + ' is required' : 'Date is required');
+        }
+        
+        if (!formData.staff_id) {
+            isValid = false;
+            showFieldError('timelog_user', typeof _l !== 'undefined' ? _l('user') + ' is required' : 'User is required');
+        }
+        
+        var timePattern = /^([0-9]{1,2}):([0-5][0-9])$/;
+        if (!formData.daily_log || !timePattern.test(formData.daily_log)) {
+            isValid = false;
+            showFieldError('timelog_daily_log', typeof _l !== 'undefined' ? _l('invalid_time_format') : 'Invalid time format. Please use HH:MM format (e.g., 02:30)');
+        } else {
+            var timeParts = formData.daily_log.split(':');
+            var hours = parseInt(timeParts[0], 10);
+            var minutes = parseInt(timeParts[1], 10);
+            if (hours === 0 && minutes === 0) {
+                isValid = false;
+                showFieldError('timelog_daily_log', 'Daily log time must be greater than 00:00');
+            }
+        }
+        
+        if (!isValid) {
+            $submitBtn.data('submitting', false);
+            return false;
+        }
+        
+        // Disable submit button
+        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> ' + (typeof _l !== 'undefined' ? _l('updating') : 'Updating') + '...');
+        
+        // Submit via AJAX
+        $.ajax({
+            url: admin_url + 'timelog/update_timelog',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $submitBtn.prop('disabled', false).data('submitting', false).html(typeof _l !== 'undefined' ? _l('update') : 'Update');
+                    
+                    // Close drawer
+                    closeTimelogDrawer();
+                    
+                    // Reset edit mode
+                    $('#timelog_drawer').data('edit-mode', false);
+                    $('#timelog_drawer').data('timelog-id', null);
+                    
+                    // Reload timelog list
+                    if (response.date) {
+                        var logDate = new Date(response.date + 'T00:00:00');
+                        var dayOfWeek = logDate.getDay();
+                        var diff = logDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                        var weekStart = new Date(logDate.setDate(diff));
+                        var weekEnd = new Date(weekStart);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        
+                        $('#current_week_start').val(formatDateYYYYMMDD(weekStart));
+                        $('#current_week_end').val(formatDateYYYYMMDD(weekEnd));
+                    } else if (response.week_start) {
+                        $('#current_week_start').val(response.week_start);
+                        if (response.week_end) {
+                            $('#current_week_end').val(response.week_end);
+                        }
+                    }
+                    loadTimelogs();
+                } else {
+                    if (response.errors) {
+                        $.each(response.errors, function(field, error) {
+                            showFieldError('timelog_' + field, error);
+                        });
+                    } else if (response.message) {
+                        showFieldError('timelog_project', response.message);
+                    }
+                    
+                    $submitBtn.prop('disabled', false).data('submitting', false).html(typeof _l !== 'undefined' ? _l('update') : 'Update');
+                }
+            },
+            error: function(xhr, status, error) {
+                showFieldError('timelog_project', typeof _l !== 'undefined' ? _l('error_updating_timelog') : 'Error updating time log. Please try again');
+                $submitBtn.prop('disabled', false).data('submitting', false).html(typeof _l !== 'undefined' ? _l('update') : 'Update');
+            }
+        });
+        
+        return false;
+    }
+    
+    /**
      * Reset timelog form
      */
     function resetTimelogForm() {
         $('#timelog_form')[0].reset();
         $('#timelog_other_fields').hide();
+        $('#timelog_task_group').show();
+        $('#timelog_task_heading_group').hide();
         $('#timelog_project, #timelog_task, #timelog_user').selectpicker('refresh');
         $('.form-group').removeClass('has-error');
         $('.help-block .error-message').remove();
         
         // Clear submitting flag
-        $('#btn_add_timelog_submit').data('submitting', false).prop('disabled', false);
+        $('#btn_add_timelog_submit').data('submitting', false).prop('disabled', false).text(typeof _l !== 'undefined' ? _l('add') : 'Add');
+        
+        // Reset edit mode
+        $('#timelog_drawer').data('edit-mode', false);
+        $('#timelog_drawer').data('timelog-id', null);
     }
 
     /**

@@ -735,7 +735,7 @@ class Projects_model extends App_Model
             if ($data['deadline'] && $data['start_date'] && $data['deadline'] < $data['start_date']) {
                 return [
                     'error' => true,
-                    'message' => _l('project_deadline_must_be_after_start_date')
+                    'message' => _l('project_deadline_must_be_after_start_date') ?: 'Deadline must be on or after the start date'
                 ];
             }
         } else {
@@ -1050,14 +1050,6 @@ class Projects_model extends App_Model
         }
 
         $data['start_date'] = to_sql_date($data['start_date']);
-        
-        // Validate that deadline is not before start date
-        if ($data['deadline'] && $data['start_date'] && $data['deadline'] < $data['start_date']) {
-            return [
-                'error' => true,
-                'message' => _l('project_deadline_must_be_after_start_date')
-            ];
-        }
         if ($data['billing_type'] == 1) {
             $data['project_rate_per_hour'] = 0;
         } elseif ($data['billing_type'] == 2) {

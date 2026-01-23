@@ -74,8 +74,19 @@ class Timelog_model extends App_Model
         $this->db->join(db_prefix() . 'staff as created_by_staff', 'created_by_staff.staffid = ' . db_prefix() . 'tasks.addedfrom', 'left');
         
         // Filter by date range (supports day, week, month, range)
+        // Use date() to ensure we're working with the correct timezone
+        // Convert date strings to timestamps at start and end of day
         $dateStartTimestamp = strtotime($dateStart . ' 00:00:00');
         $dateEndTimestamp = strtotime($dateEnd . ' 23:59:59');
+        
+        // Ensure timestamps are valid
+        if ($dateStartTimestamp === false || $dateEndTimestamp === false) {
+            log_message('error', 'Invalid date range in timelog query: ' . $dateStart . ' to ' . $dateEnd);
+            // Fallback to current week
+            $dateStartTimestamp = strtotime('monday this week 00:00:00');
+            $dateEndTimestamp = strtotime('sunday this week 23:59:59');
+        }
+        
         $this->db->where(db_prefix() . 'taskstimers.start_time >=', $dateStartTimestamp);
         $this->db->where(db_prefix() . 'taskstimers.start_time <=', $dateEndTimestamp);
         $this->db->where(db_prefix() . 'taskstimers.end_time IS NOT NULL', null, false);

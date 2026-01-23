@@ -96,37 +96,89 @@ class Timelog extends AdminController
             'advanced_filters' => $advancedFiltersJson, // Pass advanced filters JSON
         ];
 
-        $timelogData = $this->timelog_model->get_timelogs($dateStart, $filters);
-        
-        // Render the list view
-        $data['timelog_data'] = $timelogData;
-        $html = $this->load->view('timelog_list', $data, true);
-        
-        // Calculate week number for display (if week type)
-        $weekNumber = null;
-        if ($dateRangeType === 'week') {
-            $weekNumber = date('W', strtotime($dateStart));
+        try {
+            // Log the query parameters for debugging
+            log_message('debug', 'Timelog get_data called with date_start: ' . $dateStart . ', date_end: ' . $dateEnd . ', filters: ' . json_encode($filters));
+            
+            $timelogData = $this->timelog_model->get_timelogs($dateStart, $filters);
+            
+            // Log the result count for debugging
+            $totalRecords = isset($timelogData['summary']['total_records']) ? $timelogData['summary']['total_records'] : 0;
+            $groupsCount = isset($timelogData['groups']) ? count($timelogData['groups']) : 0;
+            log_message('debug', 'Timelog query returned ' . $totalRecords . ' records in ' . $groupsCount . ' groups');
+            
+            // Ensure timelogData has required structure
+            if (!isset($timelogData['groups'])) {
+                $timelogData['groups'] = [];
+            }
+            if (!isset($timelogData['summary'])) {
+                $timelogData['summary'] = [
+                    'total_billable_hours' => 0,
+                    'total_non_billable_hours' => 0,
+                    'total_hours' => 0,
+                    'total_records' => 0
+                ];
+            }
+            
+            // Render the list view
+            $data['timelog_data'] = $timelogData;
+            $html = $this->load->view('timelog_list', $data, true);
+            
+            // Ensure HTML is not empty (should always return something from view)
+            if (empty($html)) {
+                $html = '<div class="timelog-empty-state text-center" style="padding: 40px;"><i class="fa fa-clock-o fa-3x" style="color: #ccc;"></i><p style="margin-top: 20px; color: #999;">' . _l('no_timelogs_found') . '</p></div>';
+            }
+            
+            // Calculate week number for display (if week type)
+            $weekNumber = null;
+            if ($dateRangeType === 'week') {
+                $weekNumber = date('W', strtotime($dateStart));
+            }
+            
+            $response = [
+                'html' => $html,
+                'summary' => $timelogData['summary'],
+                'week_start' => $dateStart,
+                'week_end' => $dateEnd,
+                'week_number' => $weekNumber,
+                'date_start' => $dateStart,
+                'date_end' => $dateEnd,
+                'date_range_type' => $dateRangeType
+            ];
+            
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+        } catch (Exception $e) {
+            // Log error
+            log_message('error', 'Timelog get_data error: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            // Return error response with empty state
+            $errorHtml = '<div class="alert alert-danger">Error loading timelogs. Please refresh the page.</div>';
+            
+            $response = [
+                'html' => $errorHtml,
+                'summary' => [
+                    'total_billable_hours' => 0,
+                    'total_non_billable_hours' => 0,
+                    'total_hours' => 0,
+                    'total_records' => 0
+                ],
+                'week_start' => $dateStart,
+                'week_end' => $dateEnd,
+                'week_number' => null,
+                'date_start' => $dateStart,
+                'date_end' => $dateEnd,
+                'date_range_type' => $dateRangeType,
+                'error' => true,
+                'error_message' => $e->getMessage()
+            ];
+            
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
         }
-        
-        $response = [
-            'html' => $html,
-            'summary' => isset($timelogData['summary']) ? $timelogData['summary'] : [
-                'total_billable_hours' => 0,
-                'total_non_billable_hours' => 0,
-                'total_hours' => 0,
-                'total_records' => 0
-            ],
-            'week_start' => $dateStart, // Keep for backward compatibility
-            'week_end' => $dateEnd,
-            'week_number' => $weekNumber,
-            'date_start' => $dateStart,
-            'date_end' => $dateEnd,
-            'date_range_type' => $dateRangeType
-        ];
-        
-        $this->output
-            ->set_content_type('application/json')
-            ->set_output(json_encode($response));
     }
     
     /**
@@ -423,8 +475,20 @@ class Timelog extends AdminController
             if ($this->db->affected_rows() > 0) {
                 $insertId = $this->db->insert_id();
                 
-                // Reload timelog data for current week
-                $weekStart = date('Y-m-d', strtotime('monday this week', $logDate));
+                // Return the actual date used for the timelog so the frontend can reload correctly
+                $logDateFormatted = date('Y-m-d', $logDate);
+                
+                // Calculate week start (Monday) and week end (Sunday) correctly
+                // Get the day of week (0=Sunday, 1=Monday, etc.)
+                $dayOfWeek = date('w', $logDate); // 0 (Sunday) to 6 (Saturday)
+                // Calculate days to subtract to get to Monday
+                $daysToMonday = ($dayOfWeek == 0) ? 6 : ($dayOfWeek - 1);
+                $weekStartTimestamp = $logDate - ($daysToMonday * 86400); // Subtract days in seconds
+                $weekStart = date('Y-m-d', $weekStartTimestamp);
+                
+                // Week end is 6 days after week start
+                $weekEndTimestamp = $weekStartTimestamp + (6 * 86400);
+                $weekEnd = date('Y-m-d', $weekEndTimestamp);
                 
                 $this->output
                     ->set_content_type('application/json')
@@ -432,7 +496,9 @@ class Timelog extends AdminController
                         'success' => true,
                         'message' => _l('timelog_added_successfully'),
                         'insert_id' => $insertId,
-                        'week_start' => $weekStart
+                        'date' => $logDateFormatted,
+                        'week_start' => $weekStart,
+                        'week_end' => $weekEnd
                     ]));
             } else {
                 $this->output
@@ -555,6 +621,283 @@ class Timelog extends AdminController
                 'success' => false,
                 'message' => _l('invalid_request')
             ]);
+        }
+    }
+    
+    /**
+     * Get timelog data for editing
+     */
+    public function get_timelog()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+        
+        $timelog_id = $this->input->post('timelog_id');
+        
+        if (empty($timelog_id)) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['success' => false, 'message' => _l('timelog_id_required')]));
+            return;
+        }
+        
+        // Get timelog data
+        $this->db->select('
+            ' . db_prefix() . 'taskstimers.id,
+            ' . db_prefix() . 'taskstimers.task_id,
+            ' . db_prefix() . 'taskstimers.start_time,
+            ' . db_prefix() . 'taskstimers.end_time,
+            ' . db_prefix() . 'taskstimers.staff_id,
+            ' . db_prefix() . 'taskstimers.note,
+            ' . db_prefix() . 'taskstimers.bill_type,
+            ' . db_prefix() . 'tasks.rel_id as project_id,
+            ' . db_prefix() . 'tasks.name as task_name
+        ');
+        $this->db->from(db_prefix() . 'taskstimers');
+        $this->db->join(db_prefix() . 'tasks', db_prefix() . 'tasks.id = ' . db_prefix() . 'taskstimers.task_id', 'left');
+        $this->db->where(db_prefix() . 'taskstimers.id', $timelog_id);
+        $timelog = $this->db->get()->row();
+        
+        if (!$timelog) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['success' => false, 'message' => _l('timelog_not_found')]));
+            return;
+        }
+        
+        // Check permissions - user can edit their own timelogs or if they have edit permission
+        $can_edit = false;
+        if ($timelog->staff_id == get_staff_user_id()) {
+            $can_edit = true;
+        } elseif (staff_can('edit', 'timesheets') || is_admin()) {
+            $can_edit = true;
+        }
+        
+        if (!$can_edit) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['success' => false, 'message' => _l('access_denied')]));
+            return;
+        }
+        
+        // Calculate duration in hours
+        $duration = $timelog->end_time - $timelog->start_time;
+        $hours = floor($duration / 3600);
+        $minutes = floor(($duration % 3600) / 60);
+        $daily_log = sprintf('%02d:%02d', $hours, $minutes);
+        
+        // Format date
+        $date = date('Y-m-d', $timelog->start_time);
+        
+        // Check if it's a general log (task name starts with "General Log:")
+        $is_general_log = (strpos($timelog->task_name, 'General Log:') === 0);
+        $task_heading = '';
+        if ($is_general_log) {
+            $task_heading = str_replace('General Log: ', '', $timelog->task_name);
+        }
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => $timelog->id,
+                    'project_id' => $timelog->project_id,
+                    'task_id' => $timelog->task_id,
+                    'task_heading' => $task_heading,
+                    'is_general_log' => $is_general_log ? '1' : '0',
+                    'date' => $date,
+                    'staff_id' => $timelog->staff_id,
+                    'daily_log' => $daily_log,
+                    'billing_type' => $timelog->bill_type ?: 'billable',
+                    'notes' => $timelog->note ? strip_tags($timelog->note) : ''
+                ]
+            ]));
+    }
+    
+    /**
+     * Update timelog
+     */
+    public function update_timelog()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+        
+        try {
+            // Load necessary libraries and models
+            $this->load->library('form_validation');
+            $this->load->model('tasks_model');
+            
+            $timelog_id = $this->input->post('timelog_id');
+            
+            if (empty($timelog_id)) {
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'message' => _l('timelog_id_required')]));
+                return;
+            }
+            
+            // Get existing timelog
+            $this->db->where('id', $timelog_id);
+            $existing_timelog = $this->db->get(db_prefix() . 'taskstimers')->row();
+            
+            if (!$existing_timelog) {
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'message' => _l('timelog_not_found')]));
+                return;
+            }
+            
+            // Check permissions
+            $can_edit = false;
+            if ($existing_timelog->staff_id == get_staff_user_id()) {
+                $can_edit = true;
+            } elseif (staff_can('edit', 'timesheets') || is_admin()) {
+                $can_edit = true;
+            }
+            
+            if (!$can_edit) {
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'message' => _l('access_denied')]));
+                return;
+            }
+            
+            // Check if general log
+            $isGeneralLog = $this->input->post('is_general_log') == '1';
+            
+            // Validate required fields
+            $this->form_validation->set_rules('project_id', _l('project'), 'required|numeric');
+            
+            if ($isGeneralLog) {
+                $this->form_validation->set_rules('task_heading', _l('task_heading'), 'required');
+            } else {
+                $this->form_validation->set_rules('task_id', _l('tasks_feedback'), 'required|numeric');
+            }
+            
+            $this->form_validation->set_rules('date', _l('date'), 'required');
+            $this->form_validation->set_rules('staff_id', _l('user'), 'required|numeric');
+            $this->form_validation->set_rules('daily_log', _l('daily_log'), 'required|callback_validate_time_format');
+            
+            if ($this->form_validation->run() == false) {
+                $errors = [];
+                foreach ($this->form_validation->error_array() as $key => $error) {
+                    $errors[$key] = $error;
+                }
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'errors' => $errors, 'message' => _l('validation_error')]));
+                return;
+            }
+            
+            // Get form data
+            $projectId = $this->input->post('project_id');
+            $taskId = $this->input->post('task_id');
+            $taskHeading = $this->input->post('task_heading');
+            $date = $this->input->post('date');
+            $staffId = $this->input->post('staff_id');
+            $dailyLogTime = $this->input->post('daily_log');
+            $billingType = $this->input->post('billing_type') ?: 'billable';
+            $notes = $this->input->post('notes');
+            
+            // Convert time format (HH:MM) to decimal hours
+            $timeParts = explode(':', $dailyLogTime);
+            $hours = intval($timeParts[0]);
+            $minutes = intval($timeParts[1]);
+            $dailyLogHours = $hours + ($minutes / 60);
+            
+            // Parse date
+            $logDate = strtotime($date);
+            if ($logDate === false) {
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'message' => _l('invalid_date_format')]));
+                return;
+            }
+            
+            // Handle general log task creation/update
+            if ($isGeneralLog && !empty($taskHeading)) {
+                // Check if task already exists for this general log
+                $this->db->where('id', $existing_timelog->task_id);
+                $existing_task = $this->db->get(db_prefix() . 'tasks')->row();
+                
+                if ($existing_task && strpos($existing_task->name, 'General Log:') === 0) {
+                    // Update existing general log task
+                    $this->db->where('id', $existing_timelog->task_id);
+                    $this->db->update(db_prefix() . 'tasks', [
+                        'name' => 'General Log: ' . $taskHeading
+                    ]);
+                    $taskId = $existing_timelog->task_id;
+                } else {
+                    // Create new general log task (shouldn't happen, but handle it)
+                    $taskId = $this->tasks_model->add([
+                        'name' => 'General Log: ' . $taskHeading,
+                        'rel_type' => 'project',
+                        'rel_id' => $projectId,
+                        'status' => Tasks_model::STATUS_COMPLETE,
+                        'priority' => 2,
+                        'addedfrom' => get_staff_user_id(),
+                        'startdate' => date('Y-m-d', $logDate),
+                        'duedate' => date('Y-m-d', $logDate),
+                    ]);
+                }
+            }
+            
+            // Calculate start_time and end_time
+            $startHour = 9;
+            $startMinute = 0;
+            $startTime = mktime($startHour, $startMinute, 0, date('n', $logDate), date('j', $logDate), date('Y', $logDate));
+            $endTime = $startTime + ($dailyLogHours * 3600);
+            
+            // Prepare billing type
+            $billType = ($billingType == 'non_billable') ? 'non_billable' : 'billable';
+            
+            // Prepare note
+            $noteContent = !empty($notes) ? nl2br(e($notes)) : null;
+            
+            // Update timelog
+            $updateData = [
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'staff_id' => $staffId,
+                'task_id' => $taskId,
+                'note' => $noteContent,
+                'bill_type' => $billType,
+            ];
+            
+            $this->db->where('id', $timelog_id);
+            $this->db->update(db_prefix() . 'taskstimers', $updateData);
+            
+            if ($this->db->affected_rows() >= 0) {
+                $logDateFormatted = date('Y-m-d', $logDate);
+                $weekStart = date('Y-m-d', strtotime('monday this week', $logDate));
+                $weekEnd = date('Y-m-d', strtotime('sunday this week', $logDate));
+                
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'success' => true,
+                        'message' => _l('timelog_updated_successfully'),
+                        'date' => $logDateFormatted,
+                        'week_start' => $weekStart,
+                        'week_end' => $weekEnd
+                    ]));
+            } else {
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'message' => _l('error_updating_timelog')]));
+            }
+        } catch (Exception $e) {
+            log_message('error', 'Timelog update error: ' . $e->getMessage());
+            
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'success' => false,
+                    'message' => _l('error_updating_timelog') . ': ' . $e->getMessage()
+                ]));
         }
     }
 }
