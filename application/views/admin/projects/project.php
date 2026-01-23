@@ -188,7 +188,7 @@ if ($selected != '') {
                                             <?php foreach ($statuses as $status) { ?>
                                             <option
                                                 value="<?= e($status['id']); ?>"
-                                                <?php if (! isset($project) && $status['id'] == 2 || (isset($project) && $project->status == $status['id'])) {
+                                                <?php if (isset($project) && $project->status == $status['id']) {
                                                     echo 'selected';
                                                 } ?>><?= e($status['name']); ?>
                                             </option>
