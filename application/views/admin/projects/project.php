@@ -339,14 +339,32 @@ echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastn
                             </div>
                             <?php $rel_id_custom_field = (isset($project) ? $project->id : false); ?>
                             <?= render_custom_fields('projects', $rel_id_custom_field); ?>
-                            <p class="bold">
-                                <?= _l('project_description'); ?>
-                            </p>
+                            <div class="form-group">
+                                <div class="tw-flex tw-items-center tw-justify-between tw-mb-2">
+                                    <label class="bold tw-mb-0" style="margin-bottom: 0;">
+                                        <?= _l('project_description'); ?>
+                                    </label>
+                                    <button type="button" id="attach-files-btn" class="btn btn-default btn-sm" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+                                            <path d="M16.5 6v11.5c0 3.31-2.69 6-6 6s-6-2.69-6-6V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v12.5c0 .55-.45 1-1 1s-1-.45-1-1V6H9v11.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-3.31-2.69-6-6-6S2 1.69 2 5v12.5c0 4.42 3.58 8 8 8s8-3.58 8-8V6h-1.5z" stroke="#6B7280" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M16.5 6v11.5c0 3.31-2.69 6-6 6s-6-2.69-6-6V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v12.5c0 .55-.45 1-1 1s-1-.45-1-1V6H9v11.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-3.31-2.69-6-6-6S2 1.69 2 5v12.5c0 4.42 3.58 8 8 8s8-3.58 8-8V6h-1.5z" stroke="#D97706" stroke-width="0.8" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                                        </svg>
+                                        <span>Attach Files</span>
+                                    </button>
+                                </div>
+                            </div>
                             <?php $contents = '';
 if (isset($project)) {
     $contents = $project->description;
 } ?>
                             <?= render_textarea('description', '', $contents, [], [], '', 'tinymce'); ?>
+                            
+                            <!-- Hidden file input for attachments -->
+                            <input type="file" 
+                                   id="project-description-file-input" 
+                                   style="display: none;" 
+                                   multiple 
+                                   accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
 
                             <?php if (isset($estimate)) {?>
                             <hr class="hr-panel-separator" />
@@ -994,6 +1012,255 @@ foreach ($options as $option) { ?>
         
         // Always return false to prevent form submission
         return false;
+    }
+    
+    // Handle "Attach Files" button click
+    $('#attach-files-btn').on('click', function() {
+        $('#project-description-file-input').click();
+    });
+    
+    // Handle file selection and upload
+    $('#project-description-file-input').on('change', function(e) {
+        var files = this.files;
+        if (files.length === 0) {
+            return;
+        }
+        
+        // Disable the attach button while uploading
+        var $attachBtn = $('#attach-files-btn');
+        var originalText = $attachBtn.html();
+        $attachBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+        
+        var uploadPromises = [];
+        var successCount = 0;
+        var errorCount = 0;
+        var totalFiles = files.length;
+        
+        // Upload each file
+        for (var i = 0; i < files.length; i++) {
+            (function(file, index) {
+                var promise = uploadFileToDescription(file, function(success) {
+                    if (success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                    
+                    // Check if all uploads are done
+                    if (successCount + errorCount === totalFiles) {
+                        // Re-enable button
+                        $attachBtn.prop('disabled', false).html(originalText);
+                        
+                        // Show summary
+                        if (errorCount > 0) {
+                            alert_float('warning', successCount + ' file(s) uploaded, ' + errorCount + ' failed');
+                        } else if (successCount > 0) {
+                            // Success message already shown per file
+                        }
+                    }
+                });
+                uploadPromises.push(promise);
+            })(files[i], i);
+        }
+        
+        // Reset input
+        $(this).val('');
+    });
+    
+    function uploadFileToDescription(file, callback) {
+        // Validate file type
+        var allowedTypes = ['image/', 'video/', 'application/pdf', 'application/msword', 
+                          'application/vnd.openxmlformats-officedocument', 'text/', 'application/zip', 'application/x-rar-compressed'];
+        var isAllowed = false;
+        for (var j = 0; j < allowedTypes.length; j++) {
+            if (file.type.indexOf(allowedTypes[j]) === 0) {
+                isAllowed = true;
+                break;
+            }
+        }
+        
+        // Also check by extension
+        var fileName = file.name.toLowerCase();
+        var allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.zip', '.rar', '.mp4', '.avi', '.mov'];
+        var hasAllowedExtension = allowedExtensions.some(function(ext) {
+            return fileName.endsWith(ext);
+        });
+        
+        if (!isAllowed && !hasAllowedExtension) {
+            var errorMsg = 'File type not allowed: ' + file.name;
+            alert_float('danger', errorMsg);
+            if (callback) callback(false);
+            return $.Deferred().reject(errorMsg).promise();
+        }
+        
+        // Create FormData
+        var formData = new FormData();
+        formData.append('file', file);
+        
+        // Get CSRF token - try multiple methods for reliability
+        var csrfTokenName = null;
+        var csrfTokenHash = null;
+        
+        // Method 1: Get from form hidden input (CodeIgniter form_open adds this automatically)
+        var $csrfInput = $('#project_form').find('input[type="hidden"]').filter(function() {
+            return this.name && this.name.toLowerCase().indexOf('csrf') !== -1;
+        });
+        if ($csrfInput.length > 0) {
+            csrfTokenName = $csrfInput.attr('name');
+            csrfTokenHash = $csrfInput.val();
+        }
+        
+        // Method 2: Try global csrfData variable (set by csrf_jquery_token())
+        if ((!csrfTokenName || !csrfTokenHash) && typeof window.csrfData !== 'undefined' && window.csrfData) {
+            if (window.csrfData.token_name && window.csrfData.hash) {
+                csrfTokenName = window.csrfData.token_name;
+                csrfTokenHash = window.csrfData.hash;
+            } else if (window.csrfData.formatted && typeof window.csrfData.formatted === 'object') {
+                // Extract from formatted object
+                var keys = Object.keys(window.csrfData.formatted);
+                if (keys.length > 0) {
+                    csrfTokenName = keys[0];
+                    csrfTokenHash = window.csrfData.formatted[keys[0]];
+                }
+            }
+        }
+        
+        // Method 3: Try global csrfData without window prefix (some setups)
+        if ((!csrfTokenName || !csrfTokenHash) && typeof csrfData !== 'undefined' && csrfData) {
+            if (csrfData.token_name && csrfData.hash) {
+                csrfTokenName = csrfData.token_name;
+                csrfTokenHash = csrfData.hash;
+            } else if (csrfData.formatted && typeof csrfData.formatted === 'object') {
+                var keys = Object.keys(csrfData.formatted);
+                if (keys.length > 0) {
+                    csrfTokenName = keys[0];
+                    csrfTokenHash = csrfData.formatted[keys[0]];
+                }
+            }
+        }
+        
+        // Add CSRF token to FormData if we have it
+        if (csrfTokenName && csrfTokenHash) {
+            formData.append(csrfTokenName, csrfTokenHash);
+            console.log('CSRF token added:', csrfTokenName);
+        } else {
+            console.error('CSRF token not found. Available methods:', {
+                formInput: $csrfInput.length,
+                windowCsrfData: typeof window.csrfData,
+                csrfData: typeof csrfData
+            });
+            alert_float('danger', 'CSRF token missing. Please refresh the page and try again.');
+            if (callback) callback(false);
+            return $.Deferred().reject('CSRF token missing').promise();
+        }
+        
+        // Return promise for upload
+        return $.ajax({
+            url: admin_url + 'misc/upload_media_file',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                // Handle both string and object responses
+                if (typeof response === 'string') {
+                    try {
+                        response = JSON.parse(response);
+                    } catch(e) {
+                        console.error('Failed to parse response:', response);
+                        alert_float('danger', 'Invalid server response for: ' + file.name);
+                        if (callback) callback(false);
+                        return;
+                    }
+                }
+                
+                if (response && response.success && response.url) {
+                    // Insert into TinyMCE editor
+                    var editor = tinymce.get('description');
+                    if (editor) {
+                        // Determine if it's an image
+                        if (file.type.indexOf('image/') === 0) {
+                            // Insert as image
+                            editor.insertContent('<img src="' + response.url + '" alt="' + file.name + '" style="max-width: 100%; height: auto;" />');
+                        } else {
+                            // Insert as link
+                            editor.insertContent('<p><a href="' + response.url + '" target="_blank">' + file.name + '</a></p>');
+                        }
+                    } else {
+                        // Fallback: append to textarea if editor not available
+                        var $textarea = $('#description');
+                        var currentContent = $textarea.val();
+                        if (file.type.indexOf('image/') === 0) {
+                            $textarea.val(currentContent + '\n<img src="' + response.url + '" alt="' + file.name + '" />');
+                        } else {
+                            $textarea.val(currentContent + '\n<a href="' + response.url + '">' + file.name + '</a>');
+                        }
+                    }
+                    if (callback) callback(true);
+                } else {
+                    var errorMsg = 'Upload failed: ' + file.name;
+                    if (response && response.message) {
+                        errorMsg = file.name + ': ' + response.message;
+                    }
+                    alert_float('danger', errorMsg);
+                    if (callback) callback(false);
+                }
+            },
+            error: function(xhr, status, error) {
+                var errorMsg = 'Error uploading file: ' + file.name;
+                console.error('Upload error for', file.name, ':', status, error, xhr);
+                
+                // Handle 419 Page Expired (CSRF token issue)
+                if (xhr.status === 419) {
+                    errorMsg = 'Page expired (419). Please refresh the page and try again.';
+                    alert_float('warning', errorMsg);
+                    // Try to refresh CSRF token from form for next attempt
+                    var $csrfInput = $('#project_form').find('input[type="hidden"]').filter(function() {
+                        return this.name && this.name.toLowerCase().indexOf('csrf') !== -1;
+                    });
+                    if ($csrfInput.length > 0 && typeof window.csrfData !== 'undefined') {
+                        window.csrfData.hash = $csrfInput.val();
+                        if (window.csrfData.formatted) {
+                            var tokenName = $csrfInput.attr('name');
+                            window.csrfData.formatted[tokenName] = $csrfInput.val();
+                        }
+                        if (window.csrfData.token_name) {
+                            window.csrfData.hash = $csrfInput.val();
+                        }
+                    }
+                    if (callback) callback(false);
+                    return;
+                }
+                
+                try {
+                    if (xhr.responseText) {
+                        var errorResponse = typeof xhr.responseText === 'string' ? JSON.parse(xhr.responseText) : xhr.responseText;
+                        if (errorResponse && errorResponse.message) {
+                            errorMsg = file.name + ': ' + errorResponse.message;
+                        } else if (typeof xhr.responseText === 'string' && xhr.responseText.length < 500 && !xhr.responseText.includes('<html')) {
+                            errorMsg = file.name + ': ' + xhr.responseText;
+                        }
+                    }
+                } catch(e) {
+                    console.error('Error parsing response:', e, xhr.responseText);
+                    if (xhr.status === 404) {
+                        errorMsg = file.name + ': Upload endpoint not found (404). Please check the server configuration.';
+                    } else if (xhr.status === 500) {
+                        errorMsg = file.name + ': Server error (500). Please check server logs.';
+                    } else if (xhr.status === 403) {
+                        errorMsg = file.name + ': Permission denied (403). Please check file permissions.';
+                    } else if (xhr.status === 0) {
+                        errorMsg = file.name + ': Network error. Please check your connection.';
+                    }
+                }
+                alert_float('danger', errorMsg);
+                if (callback) callback(false);
+            }
+        });
     }
 </script>
 <?php } ?>

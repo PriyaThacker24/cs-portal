@@ -690,4 +690,127 @@ class Misc extends AdminController
         $this->db->query('ALTER TABLE `' . db_prefix() . 'leads` CHANGE `email` `email` VARCHAR(100) CHARACTER SET ' . $charset . ' COLLATE ' . $collat . ' NULL DEFAULT NULL;');
         add_option('_232_upgrade_db_queries_performed', '1', 0);
     }
+
+    /**
+     * Upload media file for project description
+     */
+    public function upload_media_file()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        // Check permissions
+        if (!staff_can('edit', 'projects') && !staff_can('create', 'projects')) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('access_denied')
+            ]);
+            return;
+        }
+
+        try {
+            $media_folder = $this->app->get_media_folder();
+            if (empty($media_folder)) {
+                $media_folder = 'uploads/media';
+            }
+            
+            $mediaPath = FCPATH . $media_folder;
+
+            // Create media folder if it doesn't exist
+            if (!is_dir($mediaPath)) {
+                if (!@mkdir($mediaPath, 0755, true)) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Failed to create media folder. Please check directory permissions.'
+                    ]);
+                    return;
+                }
+            }
+
+            // Create public subfolder if it doesn't exist
+            $publicPath = $mediaPath . '/public';
+            if (!is_dir($publicPath)) {
+                if (!@mkdir($publicPath, 0755, true)) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Failed to create public folder. Please check directory permissions.'
+                    ]);
+                    return;
+                }
+            }
+
+            // Set upload path to public folder (without trailing slash for helper functions)
+            $uploadPath = rtrim($publicPath, '/');
+
+            if (isset($_FILES['file']) && !empty($_FILES['file']['name'])) {
+                $this->load->helper(['upload', 'files']);
+                
+                // Check for upload errors
+                $uploadError = _perfex_upload_error($_FILES['file']['error']);
+                if ($uploadError) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => $uploadError
+                    ]);
+                    return;
+                }
+
+                // Validate file extension
+                if (!_upload_extension_allowed($_FILES['file']['name'])) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => _l('file_upload_extension_not_allowed') ?: 'File extension not allowed'
+                    ]);
+                    return;
+                }
+
+                // Create upload path if it doesn't exist
+                _maybe_create_upload_path($uploadPath);
+
+                // Generate unique filename
+                $originalName = $_FILES['file']['name'];
+                $filename = unique_filename($uploadPath, $originalName);
+                $targetFile = $uploadPath . '/' . $filename;
+
+                if (@move_uploaded_file($_FILES['file']['tmp_name'], $targetFile)) {
+                    // Ensure proper URL format
+                    $fileUrl = site_url($media_folder . '/public/' . $filename);
+                    echo json_encode([
+                        'success' => true,
+                        'url' => $fileUrl,
+                        'filename' => $filename
+                    ]);
+                } else {
+                    $error = error_get_last();
+                    $errorMsg = 'File upload failed';
+                    if ($error && isset($error['message'])) {
+                        $errorMsg .= ': ' . $error['message'];
+                    }
+                    if (!is_writable($uploadPath)) {
+                        $errorMsg = 'Upload directory is not writable. Please check permissions.';
+                    }
+                    echo json_encode([
+                        'success' => false,
+                        'message' => $errorMsg
+                    ]);
+                }
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No file selected'
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Upload error: ' . $e->getMessage()
+            ]);
+        } catch (Error $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Upload error: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
