@@ -21,10 +21,10 @@
                             
                            
                         </div>
-                         <!-- Date Range Navigation -->
-                         <div class="timelog-header-center">
+                        <!-- Date Range Navigation -->
+                        <div class="timelog-header-center">
                             <div class="timelog-date-nav">
-                                <button type="button" class="btn btn-default btn-date-nav" id="btn_prev_range" title="<?= _l('previous'); ?>">
+                                <button type="button" class="btn btn-default btn-date-nav" id="btn_prev_week" title="<?= _l('previous'); ?>">
                                     <i class="fa fa-chevron-left"></i>
                                 </button>
                                 <button type="button" class="btn btn-default btn-date-display" id="btn_open_date_picker" title="<?= _l('select_date_range'); ?>">
@@ -34,7 +34,7 @@
                                         (<?= _l('week'); ?> <?= date('W', strtotime($week_start)); ?>)
                                     </span>
                                 </button>
-                                <button type="button" class="btn btn-default btn-date-nav" id="btn_next_range" title="<?= _l('next'); ?>">
+                                <button type="button" class="btn btn-default btn-date-nav" id="btn_next_week" title="<?= _l('next'); ?>">
                                     <i class="fa fa-chevron-right"></i>
                                 </button>
                             </div>

@@ -200,9 +200,15 @@ var TimelogModule = (function() {
         var day = currentDate.getDay();
         var diff = currentDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
         var mondayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), diff);
+        var sundayDate = new Date(mondayDate);
+        sundayDate.setDate(mondayDate.getDate() + 6);
 
+        // Update both start and end of the week
         currentWeekStart = formatDate(mondayDate);
+        var currentWeekEnd = formatDate(sundayDate);
+
         $('#current_week_start').val(currentWeekStart);
+        $('#current_week_end').val(currentWeekEnd);
         
         // Load new week data (server will return correct week number)
         loadTimelogs();
@@ -472,12 +478,21 @@ var TimelogModule = (function() {
     }
 
     /**
-     * Update week display
+     * Update week display in the header button
      */
     function updateWeekDisplay(weekStart, weekEnd, weekNumber) {
         var startDate = formatDateDisplay(weekStart);
         var endDate = formatDateDisplay(weekEnd);
-        $('#week_display').text(startDate + ' - ' + endDate + ' (' + (typeof _l !== 'undefined' ? _l('week') : 'Week') + ' ' + weekNumber + ')');
+        var text = startDate + ' - ' + endDate;
+
+        if (weekNumber) {
+            text += ' (' + (typeof _l !== 'undefined' ? _l('week') : 'Week') + ' ' + weekNumber + ')';
+        }
+
+        // Old ID (if ever used elsewhere)
+        $('#week_display').text(text);
+        // Actual element in the view
+        $('#date_display').text(text);
     }
 
     /**
@@ -1208,7 +1223,17 @@ var TimelogModule = (function() {
                     // Show errors below fields
                     if (response.errors) {
                         $.each(response.errors, function(field, error) {
-                            showFieldError('timelog_' + field, error);
+                            // Map backend field names to form input IDs
+                            var fieldIdMap = {
+                                project_id: 'timelog_project',
+                                task_id: 'timelog_task',
+                                task_heading: 'timelog_task_heading',
+                                date: 'timelog_date',
+                                staff_id: 'timelog_user',
+                                daily_log: 'timelog_daily_log'
+                            };
+                            var targetId = fieldIdMap[field] || ('timelog_' + field);
+                            showFieldError(targetId, error);
                         });
                     } else if (response.message) {
                         // Show general error message if no specific field errors
@@ -1485,6 +1510,10 @@ var TimelogModule = (function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
+                    // Notify user
+                    if (typeof alert_float !== 'undefined') {
+                        alert_float('success', response.message || (typeof _l !== 'undefined' ? _l('timelog_added_successfully') : 'Time log added successfully'));
+                    }
                     $submitBtn.prop('disabled', false).data('submitting', false).html(typeof _l !== 'undefined' ? _l('update') : 'Update');
                     
                     // Close drawer
@@ -1515,7 +1544,17 @@ var TimelogModule = (function() {
                 } else {
                     if (response.errors) {
                         $.each(response.errors, function(field, error) {
-                            showFieldError('timelog_' + field, error);
+                            // Map backend field names to form input IDs
+                            var fieldIdMap = {
+                                project_id: 'timelog_project',
+                                task_id: 'timelog_task',
+                                task_heading: 'timelog_task_heading',
+                                date: 'timelog_date',
+                                staff_id: 'timelog_user',
+                                daily_log: 'timelog_daily_log'
+                            };
+                            var targetId = fieldIdMap[field] || ('timelog_' + field);
+                            showFieldError(targetId, error);
                         });
                     } else if (response.message) {
                         showFieldError('timelog_project', response.message);

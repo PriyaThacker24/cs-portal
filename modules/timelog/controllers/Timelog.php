@@ -458,7 +458,9 @@ class Timelog extends AdminController
             // Prepare note
             $noteContent = !empty($notes) ? nl2br(e($notes)) : null;
             
-            // Insert into tbltaskstimers
+            // Build insert data using existing columns only to avoid SQL errors
+            $columns = $this->db->list_fields(db_prefix() . 'taskstimers');
+            
             $insertData = [
                 'start_time'  => $startTime,
                 'end_time'    => $endTime,
@@ -466,9 +468,15 @@ class Timelog extends AdminController
                 'task_id'     => $taskId, // Created task_id for general log, existing task_id for regular log
                 'hourly_rate' => $hourlyRate,
                 'note'        => $noteContent,
-                'bill_type'   => $billType,
-                'status'      => 'pending',
             ];
+            
+            if (in_array('bill_type', $columns)) {
+                $insertData['bill_type'] = $billType;
+            }
+            
+            if (in_array('status', $columns)) {
+                $insertData['status'] = 'pending';
+            }
             
             $this->db->insert(db_prefix() . 'taskstimers', $insertData);
             
@@ -501,9 +509,16 @@ class Timelog extends AdminController
                         'week_end' => $weekEnd
                     ]));
             } else {
+                // If insert failed, include database error message for easier debugging
+                $dbError = $this->db->error();
+                $errorMessage = _l('error_adding_timelog');
+                if (!empty($dbError['message'])) {
+                    $errorMessage .= ': ' . $dbError['message'];
+                }
+                
                 $this->output
                     ->set_content_type('application/json')
-                    ->set_output(json_encode(['success' => false, 'message' => _l('error_adding_timelog')]));
+                    ->set_output(json_encode(['success' => false, 'message' => $errorMessage]));
             }
         } catch (Exception $e) {
             // Log the error for debugging
