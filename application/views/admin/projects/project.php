@@ -111,14 +111,57 @@ if ($selected != '') {
                                         } else {
                                             // Find Nirav Mehta in staff array as default only if no owner is set
                                             foreach ($staff as $staff_member) {
-                                                $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
+                                                $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
+                                                $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
+                                                $staff_id   = is_array($staff_member) ? $staff_member['staffid'] : $staff_member->staffid;
+
+                                                $full_name = trim($first_name . ' ' . $last_name);
                                                 if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
-                                                    $owner_selected = $staff_member['staffid'];
+                                                    $owner_selected = $staff_id;
                                                     break;
                                                 }
                                             }
                                         }
-                                        echo render_select('owner_id', $staff, ['staffid', ['firstname', 'lastname']], '', $owner_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
+
+                                        // Restrict OWNER dropdown to specific staff only
+                                        $allowed_owner_names = ['Nirav Mehta', 'Adarsh Verma', 'Kakshak Kalaria'];
+                                        $owner_staff         = [];
+
+                                        foreach ($staff as $staff_member) {
+                                            $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
+                                            $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
+                                            $full_name  = trim($first_name . ' ' . $last_name);
+                                            foreach ($allowed_owner_names as $allowed_name) {
+                                                if (stripos($full_name, $allowed_name) !== false) {
+                                                    $owner_staff[] = $staff_member;
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        // Ensure the currently selected owner is still available in edit mode
+                                        if (!empty($owner_selected)) {
+                                            $owner_exists_in_list = false;
+                                            foreach ($owner_staff as $owner_staff_member) {
+                                                $staff_id = is_array($owner_staff_member) ? $owner_staff_member['staffid'] : $owner_staff_member->staffid;
+                                                if ($staff_id == $owner_selected) {
+                                                    $owner_exists_in_list = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!$owner_exists_in_list) {
+                                                foreach ($staff as $staff_member) {
+                                                    $staff_id = is_array($staff_member) ? $staff_member['staffid'] : $staff_member->staffid;
+                                                    if ($staff_id == $owner_selected) {
+                                                        $owner_staff[] = $staff_member;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        echo render_select('owner_id', $owner_staff, ['staffid', ['firstname', 'lastname']], '', $owner_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
                                         ?>
                                     </div>
                                 </div>
@@ -135,14 +178,82 @@ if ($selected != '') {
                                         } else {
                                             // Find Nirav Mehta in staff array as default only if no manager is set
                                             foreach ($staff as $staff_member) {
-                                                $full_name = trim($staff_member['firstname'] . ' ' . $staff_member['lastname']);
+                                                $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
+                                                $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
+                                                $staff_id   = is_array($staff_member) ? $staff_member['staffid'] : $staff_member->staffid;
+
+                                                $full_name = trim($first_name . ' ' . $last_name);
                                                 if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
-                                                    $manager_selected = $staff_member['staffid'];
+                                                    $manager_selected = $staff_id;
                                                     break;
                                                 }
                                             }
                                         }
-                                        echo render_select('manager_id', $staff, ['staffid', ['firstname', 'lastname']], '', $manager_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
+
+                                        // Remove specific names from MANAGER dropdown
+                                        // Be deliberately generous with matching to ensure these never appear:
+                                        // - Jaimin/Jaymin Patel
+                                        // - Parth (any last name containing "sangh")
+                                        // - PM Designer (or similar)
+                                        $manager_staff = [];
+
+                                        foreach ($staff as $staff_member) {
+                                            $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
+                                            $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
+                                            $full_name  = trim($first_name . ' ' . $last_name);
+                                            $name_lc    = mb_strtolower($full_name);
+
+                                            $exclude_staff = false;
+
+                                            // Match Jaimin/Jaymin Patel
+                                            if (preg_match('/ja[yi]min\s+patel/i', $full_name)) {
+                                                $exclude_staff = true;
+                                            }
+
+                                            // Match any "Parth" with a Sangh* last name variant
+                                            if (!$exclude_staff && strpos($name_lc, 'parth') !== false && preg_match('/sangh/i', $full_name)) {
+                                                $exclude_staff = true;
+                                            }
+
+                                            // Match any PM Designer variants
+                                            if (
+                                                !$exclude_staff
+                                                && (
+                                                    strpos($name_lc, 'pm designer') !== false
+                                                    || (strpos($name_lc, 'pm') === 0 && strpos($name_lc, 'designer') !== false)
+                                                )
+                                            ) {
+                                                $exclude_staff = true;
+                                            }
+
+                                            if (!$exclude_staff) {
+                                                $manager_staff[] = $staff_member;
+                                            }
+                                        }
+
+                                        // Ensure the currently selected manager is still available in edit mode
+                                        if (!empty($manager_selected)) {
+                                            $manager_exists_in_list = false;
+                                            foreach ($manager_staff as $manager_staff_member) {
+                                                $staff_id = is_array($manager_staff_member) ? $manager_staff_member['staffid'] : $manager_staff_member->staffid;
+                                                if ($staff_id == $manager_selected) {
+                                                    $manager_exists_in_list = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!$manager_exists_in_list) {
+                                                foreach ($staff as $staff_member) {
+                                                    $staff_id = is_array($staff_member) ? $staff_member['staffid'] : $staff_member->staffid;
+                                                    if ($staff_id == $manager_selected) {
+                                                        $manager_staff[] = $staff_member;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        echo render_select('manager_id', $manager_staff, ['staffid', ['firstname', 'lastname']], '', $manager_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
                                         ?>
                                     </div>
                                 </div>
