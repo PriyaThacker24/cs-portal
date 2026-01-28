@@ -1102,13 +1102,20 @@ var TimelogDatePicker = (function() {
                     classes.push('weekend');
                 }
                 
-                // Only highlight today's date, remove all range/selection highlighting
+                // Only highlight today's date, and only in the calendar
+                // that represents the current month (to avoid showing
+                // a dark highlight on the same day number in the next month)
                 var today = new Date();
                 today.setHours(0, 0, 0, 0);
                 var dateCopy2 = new Date(dateCopy);
                 dateCopy2.setHours(0, 0, 0, 0);
                 
-                if (dateCopy2.getTime() === today.getTime()) {
+                var isToday =
+                    dateCopy2.getTime() === today.getTime() &&
+                    monthDate.getFullYear() === today.getFullYear() &&
+                    monthDate.getMonth() === today.getMonth();
+
+                if (isToday) {
                     classes.push('today');
                 }
                 
