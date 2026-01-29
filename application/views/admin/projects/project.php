@@ -104,17 +104,16 @@ if ($selected != '') {
                                             for="owner_id"><?= _l('owner'); ?></label>
                                         <div class="clearfix"></div>
                                         <?php
-                                        // Get owner_id from project if it exists and is not empty
+                                        // Get owner_id from project: use saved value when editing, no default when adding
                                         $owner_selected = '';
-                                        if (isset($project) && property_exists($project, 'owner_id') && !empty($project->owner_id) && $project->owner_id > 0) {
+                                        if (isset($project) && property_exists($project, 'owner_id') && $project->owner_id !== null && $project->owner_id !== '' && $project->owner_id > 0) {
                                             $owner_selected = $project->owner_id;
-                                        } else {
-                                            // Find Nirav Mehta in staff array as default only if no owner is set
+                                        } elseif (isset($project)) {
+                                            // Editing existing project but no owner set: default to Nirav Mehta only for backward compatibility
                                             foreach ($staff as $staff_member) {
                                                 $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
                                                 $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
                                                 $staff_id   = is_array($staff_member) ? $staff_member['staffid'] : $staff_member->staffid;
-
                                                 $full_name = trim($first_name . ' ' . $last_name);
                                                 if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
                                                     $owner_selected = $staff_id;
@@ -163,6 +162,7 @@ if ($selected != '') {
 
                                         echo render_select('owner_id', $owner_staff, ['staffid', ['firstname', 'lastname']], '', $owner_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
                                         ?>
+                                        <input type="hidden" name="owner_id" id="project_owner_id_submit" value="<?= e($owner_selected); ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -171,17 +171,16 @@ if ($selected != '') {
                                             for="manager_id">Manager</label>
                                         <div class="clearfix"></div>
                                         <?php
-                                        // Get manager_id from project if it exists and is not empty
+                                        // Get manager_id from project: use saved value when editing, no default when adding
                                         $manager_selected = '';
-                                        if (isset($project) && property_exists($project, 'manager_id') && !empty($project->manager_id) && $project->manager_id > 0) {
+                                        if (isset($project) && property_exists($project, 'manager_id') && $project->manager_id !== null && $project->manager_id !== '' && $project->manager_id > 0) {
                                             $manager_selected = $project->manager_id;
-                                        } else {
-                                            // Find Nirav Mehta in staff array as default only if no manager is set
+                                        } elseif (isset($project)) {
+                                            // Editing existing project but no manager set: default to Nirav Mehta only for backward compatibility
                                             foreach ($staff as $staff_member) {
                                                 $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
                                                 $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
                                                 $staff_id   = is_array($staff_member) ? $staff_member['staffid'] : $staff_member->staffid;
-
                                                 $full_name = trim($first_name . ' ' . $last_name);
                                                 if (stripos($full_name, 'Nirav Mehta') !== false || stripos($full_name, 'Nirav Maheta') !== false) {
                                                     $manager_selected = $staff_id;
@@ -255,6 +254,7 @@ if ($selected != '') {
 
                                         echo render_select('manager_id', $manager_staff, ['staffid', ['firstname', 'lastname']], '', $manager_selected, ['data-width' => '100%', 'data-none-selected-text' => _l('dropdown_non_selected_tex'), 'data-live-search' => 'true', 'data-size' => '10'], [], '', '', true);
                                         ?>
+                                        <input type="hidden" name="manager_id" id="project_manager_id_submit" value="<?= e($manager_selected); ?>">
                                     </div>
                                 </div>
                             </div>
@@ -716,6 +716,29 @@ foreach ($options as $option) { ?>
             $clientSelect = $('#clientid'),
             $contact_notification_select = $('#contact_notification');
 
+        // Owner and Manager: use hidden inputs for submit so selected value is always sent (selectpicker often does not sync to native select)
+        // Run after selectpicker is initialized (next tick)
+        setTimeout(function() {
+            var $ownerSelect = $('select#owner_id');
+            var $managerSelect = $('select#manager_id');
+            if ($ownerSelect.length) {
+                $ownerSelect.removeAttr('name');
+                $ownerSelect.on('changed.bs.select', function() {
+                    var v = $(this).selectpicker('val');
+                    v = (v != null && Array.isArray(v)) ? (v[0] || '') : (v || '');
+                    $('#project_owner_id_submit').val(v);
+                });
+            }
+            if ($managerSelect.length) {
+                $managerSelect.removeAttr('name');
+                $managerSelect.on('changed.bs.select', function() {
+                    var v = $(this).selectpicker('val');
+                    v = (v != null && Array.isArray(v)) ? (v[0] || '') : (v || '');
+                    $('#project_manager_id_submit').val(v);
+                });
+            }
+        }, 0);
+
         init_ajax_search('contacts', $contacts_select, {
             rel_id: $contacts_select.val(),
             type: 'contacts',
@@ -891,6 +914,21 @@ foreach ($options as $option) { ?>
         });
 
         $('form').on('submit', function() {
+            // Ensure only hidden inputs are used for Owner/Manager (remove name from selects so they are not submitted)
+            var $ownerSelect = $('select#owner_id');
+            var $managerSelect = $('select#manager_id');
+            $ownerSelect.removeAttr('name');
+            $managerSelect.removeAttr('name');
+            // Copy current Owner/Manager from selectpicker (or native select) into hidden inputs
+            function getSelectValue($sel) {
+                if (!$sel.length) return '';
+                var v = (typeof $sel.selectpicker === 'function') ? $sel.selectpicker('val') : null;
+                if (v != null) return (Array.isArray(v) ? (v[0] || '') : v);
+                var opt = $sel.find('option:selected');
+                return (opt.length && opt.val()) ? opt.val() : '';
+            }
+            $('#project_owner_id_submit').val(getSelectValue($ownerSelect));
+            $('#project_manager_id_submit').val(getSelectValue($managerSelect));
             $('select[name="billing_type"]').prop('disabled', false);
             $('#available_features,#available_features option').prop('disabled', false);
             $('input[name="project_rate_per_hour"]').prop('disabled', false);

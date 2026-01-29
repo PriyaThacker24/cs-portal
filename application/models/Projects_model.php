@@ -684,6 +684,21 @@ class Projects_model extends App_Model
         return false;
     }
 
+    /**
+     * Ensure owner_id and manager_id columns exist on tblprojects (add if missing).
+     * Allows saving Owner/Manager even if migration 342 has not been run.
+     */
+    private function ensure_project_owner_manager_columns()
+    {
+        $table = db_prefix() . 'projects';
+        if (! $this->db->field_exists('owner_id', $table)) {
+            $this->db->query('ALTER TABLE `' . $table . '` ADD `owner_id` INT(11) NULL DEFAULT NULL AFTER `addedfrom`');
+        }
+        if (! $this->db->field_exists('manager_id', $table)) {
+            $this->db->query('ALTER TABLE `' . $table . '` ADD `manager_id` INT(11) NULL DEFAULT NULL AFTER `owner_id`');
+        }
+    }
+
     public function add($data)
     {
         if (isset($data['notify_project_members_status_change'])) {
@@ -769,6 +784,9 @@ class Projects_model extends App_Model
         }
 
         $data = hooks()->apply_filters('before_add_project', $data);
+
+        // Ensure owner_id and manager_id columns exist (add if missing, e.g. if migration 342 not run)
+        $this->ensure_project_owner_manager_columns();
 
         // Check if owner_id and manager_id columns exist and normalize values before saving
         try {
@@ -1097,6 +1115,9 @@ class Projects_model extends App_Model
         }
 
         $data = hooks()->apply_filters('before_update_project', $data, $id);
+
+        // Ensure owner_id and manager_id columns exist (add if missing)
+        $this->ensure_project_owner_manager_columns();
 
         // Check if owner_id and manager_id columns exist before trying to save them
         // Also convert empty strings to NULL for proper database handling

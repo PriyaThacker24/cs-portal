@@ -991,8 +991,15 @@ function handle_staff_profile_image_upload($staff_id = '')
             _maybe_create_upload_path($path);
             $filename    = unique_filename($path, $_FILES['profile_image']['name']);
             $newFilePath = $path . '/' . $filename;
-            // Upload the file into the company uploads dir
-            if (move_uploaded_file($tmpFilePath, $newFilePath)) {
+            // Upload the file (support both HTTP uploads and temp files e.g. from pixelated image data)
+            $moved = move_uploaded_file($tmpFilePath, $newFilePath);
+            if (!$moved && file_exists($tmpFilePath)) {
+                $moved = copy($tmpFilePath, $newFilePath);
+                if ($moved) {
+                    @unlink($tmpFilePath);
+                }
+            }
+            if ($moved) {
                 $CI                       = & get_instance();
                 $config                   = [];
                 $config['image_library']  = 'gd2';

@@ -214,38 +214,36 @@ class Staff extends AdminController
         hooks()->do_action('edit_logged_in_staff_profile');
 
         if ($this->input->post()) {
-            // If client-side pixelated image was provided, convert it to a temporary file
+            // If pixelated image data (base64) was submitted, convert to temp file so upload helper can process it
             $pixelated = $this->input->post('pixelated_image_data', false);
             if (!empty($pixelated) && strpos($pixelated, 'data:image') === 0) {
-                $parts = explode(',', $pixelated);
+                $parts = explode(',', $pixelated, 2);
                 if (count($parts) === 2) {
-                    $meta = $parts[0]; // data:image/png;base64
+                    $meta = $parts[0];
                     $content = $parts[1];
-
-                    $metaParts = explode(';', $meta);
                     $mime = 'image/png';
-                    if (isset($metaParts[0]) && strpos($metaParts[0], ':') !== false) {
-                        $mime = substr($metaParts[0], strpos($metaParts[0], ':') + 1);
+                    if (preg_match('#data:([^;]+)#', $meta, $m)) {
+                        $mime = trim($m[1]);
                     }
-
                     $imageData = base64_decode($content);
                     if ($imageData !== false) {
                         $tmpFile = tempnam(sys_get_temp_dir(), 'staff_pix_');
-                        file_put_contents($tmpFile, $imageData);
-
-                        $_FILES['profile_image'] = [
-                            'name'     => 'profile_pixelated.png',
-                            'type'     => $mime,
-                            'tmp_name' => $tmpFile,
-                            'error'    => 0,
-                            'size'     => strlen($imageData),
-                        ];
+                        if ($tmpFile && file_put_contents($tmpFile, $imageData) !== false) {
+                            $_FILES['profile_image'] = [
+                                'name'     => 'profile_pixelated.png',
+                                'type'     => $mime,
+                                'tmp_name' => $tmpFile,
+                                'error'    => 0,
+                                'size'     => strlen($imageData),
+                            ];
+                        }
                     }
                 }
             }
 
             handle_staff_profile_image_upload();
             $data = $this->input->post();
+            unset($data['pixelated_image_data']);
             // Don't do XSS clean here.
             $data['email_signature'] = $this->input->post('email_signature', false);
             $data['email_signature'] = html_entity_decode($data['email_signature']);
@@ -263,6 +261,9 @@ class Staff extends AdminController
 
             redirect(admin_url('staff/edit_profile/' . get_staff_user_id()));
         }
+        // Prevent caching so after save+redirect the page shows the updated profile image
+        $this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        $this->output->set_header('Pragma: no-cache');
         $member = $this->staff_model->get(get_staff_user_id());
         $this->load->model('departments_model');
         $data['member']            = $member;

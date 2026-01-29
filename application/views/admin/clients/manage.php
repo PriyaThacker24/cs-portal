@@ -226,6 +226,14 @@ $table_data = hooks()->apply_filters('customers_table_columns', $table_data);
     </div>
 </div>
 <?php init_tail(); ?>
+
+<style>
+    /* Make the Customers page length dropdown (e.g. 25) narrower */
+    #clients_length select.form-control {
+        width: 56px !important;
+    }
+</style>
+
 <script>
     $(function() {
         var tAPI = initDataTable('.table-clients', admin_url + 'clients/table', [0], [0], {},

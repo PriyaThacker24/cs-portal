@@ -1,4 +1,4 @@
-<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+image.png<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <style>
     /* Pixelate profile image on Edit Profile page */
@@ -19,7 +19,7 @@
 
             <div class="panel_s">
                 <div class="panel-body">
-                    <?php if ($current_user->profile_image == null) { ?>
+                    <?php if ($member->profile_image == null) { ?>
                     <div class="form-group">
                         <label for="profile_image"
                             class="profile-image"><?= _l('staff_edit_profile_image'); ?></label>
@@ -28,11 +28,11 @@
                         <input type="hidden" name="pixelated_image_data" id="pixelated_image_data">
                     </div>
                     <?php } ?>
-                    <?php if ($current_user->profile_image != null) { ?>
+                    <?php if ($member->profile_image != null) { ?>
                     <div class="form-group">
                         <div class="row">
                             <div class="col-md-9">
-                                <?= staff_profile_image($current_user->staffid, ['img', 'img-responsive', 'staff-profile-image-thumb'], 'thumb'); ?>
+                                <?= staff_profile_image($member->staffid, ['img', 'img-responsive', 'staff-profile-image-thumb'], 'thumb'); ?>
                             </div>
                             <div class="col-md-3 text-right">
                                 <a
@@ -244,7 +244,7 @@
                     <div class="radio radio-primary">
                         <input type="radio" id="two_factor_auth_disabled" name="two_factor_auth" value="off"
                             class="custom-control-input"
-                            <?= ($current_user->two_factor_auth_enabled == 0) ? 'checked' : '' ?>>
+                            <?= ($member->two_factor_auth_enabled == 0) ? 'checked' : '' ?>>
                         <label class="custom-control-label"
                             for="two_factor_auth_disabled"><?= _l('two_factor_authentication_disabed'); ?></label>
                     </div>
@@ -252,7 +252,7 @@
                     <div class="radio radio-primary">
                         <input type="radio" id="two_factor_auth_enabled" name="two_factor_auth" value="email"
                             class="custom-control-input"
-                            <?= ($current_user->two_factor_auth_enabled == 1) ? 'checked' : '' ?>>
+                            <?= ($member->two_factor_auth_enabled == 1) ? 'checked' : '' ?>>
                         <label for="two_factor_auth_enabled">
                             <i class="fa-regular fa-circle-question" data-placement="right" data-toggle="tooltip"
                                 data-title="<?= _l('two_factor_authentication_info'); ?>"></i>
@@ -263,7 +263,7 @@
                     <div class="radio radio-primary">
                         <input type="radio" id="google_two_factor_auth_enabled" name="two_factor_auth" value="google"
                             class="custom-control-input"
-                            <?= ($current_user->two_factor_auth_enabled == 2) ? 'checked' : '' ?>>
+                            <?= ($member->two_factor_auth_enabled == 2) ? 'checked' : '' ?>>
                         <label class="custom-control-label"
                             for="google_two_factor_auth_enabled"><?= _l('enable_google_two_factor_authentication'); ?></label>
                     </div>
@@ -296,88 +296,56 @@
             var originalImage = new Image();
             var pixelCanvas = document.getElementById('pixelCanvas');
             var pixelCtx = pixelCanvas ? pixelCanvas.getContext('2d') : null;
-            var currentPixelFactor = 10; // 1 = clear, higher = more pixelated
+            var currentPixelFactor = 10;
             var selectedFile = null;
 
             function sliderValueToPixelFactor(v) {
                 v = parseInt(v, 10);
-                if (isNaN(v) || v < 0) {
-                    v = 0;
-                }
-                if (v <= 2) {
-                    // 0–2 => clear image (no pixelation)
-                    return 1;
-                }
-                // Map 3–100 to factor 2–50 (higher => more blur / larger blocks)
+                if (isNaN(v) || v < 0) { v = 0; }
+                if (v <= 2) { return 1; }
                 return 1 + Math.round(((v - 2) / 98) * 49);
             }
 
             function drawPixelatedImage() {
-                if (!pixelCtx || !originalImage.src) {
-                    return;
-                }
-
-                var maxWidth = 400;
-                var maxHeight = 400;
-                var width = originalImage.width;
-                var height = originalImage.height;
-
+                if (!pixelCtx || !originalImage.src) { return; }
+                var maxWidth = 400, maxHeight = 400;
+                var width = originalImage.width, height = originalImage.height;
                 var scale = Math.min(maxWidth / width, maxHeight / height, 1);
-                var drawWidth = Math.floor(width * scale);
-                var drawHeight = Math.floor(height * scale);
-
+                var drawWidth = Math.floor(width * scale), drawHeight = Math.floor(height * scale);
                 pixelCanvas.width = drawWidth;
                 pixelCanvas.height = drawHeight;
-
                 var factor = currentPixelFactor;
-
-                // Clear canvas
                 pixelCtx.clearRect(0, 0, drawWidth, drawHeight);
-
                 if (factor <= 1) {
-                    // Factor 1 => draw clear image
                     pixelCtx.imageSmoothingEnabled = true;
                     pixelCtx.drawImage(originalImage, 0, 0, width, height, 0, 0, drawWidth, drawHeight);
                     return;
                 }
-
-                // Draw pixelated using an offscreen canvas:
-                // 1) scale image down
-                // 2) scale back up with smoothing disabled
                 var smallWidth = Math.max(1, Math.round(drawWidth / factor));
                 var smallHeight = Math.max(1, Math.round(drawHeight / factor));
-
                 var offCanvas = document.createElement('canvas');
                 offCanvas.width = smallWidth;
                 offCanvas.height = smallHeight;
                 var offCtx = offCanvas.getContext('2d');
-
                 offCtx.imageSmoothingEnabled = true;
                 offCtx.drawImage(originalImage, 0, 0, width, height, 0, 0, smallWidth, smallHeight);
-
                 pixelCtx.imageSmoothingEnabled = false;
                 pixelCtx.drawImage(offCanvas, 0, 0, smallWidth, smallHeight, 0, 0, drawWidth, drawHeight);
             }
 
             $('#profile_image').on('change', function(e) {
                 var file = e.target.files[0];
-                if (!file) {
-                    return;
-                }
-
+                if (!file) { return; }
                 if (!file.type.match(/^image\//)) {
                     alert('Please select an image file.');
                     this.value = '';
                     selectedFile = null;
                     return;
                 }
-
                 selectedFile = file;
-
                 var reader = new FileReader();
                 reader.onload = function(evt) {
                     originalImage.onload = function() {
-                        // Initialize slider / label for this image
                         var slider = $('#pixelSizeRange');
                         if (slider.length) {
                             var sliderVal = slider.val() || '50';
@@ -399,9 +367,7 @@
                 drawPixelatedImage();
             });
 
-            // Handle modal close/cancel - clear file input and pixelated data
             $('#pixelateModal').on('hidden.bs.modal', function() {
-                // Only clear if Save was not clicked (pixelated_image_data is empty)
                 if (!$('#pixelated_image_data').val()) {
                     $('#profile_image').val('');
                     selectedFile = null;
@@ -412,15 +378,12 @@
                 }
             });
 
-            // Handle Close button click
             $('#pixelateModal').on('click', '.btn-default[data-dismiss="modal"]', function() {
                 $('#pixelated_image_data').val('');
             });
 
             $('#savePixelatedImage').on('click', function() {
-                if (!pixelCanvas) {
-                    return;
-                }
+                if (!pixelCanvas) { return; }
                 var dataUrl = pixelCanvas.toDataURL('image/png');
                 $('#pixelated_image_data').val(dataUrl);
                 $('#pixelateModal').modal('hide');
@@ -428,7 +391,7 @@
 
             var qr_loaded = 0;
             var is_g2fa_enabled =
-                "<?= $current_user->two_factor_auth_enabled ?>";
+                "<?= $member->two_factor_auth_enabled ?>";
             var
                 imagick_available = <?= extension_loaded('imagick') ? 'true' : 'false' ?> ;
 

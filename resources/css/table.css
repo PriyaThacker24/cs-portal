@@ -393,16 +393,6 @@ table.dataTable > tbody > tr.success + tr:not(.success) > td {
   width: 100% !important;
 }
 
-.dataTables_length {
-  float: left;
-  margin-right: 5px;
-}
-
-[dir="rtl"] .dataTables_length {
-  float: right;
-  margin-left: 5px;
-}
-
 ul.dt-button-collection.dropdown-menu {
   z-index: 20005;
 }
@@ -443,11 +433,14 @@ ul.dt-button-collection.dropdown-menu {
   div.dataTables_wrapper div.dataTables_length {
     position: absolute;
     top: 0;
+    left: 0;
     z-index: 55;
+    min-width: 90px;
   }
 
   [dir="rtl"] div.dataTables_wrapper div.dataTables_length {
-    left: 10px;
+    left: auto;
+    right: 10px;
   }
 
   div.dataTables_wrapper div.dataTables_paginate {
