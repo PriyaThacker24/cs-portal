@@ -277,3 +277,12 @@
     }
 }
 
+/* Tasks module only: remove gap between "25" and dropdown arrow in length select */
+body.tasks-page .dataTables_wrapper .dataTables_length select {
+    width: 52px !important;
+    padding-left: 6px !important;
+    padding-right: 8px !important;
+    text-align: left;
+    background-position: right 0 center !important;
+    background-size: 8px !important;
+}

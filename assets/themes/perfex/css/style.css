@@ -922,24 +922,24 @@ body.viewinvoice .alert {
   height: 32px;
   width: 32px;
   border-radius: 50%;
+  object-fit: cover;
+  image-rendering: auto;
 }
 
 .staff-profile-xs-image {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-}
-
-.staff-profile-image-small {
-  height: 32px;
-  width: 32px;
-  border-radius: 50%;
+  object-fit: cover;
+  image-rendering: auto;
 }
 
 .staff-profile-image-thumb {
   height: 160px;
   width: 160px;
   border-radius: 50%;
+  object-fit: cover;
+  image-rendering: auto;
 }
 
 .task-attachment {

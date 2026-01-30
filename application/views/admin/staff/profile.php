@@ -1,14 +1,5 @@
-image.png<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
-<style>
-    /* Pixelate profile image on Edit Profile page */
-    .staff-profile-image-thumb img,
-    img.staff-profile-image-thumb {
-        image-rendering: pixelated;
-        image-rendering: crisp-edges;
-        -ms-interpolation-mode: nearest-neighbor; /* Legacy IE */
-    }
-</style>
 <div id="wrapper">
     <div class="content">
         <div class="tw-max-w-4xl tw-mx-auto">
@@ -25,7 +16,6 @@ image.png<?php defined('BASEPATH') or exit('No direct script access allowed'); ?
                             class="profile-image"><?= _l('staff_edit_profile_image'); ?></label>
                         <input type="file" name="profile_image" class="form-control" id="profile_image"
                             accept="image/*">
-                        <input type="hidden" name="pixelated_image_data" id="pixelated_image_data">
                     </div>
                     <?php } ?>
                     <?php if ($member->profile_image != null) { ?>
@@ -157,39 +147,6 @@ image.png<?php defined('BASEPATH') or exit('No direct script access allowed'); ?
             </div>
             <?= form_close(); ?>
 
-            <!-- Pixelate Image Modal -->
-            <div class="modal fade" id="pixelateModal" tabindex="-1" role="dialog" aria-labelledby="pixelateModalLabel">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                                    aria-hidden="true">&times;</span></button>
-                            <h4 class="modal-title" id="pixelateModalLabel">
-                                <?= _l('staff_edit_profile_image'); ?>
-                            </h4>
-                        </div>
-                        <div class="modal-body text-center">
-                            <canvas id="pixelCanvas" style="max-width:100%;"></canvas>
-                            <div class="mtop20">
-                                <label for="pixelSizeRange" class="control-label">
-                                    Pixel size:
-                                    <span id="pixelSizeValue">50</span>
-                                </label>
-                                <input type="range" id="pixelSizeRange" min="0" max="100" step="1" value="50">
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">
-                                <?= _l('close'); ?>
-                            </button>
-                            <button type="button" class="btn btn-primary" id="savePixelatedImage">
-                                <?= _l('submit'); ?>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <h4 class="tw-mt-0 tw-font-bold tw-text-lg tw-text-neutral-700">
                 <?= _l('staff_edit_profile_change_your_password'); ?>
             </h4>
@@ -292,103 +249,6 @@ image.png<?php defined('BASEPATH') or exit('No direct script access allowed'); ?
     <?php init_tail(); ?>
     <script>
         $(function() {
-            // Pixelate image preview logic
-            var originalImage = new Image();
-            var pixelCanvas = document.getElementById('pixelCanvas');
-            var pixelCtx = pixelCanvas ? pixelCanvas.getContext('2d') : null;
-            var currentPixelFactor = 10;
-            var selectedFile = null;
-
-            function sliderValueToPixelFactor(v) {
-                v = parseInt(v, 10);
-                if (isNaN(v) || v < 0) { v = 0; }
-                if (v <= 2) { return 1; }
-                return 1 + Math.round(((v - 2) / 98) * 49);
-            }
-
-            function drawPixelatedImage() {
-                if (!pixelCtx || !originalImage.src) { return; }
-                var maxWidth = 400, maxHeight = 400;
-                var width = originalImage.width, height = originalImage.height;
-                var scale = Math.min(maxWidth / width, maxHeight / height, 1);
-                var drawWidth = Math.floor(width * scale), drawHeight = Math.floor(height * scale);
-                pixelCanvas.width = drawWidth;
-                pixelCanvas.height = drawHeight;
-                var factor = currentPixelFactor;
-                pixelCtx.clearRect(0, 0, drawWidth, drawHeight);
-                if (factor <= 1) {
-                    pixelCtx.imageSmoothingEnabled = true;
-                    pixelCtx.drawImage(originalImage, 0, 0, width, height, 0, 0, drawWidth, drawHeight);
-                    return;
-                }
-                var smallWidth = Math.max(1, Math.round(drawWidth / factor));
-                var smallHeight = Math.max(1, Math.round(drawHeight / factor));
-                var offCanvas = document.createElement('canvas');
-                offCanvas.width = smallWidth;
-                offCanvas.height = smallHeight;
-                var offCtx = offCanvas.getContext('2d');
-                offCtx.imageSmoothingEnabled = true;
-                offCtx.drawImage(originalImage, 0, 0, width, height, 0, 0, smallWidth, smallHeight);
-                pixelCtx.imageSmoothingEnabled = false;
-                pixelCtx.drawImage(offCanvas, 0, 0, smallWidth, smallHeight, 0, 0, drawWidth, drawHeight);
-            }
-
-            $('#profile_image').on('change', function(e) {
-                var file = e.target.files[0];
-                if (!file) { return; }
-                if (!file.type.match(/^image\//)) {
-                    alert('Please select an image file.');
-                    this.value = '';
-                    selectedFile = null;
-                    return;
-                }
-                selectedFile = file;
-                var reader = new FileReader();
-                reader.onload = function(evt) {
-                    originalImage.onload = function() {
-                        var slider = $('#pixelSizeRange');
-                        if (slider.length) {
-                            var sliderVal = slider.val() || '50';
-                            currentPixelFactor = sliderValueToPixelFactor(sliderVal);
-                            $('#pixelSizeValue').text(sliderVal);
-                        }
-                        drawPixelatedImage();
-                        $('#pixelateModal').modal('show');
-                    };
-                    originalImage.src = evt.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-
-            $('#pixelSizeRange').on('input change', function() {
-                var rawVal = this.value || '0';
-                currentPixelFactor = sliderValueToPixelFactor(rawVal);
-                $('#pixelSizeValue').text(rawVal);
-                drawPixelatedImage();
-            });
-
-            $('#pixelateModal').on('hidden.bs.modal', function() {
-                if (!$('#pixelated_image_data').val()) {
-                    $('#profile_image').val('');
-                    selectedFile = null;
-                    originalImage.src = '';
-                    if (pixelCtx && pixelCanvas) {
-                        pixelCtx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
-                    }
-                }
-            });
-
-            $('#pixelateModal').on('click', '.btn-default[data-dismiss="modal"]', function() {
-                $('#pixelated_image_data').val('');
-            });
-
-            $('#savePixelatedImage').on('click', function() {
-                if (!pixelCanvas) { return; }
-                var dataUrl = pixelCanvas.toDataURL('image/png');
-                $('#pixelated_image_data').val(dataUrl);
-                $('#pixelateModal').modal('hide');
-            });
-
             var qr_loaded = 0;
             var is_g2fa_enabled =
                 "<?= $member->two_factor_auth_enabled ?>";

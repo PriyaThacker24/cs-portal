@@ -968,31 +968,61 @@ function handle_staff_profile_image_upload($staff_id = '')
 
     if (isset($_FILES['profile_image']['name']) && $_FILES['profile_image']['name'] != '') {
         hooks()->do_action('before_upload_staff_profile_image');
+
+        // Check PHP upload error first (e.g. UPLOAD_ERR_EXTENSION, size limits)
+        $uploadError = isset($_FILES['profile_image']['error']) ? (int) $_FILES['profile_image']['error'] : 0;
+        if ($uploadError !== 0) {
+            $errorMessage = _perfex_upload_error($uploadError);
+            if ($errorMessage) {
+                set_alert('warning', $errorMessage);
+            }
+            return false;
+        }
+
         $path = get_upload_path_by_type('staff') . $staff_id . '/';
         // Get the temp file path
-        $tmpFilePath = $_FILES['profile_image']['tmp_name'];
-        // Make sure we have a filepath
-        if (!empty($tmpFilePath) && $tmpFilePath != '') {
-            // Getting file extension
-            $extension          = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
-            $allowed_extensions = [
-                'jpg',
-                'jpeg',
-                'png',
+        $tmpFilePath = isset($_FILES['profile_image']['tmp_name']) ? $_FILES['profile_image']['tmp_name'] : '';
+        if (empty($tmpFilePath) || !is_uploaded_file($tmpFilePath)) {
+            set_alert('warning', _l('file_not_uploaded'));
+            return false;
+        }
+        {
+            // Only allow real image types (MIME must start with image/) - never .php or other non-image files
+            $finfo    = finfo_open(FILEINFO_MIME_TYPE);
+            $detected = $finfo ? finfo_file($finfo, $tmpFilePath) : '';
+            if ($finfo) {
+                finfo_close($finfo);
+            }
+            if (empty($detected) || strpos($detected, 'image/') !== 0) {
+                set_alert('warning', _l('validation_extension_not_allowed'));
+                return false;
+            }
+            $mimeToExt = [
+                'image/jpeg'       => 'jpg',
+                'image/pjpeg'      => 'jpg',
+                'image/png'        => 'png',
+                'image/gif'        => 'gif',
+                'image/webp'       => 'webp',
+                'image/bmp'        => 'bmp',
+                'image/x-ms-bmp'   => 'bmp',
+                'image/x-windows-bmp' => 'bmp',
             ];
-
+            $extension = isset($mimeToExt[$detected]) ? $mimeToExt[$detected] : strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+            $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
             $allowed_extensions = hooks()->apply_filters('staff_profile_image_upload_allowed_extensions', $allowed_extensions);
-
             if (!in_array($extension, $allowed_extensions)) {
-                set_alert('warning', _l('file_php_extension_blocked'));
-
+                $extension = isset($mimeToExt[$detected]) ? $mimeToExt[$detected] : 'jpg';
+            }
+            if (!in_array($extension, $allowed_extensions)) {
+                set_alert('warning', _l('validation_extension_not_allowed'));
                 return false;
             }
             _maybe_create_upload_path($path);
-            $filename    = unique_filename($path, $_FILES['profile_image']['name']);
-            $newFilePath = $path . '/' . $filename;
-            // Upload the file (support both HTTP uploads and temp files e.g. from pixelated image data)
-            $moved = move_uploaded_file($tmpFilePath, $newFilePath);
+            $originalName = $_FILES['profile_image']['name'];
+            $baseName     = pathinfo($originalName, PATHINFO_FILENAME);
+            $filename     = unique_filename($path, $baseName . '.' . $extension);
+            $newFilePath  = $path . $filename;
+            $moved        = move_uploaded_file($tmpFilePath, $newFilePath);
             if (!$moved && file_exists($tmpFilePath)) {
                 $moved = copy($tmpFilePath, $newFilePath);
                 if ($moved) {
@@ -1000,33 +1030,53 @@ function handle_staff_profile_image_upload($staff_id = '')
                 }
             }
             if ($moved) {
-                $CI                       = & get_instance();
-                $config                   = [];
-                $config['image_library']  = 'gd2';
-                $config['source_image']   = $newFilePath;
-                $config['new_image']      = 'thumb_' . $filename;
-                $config['maintain_ratio'] = true;
-                $config['width']          = hooks()->apply_filters('staff_profile_image_thumb_width', 320);
-                $config['height']         = hooks()->apply_filters('staff_profile_image_thumb_height', 320);
-                $CI->image_lib->initialize($config);
-                $CI->image_lib->resize();
-                $CI->image_lib->clear();
-                $config['image_library']  = 'gd2';
-                $config['source_image']   = $newFilePath;
-                $config['new_image']      = 'small_' . $filename;
-                $config['maintain_ratio'] = true;
-                $config['width']          = hooks()->apply_filters('staff_profile_image_small_width', 96);
-                $config['height']         = hooks()->apply_filters('staff_profile_image_small_height', 96);
-                $CI->image_lib->initialize($config);
-                $CI->image_lib->resize();
-                $CI->db->where('staffid', $staff_id);
-                $CI->db->update(db_prefix() . 'staff', [
-                    'profile_image' => $filename,
-                ]);
-                // Remove original image
-                unlink($newFilePath);
-
-                return true;
+                $CI = & get_instance();
+                $CI->load->library('image_lib');
+                $thumbPath  = $path . 'thumb_' . $filename;
+                $smallPath  = $path . 'small_' . $filename;
+                $thumbWidth = (int) hooks()->apply_filters('staff_profile_image_thumb_width', 400);
+                $thumbHeight = (int) hooks()->apply_filters('staff_profile_image_thumb_height', 400);
+                $smallWidth = (int) hooks()->apply_filters('staff_profile_image_small_width', 128);
+                $smallHeight = (int) hooks()->apply_filters('staff_profile_image_small_height', 128);
+                $resizeOk = true;
+                $config = [
+                    'image_library'  => 'gd2',
+                    'source_image'   => $newFilePath,
+                    'maintain_ratio' => true,
+                ];
+                $CI->image_lib->initialize(array_merge($config, ['new_image' => $thumbPath, 'width' => $thumbWidth, 'height' => $thumbHeight]));
+                if (!$CI->image_lib->resize()) {
+                    $CI->image_lib->clear();
+                    $resizeOk = false;
+                } else {
+                    $CI->image_lib->clear();
+                }
+                if ($resizeOk) {
+                    $CI->image_lib->initialize(array_merge($config, ['new_image' => $smallPath, 'width' => $smallWidth, 'height' => $smallHeight]));
+                    if (!$CI->image_lib->resize()) {
+                        $CI->image_lib->clear();
+                        @unlink($thumbPath);
+                        $resizeOk = false;
+                    } else {
+                        $CI->image_lib->clear();
+                    }
+                }
+                if (!$resizeOk) {
+                    // GD could not resize (e.g. webp on older PHP) - save as-is by copying to thumb_ and small_
+                    @copy($newFilePath, $thumbPath);
+                    @copy($newFilePath, $smallPath);
+                }
+                if (file_exists($thumbPath) && file_exists($smallPath)) {
+                    $CI->db->where('staffid', $staff_id);
+                    $CI->db->update(db_prefix() . 'staff', ['profile_image' => $filename]);
+                    @unlink($newFilePath);
+                    return true;
+                }
+                @unlink($newFilePath);
+                @unlink($thumbPath);
+                @unlink($smallPath);
+                set_alert('warning', _l('file_php_extension_blocked'));
+                return false;
             }
         }
     }

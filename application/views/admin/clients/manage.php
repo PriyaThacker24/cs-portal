@@ -228,9 +228,14 @@ $table_data = hooks()->apply_filters('customers_table_columns', $table_data);
 <?php init_tail(); ?>
 
 <style>
-    /* Make the Customers page length dropdown (e.g. 25) narrower */
+    /* Make the Customers page length dropdown (e.g. 25) narrower - remove gap between "25" and dropdown arrow */
     #clients_length select.form-control {
-        width: 56px !important;
+        width: 52px !important;
+        padding-left: 6px !important;
+        padding-right: 8px !important;
+        text-align: left;
+        background-position: right 0 center !important;
+        background-size: 8px !important;
     }
 </style>
 

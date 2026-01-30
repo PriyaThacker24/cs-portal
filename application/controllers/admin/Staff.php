@@ -214,36 +214,8 @@ class Staff extends AdminController
         hooks()->do_action('edit_logged_in_staff_profile');
 
         if ($this->input->post()) {
-            // If pixelated image data (base64) was submitted, convert to temp file so upload helper can process it
-            $pixelated = $this->input->post('pixelated_image_data', false);
-            if (!empty($pixelated) && strpos($pixelated, 'data:image') === 0) {
-                $parts = explode(',', $pixelated, 2);
-                if (count($parts) === 2) {
-                    $meta = $parts[0];
-                    $content = $parts[1];
-                    $mime = 'image/png';
-                    if (preg_match('#data:([^;]+)#', $meta, $m)) {
-                        $mime = trim($m[1]);
-                    }
-                    $imageData = base64_decode($content);
-                    if ($imageData !== false) {
-                        $tmpFile = tempnam(sys_get_temp_dir(), 'staff_pix_');
-                        if ($tmpFile && file_put_contents($tmpFile, $imageData) !== false) {
-                            $_FILES['profile_image'] = [
-                                'name'     => 'profile_pixelated.png',
-                                'type'     => $mime,
-                                'tmp_name' => $tmpFile,
-                                'error'    => 0,
-                                'size'     => strlen($imageData),
-                            ];
-                        }
-                    }
-                }
-            }
-
             handle_staff_profile_image_upload();
             $data = $this->input->post();
-            unset($data['pixelated_image_data']);
             // Don't do XSS clean here.
             $data['email_signature'] = $this->input->post('email_signature', false);
             $data['email_signature'] = html_entity_decode($data['email_signature']);

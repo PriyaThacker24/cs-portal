@@ -690,18 +690,26 @@ body.page-small #header {
   height: 32px;
   width: 32px;
   border-radius: 50%;
+  object-fit: cover;
+  image-rendering: auto;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 .staff-profile-image-xs {
   height: 20px;
   width: 20px;
   border-radius: 50%;
+  object-fit: cover;
+  image-rendering: auto;
 }
 
 .staff-profile-image-thumb {
   height: 160px;
   width: 160px;
   border-radius: 50%;
+  object-fit: cover;
+  image-rendering: auto;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 .client-profile-image-thumb {

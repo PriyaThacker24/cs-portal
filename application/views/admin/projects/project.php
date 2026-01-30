@@ -397,7 +397,7 @@ echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastn
                             <div class="row">
                                 <div class="col-md-6">
                                     <?php $value = (isset($project) ? _d($project->start_date) : _d(date('Y-m-d'))); ?>
-                                    <?= render_date_input('start_date', 'project_start_date', $value); ?>
+                                    <?= render_date_input('start_date', 'project_start_date', $value, [], [], '', 'required'); ?>
                                 </div>
                                 <div class="col-md-6">
                                     <?php 
