@@ -75,6 +75,12 @@ if (typeof $.validator == "undefined") {
         errorPlacement: $.fn.appFormValidator.internal_options.error_placement,
       });
 
+      // Ensure a consistent, user-friendly message for required fields
+      // across all admin/client modules that rely on jQuery Validation.
+      $.extend($.validator.messages, {
+        required: "This field is required.",
+      });
+
       self.addMethodFileSize();
       self.addMethodExtension();
     };

@@ -268,7 +268,9 @@ if ($selected != '') {
                                             data-width="100%"
                                             <?= $disable_type_edit; ?>
                                             data-none-selected-text="<?= _l('dropdown_non_selected_tex'); ?>">
-                                            <option value=""></option>
+                                            <option value="" disabled <?php if (!isset($project) || (isset($project) && empty($project->billing_type))) { echo 'selected'; } ?>>
+                                                <?= _l('dropdown_non_selected_tex'); ?>
+                                            </option>
                                             <option value="1" <?php if (isset($project) && $project->billing_type == 1 || ! isset($project) && $auto_select_billing_type && $auto_select_billing_type->billing_type == 1) {
                                                 echo 'selected';
                                             } ?>><?= _l('project_billing_type_fixed_cost'); ?>
@@ -854,14 +856,11 @@ foreach ($options as $option) { ?>
         });
 
 
-        appValidateForm($('form'), {
+        appValidateForm($('#project_form'), {
             name: 'required',
             clientid: 'required',
             start_date: 'required',
             billing_type: 'required',
-            deadline: {
-                deadlineAfterStartDate: true
-            },
             'notify_contacts[]': {
                 required: {
                     depends: function() {

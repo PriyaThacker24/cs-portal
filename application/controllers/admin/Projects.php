@@ -156,44 +156,75 @@ class Projects extends AdminController
         }
 
         if ($this->input->post()) {
-            $data                = $this->input->post();
-            $data['description'] = html_purify($this->input->post('description', false));
-            if ($id == '') {
-                if (staff_cant('create', 'projects')) {
-                    access_denied('Projects');
+            // Server-side validation to mirror client-side rules.
+            // Ensures projects are NEVER saved when required fields are missing.
+            $this->load->library('form_validation');
+
+            $this->form_validation->set_rules('name', _l('project_name'), 'trim|required');
+            $this->form_validation->set_rules('clientid', _l('project_customer'), 'required');
+            $this->form_validation->set_rules('start_date', _l('project_start_date'), 'required');
+            $this->form_validation->set_rules('billing_type', _l('project_billing_type'), 'required');
+
+            if ($this->form_validation->run() === false) {
+                // If this ever gets used via AJAX in the future, return a structured error.
+                if ($this->input->is_ajax_request()) {
+                    $this->output
+                        ->set_content_type('application/json')
+                        ->set_status_header(400)
+                        ->set_output(json_encode([
+                            'success' => false,
+                            'message' => validation_errors(),
+                        ]));
+
+                    return;
                 }
-                $id = $this->projects_model->add($data);
-                if (is_array($id) && isset($id['error']) && $id['error']) {
-                    set_alert('danger', $id['message']);
-                    redirect(admin_url('projects/project'));
-                } elseif ($id) {
-                    set_alert('success', _l('added_successfully', _l('project')));
+
+                // For normal requests, show validation errors and fall through
+                // to the form view so the user can correct the fields.
+                set_alert('danger', validation_errors());
+            } else {
+                $data                = $this->input->post();
+                $data['description'] = html_purify($this->input->post('description', false));
+
+                if ($id == '') {
+                    if (staff_cant('create', 'projects')) {
+                        access_denied('Projects');
+                    }
+
+                    $id = $this->projects_model->add($data);
+
+                    if (is_array($id) && isset($id['error']) && $id['error']) {
+                        set_alert('danger', $id['message']);
+                        redirect(admin_url('projects/project'));
+                    } elseif ($id) {
+                        set_alert('success', _l('added_successfully', _l('project')));
+                        redirect(admin_url('projects/view/' . $id));
+                    }
+                } else {
+                    // Check permission with priority logic (staff-level first, then project-level)
+                    $can_edit = false;
+
+                    // Check staff-level permission first
+                    if (staff_can('edit', 'projects')) {
+                        $can_edit = true;
+                    } else {
+                        // Fallback to project-level permission
+                        $can_edit = can_user_project_action('edit', $id);
+                    }
+
+                    if (!$can_edit) {
+                        access_denied('Projects');
+                    }
+
+                    $success = $this->projects_model->update($data, $id);
+                    if (is_array($success) && isset($success['error']) && $success['error']) {
+                        set_alert('danger', $success['message']);
+                        redirect(admin_url('projects/project/' . $id));
+                    } elseif ($success) {
+                        set_alert('success', _l('updated_successfully', _l('project')));
+                    }
                     redirect(admin_url('projects/view/' . $id));
                 }
-            } else {
-                // Check permission with priority logic (staff-level first, then project-level)
-                $can_edit = false;
-                
-                // Check staff-level permission first
-                if (staff_can('edit', 'projects')) {
-                    $can_edit = true;
-                } else {
-                    // Fallback to project-level permission
-                    $can_edit = can_user_project_action('edit', $id);
-                }
-                
-                if (!$can_edit) {
-                    access_denied('Projects');
-                }
-                
-                $success = $this->projects_model->update($data, $id);
-                if (is_array($success) && isset($success['error']) && $success['error']) {
-                    set_alert('danger', $success['message']);
-                    redirect(admin_url('projects/project/' . $id));
-                } elseif ($success) {
-                    set_alert('success', _l('updated_successfully', _l('project')));
-                }
-                redirect(admin_url('projects/view/' . $id));
             }
         }
         if ($id == '') {
