@@ -29,15 +29,13 @@ class Payments extends AdminController
 			show_404();
 		}
 
-		if (staff_cant('create', 'payments')) {
+		if (staff_cant('create', 'payment')) {
 			access_denied('Create Payment');
 		}
 		$totalAdded = $this->payments_model->add_batch_payment($this->input->post());
         if ($totalAdded > 0) {
             set_alert('success', _l('batch_payment_added_successfully', $totalAdded));
-            if (staff_can('view', 'payments') || staff_can('view_own', 'payments')) {
-                return redirect(admin_url('payments'));
-            }
+            return redirect(admin_url('payments'));
         }
         return redirect(admin_url('invoices'));
 	}
@@ -57,6 +55,7 @@ class Payments extends AdminController
         }
 
         $data['title'] = _l('payments');
+        $data['payments_table'] = App_table::find('payments');
         $this->load->view('admin/payments/manage', $data);
     }
 
@@ -68,7 +67,7 @@ class Payments extends AdminController
             ajax_access_denied();
         }
 
-        $this->app->get_table_data('payments', [
+        App_table::find('payments')->output([
             'clientid' => $clientid,
         ]);
     }

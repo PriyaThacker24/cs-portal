@@ -28,13 +28,13 @@ function app_init_admin_sidebar_menu_items()
         ]);
     }
 
-    // $CI->app_menu->add_sidebar_menu_item('sales', [
-    //     'collapse' => true,
-    //     'name'     => _l('als_sales'),
-    //     'position' => 10,
-    //     'icon'     => 'fa-solid fa-bolt',
-    //     'badge'    => [],
-    // ]);
+    $CI->app_menu->add_sidebar_menu_item('sales', [
+        'collapse' => true,
+        'name'     => _l('als_sales'),
+        'position' => 10,
+        'icon'     => 'fa-solid fa-bolt',
+        'badge'    => [],
+    ]);
 
     if ((staff_can('view',  'proposals') || staff_can('view_own',  'proposals'))
         || (staff_has_assigned_proposals() && get_option('allow_staff_view_proposals_assigned') == 1)

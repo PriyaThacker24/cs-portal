@@ -86,4 +86,8 @@ hooks()->add_action('admin_init', function () {
             ->relatedTo($proposalsTable->id())
             ->setRules($proposalsTable->rules())
     );
+
+    App_table::register(
+        App_table::new('payments')->setDbTableName('invoicepaymentrecords')
+    );
 });

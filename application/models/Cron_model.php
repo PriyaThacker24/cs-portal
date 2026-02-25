@@ -1,13 +1,13 @@
 <?php
 
-use app\services\imap\ConnectionErrorException;
-use app\services\imap\Imap;
 use Carbon\Carbon;
-use Ddeboer\Imap\Exception\MessageDoesNotExistException;
+use app\services\imap\Imap;
+use Ddeboer\Imap\SearchExpression;
+use Ddeboer\Imap\Search\Flag\Unseen;
+use app\services\imap\ConnectionErrorException;
 use Ddeboer\Imap\Exception\UnexpectedEncodingException;
 use Ddeboer\Imap\Exception\UnsupportedCharsetException;
-use Ddeboer\Imap\Search\Flag\Unseen;
-use Ddeboer\Imap\SearchExpression;
+use Ddeboer\Imap\Exception\MessageDoesNotExistException;
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
@@ -16,19 +16,21 @@ define('CRON', true);
 class Cron_model extends App_Model
 {
     public $manually = false;
+
     private $lock_handle;
+
     private $currentImapMessage;
 
     public function __construct()
     {
-        if (! defined('APP_DISABLE_CRON_LOCK') || defined('APP_DISABLE_CRON_LOCK') && ! APP_DISABLE_CRON_LOCK) {
+        if (!defined('APP_DISABLE_CRON_LOCK') || defined('APP_DISABLE_CRON_LOCK') && !APP_DISABLE_CRON_LOCK) {
             register_shutdown_function([$this, '__destruct']);
             $f = fopen(get_temp_dir() . 'pcrm-cron-lock', 'w+');
 
-            if (! $f) {
+            if (!$f) {
                 $this->lock_handle = fopen(TEMP_FOLDER . 'pcrm-cron-lock', 'w+');
                 // Again? Disable the lock
-                if (! $this->lock_handle && ! defined('APP_DISABLE_CRON_LOCK')) {
+                if (!$this->lock_handle && !defined('APP_DISABLE_CRON_LOCK')) {
                     // Defined this constant manually here so the cron is able to run
                     // Used in method can_cron_run
                     define('APP_DISABLE_CRON_LOCK', true);
@@ -59,7 +61,7 @@ class Cron_model extends App_Model
             if ($manually == true) {
                 $this->manually = true;
 
-                if (! extension_loaded('suhosin')) {
+                if (!extension_loaded('suhosin')) {
                     @ini_set('memory_limit', '-1');
                 }
 
@@ -123,7 +125,7 @@ class Cron_model extends App_Model
         }
 
         $tasks_reminder_notification_hour = get_option('tasks_reminder_notification_hour');
-        if (! $this->shouldRunAutomations($tasks_reminder_notification_hour)) {
+        if (!$this->shouldRunAutomations($tasks_reminder_notification_hour)) {
             return;
         }
 
@@ -136,7 +138,7 @@ class Cron_model extends App_Model
         $lastNotifiedDay = get_option('tasks_reminder_notification_last_notified_day');
         $today           = date('l');
 
-        if (! in_array($today, $daysToNotify) || $lastNotifiedDay === $today) {
+        if (!in_array($today, $daysToNotify) || $lastNotifiedDay === $today) {
             return;
         }
 
@@ -166,7 +168,7 @@ class Cron_model extends App_Model
 
         $older_than_hours = intval($older_than_hours);
         $time_ago         = strtotime(" - {$older_than_hours} hours");
-        $this->db->set('end_time', "UNIX_TIMESTAMP(DATE_ADD(from_unixtime(start_time), INTERVAL {$older_than_hours} HOUR))", false);
+        $this->db->set('end_time', "UNIX_TIMESTAMP(DATE_ADD(from_unixtime(start_time), INTERVAL $older_than_hours HOUR))", false);
         $this->db->where('end_time IS NULL');
         $this->db->where('task_id !=', '0');
         $this->db->where('start_time <=', $time_ago);
@@ -193,7 +195,6 @@ class Cron_model extends App_Model
         $notified_users            = [];
         $notificationNotifiedUsers = [];
         $all_notified_events       = [];
-
         foreach ($events as $event) {
             $date_compare = date('Y-m-d H:i:s', strtotime('+' . $event['reminder_before'] . ' ' . strtoupper($event['reminder_before_type'])));
 
@@ -291,7 +292,7 @@ class Cron_model extends App_Model
 
         foreach ($tickets as $ticket) {
             $close_ticket = false;
-            if (! is_null($ticket['lastreply'])) {
+            if (!is_null($ticket['lastreply'])) {
                 $last_reply = strtotime($ticket['lastreply']);
                 if ($last_reply <= strtotime('-' . $auto_close_after . ' hours')) {
                     $close_ticket = true;
@@ -338,7 +339,7 @@ class Cron_model extends App_Model
     {
         $contracts_auto_operations_hour = get_option('contracts_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($contracts_auto_operations_hour)) {
+        if (!$this->shouldRunAutomations($contracts_auto_operations_hour)) {
             return;
         }
 
@@ -387,7 +388,6 @@ class Cron_model extends App_Model
 
                     if ($contract['not_visible_to_client'] == 0) {
                         $contacts = $this->clients_model->get_contacts($contract['client'], ['active' => 1, 'contract_emails' => 1]);
-
                         foreach ($contacts as $contact) {
                             $template = mail_template('contract_expiration_reminder_to_customer', $contract, $contact);
 
@@ -411,7 +411,7 @@ class Cron_model extends App_Model
     {
         $contracts_auto_operations_hour = get_option('contracts_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($contracts_auto_operations_hour)) {
+        if (!$this->shouldRunAutomations($contracts_auto_operations_hour)) {
             return;
         }
 
@@ -440,13 +440,12 @@ class Cron_model extends App_Model
         foreach ($contracts as $contract) {
             $whereIn = [];
             $cc      = '';
-            if (! empty($contract['contacts_sent_to'])) {
+            if (!empty($contract['contacts_sent_to'])) {
                 $sentTo        = json_decode($contract['contacts_sent_to'], true);
                 $cc            = $sentTo['cc'];
                 $whereIn['id'] = $sentTo['contact_ids'];
             }
             $contacts = $this->clients_model->get_contacts($contract['client'], ['active' => 1], $whereIn);
-
             foreach ($contacts as $contact) {
                 $template     = mail_template('contract_sign_reminder_to_customer', $contract, $contact, $cc);
                 $merge_fields = $template->get_merge_fields();
@@ -464,7 +463,7 @@ class Cron_model extends App_Model
     {
         $tasks_reminder_notification_hour = get_option('tasks_reminder_notification_hour');
 
-        if (! $this->shouldRunAutomations($tasks_reminder_notification_hour)) {
+        if (!$this->shouldRunAutomations($tasks_reminder_notification_hour)) {
             return;
         }
 
@@ -484,7 +483,7 @@ class Cron_model extends App_Model
             // Current date
             $date = new DateTime(date('Y-m-d'));
             // Check if is first recurring
-            if (! $last_recurring_date) {
+            if (!$last_recurring_date) {
                 $last_recurring_date = date('Y-m-d', strtotime($task_date));
             } else {
                 $last_recurring_date = date('Y-m-d', strtotime($last_recurring_date));
@@ -509,7 +508,7 @@ class Cron_model extends App_Model
                     'is_recurring_from'   => $task['id'],
                 ];
 
-                if (! empty($task['duedate'])) {
+                if (!empty($task['duedate'])) {
                     $dStart                      = new DateTime($task['startdate']);
                     $dEnd                        = new DateTime($task['duedate']);
                     $dDiff                       = $dStart->diff($dEnd);
@@ -530,7 +529,6 @@ class Cron_model extends App_Model
 
                     $this->db->where('taskid', $task['id']);
                     $assigned = $this->db->get(db_prefix() . 'task_assigned')->result_array();
-
                     foreach ($assigned as $assignee) {
                         $assigneeId = $this->tasks_model->add_task_assignees([
                             'taskid'   => $newTaskID,
@@ -553,7 +551,7 @@ class Cron_model extends App_Model
     {
         $expenses_hour_auto_operations = get_option('expenses_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($expenses_hour_auto_operations)) {
+        if (!$this->shouldRunAutomations($expenses_hour_auto_operations)) {
             return;
         }
 
@@ -577,7 +575,7 @@ class Cron_model extends App_Model
             // Current date
             $date = new DateTime(date('Y-m-d'));
             // Check if is first recurring
-            if (! $last_recurring_date) {
+            if (!$last_recurring_date) {
                 $last_recurring_date = date('Y-m-d', strtotime($expense_date));
             } else {
                 $last_recurring_date = date('Y-m-d', strtotime($last_recurring_date));
@@ -588,7 +586,6 @@ class Cron_model extends App_Model
                 // Ok we can repeat the expense now
                 $new_expense_data = [];
                 $expense_fields   = $this->db->list_fields(db_prefix() . 'expenses');
-
                 foreach ($expense_fields as $field) {
                     if (isset($expense[$field])) {
                         // We dont need the invoiceid field
@@ -616,7 +613,6 @@ class Cron_model extends App_Model
                 if ($insert_id) {
                     // Get the old expense custom field and add to the new
                     $custom_fields = get_custom_fields('expenses');
-
                     foreach ($custom_fields as $field) {
                         $value = get_custom_field_value($expense['id'], $field['id'], 'expenses', false);
                         if ($value != '') {
@@ -659,9 +655,9 @@ class Cron_model extends App_Model
                         'addedfrom'                => $expense['addedfrom'],
                         'created_invoice_id'       => $created_invoice_id,
                     ];
-                    hooks()->do_action('after_recurring_expense_created', ['original_expense' => $expense, 'new_expense_id' => $insert_id]);
                 }
             }
+            hooks()->do_action('after_recurring_expense_created', ['original_expense' => $expense, 'new_expense_id' => $insert_id]);
         }
 
         $send_recurring_expenses_email = hooks()->apply_filters('send_recurring_system_expenses_email', 'true');
@@ -671,12 +667,10 @@ class Cron_model extends App_Model
             $date                               = _dt(date('Y-m-d H:i:s'));
             // Get all active staff members
             $staff = $this->staff_model->get('', ['active' => 1]);
-
             foreach ($staff as $member) {
                 $sent = false;
                 load_admin_language($member['staffid']);
                 $recurring_expenses_email_data = _l('not_recurring_expense_cron_activity_heading') . ' - ' . $date . '<br /><br />';
-
                 foreach ($_renewals_ids_data as $data) {
                     if ($data['addedfrom'] == $member['staffid'] || is_admin($member['staffid'])) {
                         $unique_send = '[' . $member['staffid'] . '-' . $data['from'] . ']';
@@ -688,7 +682,7 @@ class Cron_model extends App_Model
 
                         $expense = $this->expenses_model->get($data['from']);
 
-                        $recurring_expenses_email_data .= _l('not_recurring_expenses_action_taken_from') . ': <a href="' . admin_url('expenses/list_expenses/' . $data['from']) . '">' . $expense->category_name . (! empty($expense->expense_name) ? ' (' . $expense->expense_name . ')' : '') . '</a> - ' . _l('expense_amount') . ' ' . app_format_money($expense->amount, get_currency($expense->currency)) . '<br />';
+                        $recurring_expenses_email_data .= _l('not_recurring_expenses_action_taken_from') . ': <a href="' . admin_url('expenses/list_expenses/' . $data['from']) . '">' . $expense->category_name . (!empty($expense->expense_name) ? ' (' . $expense->expense_name . ')' : '') . '</a> - ' . _l('expense_amount') . ' ' . app_format_money($expense->amount, get_currency($expense->currency)) . '<br />';
 
                         $recurring_expenses_email_data .= _l('not_expense_renewed') . ' <a href="' . admin_url('expenses/list_expenses/' . $data['renewed']) . '">' . _l('id') . ' ' . $data['renewed'] . '</a>';
 
@@ -724,7 +718,7 @@ class Cron_model extends App_Model
     {
         $invoice_hour_auto_operations = get_option('invoice_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($invoice_hour_auto_operations)) {
+        if (!$this->shouldRunAutomations($invoice_hour_auto_operations)) {
             return;
         }
 
@@ -746,12 +740,12 @@ class Cron_model extends App_Model
 
         $_renewals_ids_data = [];
         $total_renewed      = 0;
-
         foreach ($invoices as $invoice) {
+
             // Current date
             $date = new DateTime(date('Y-m-d'));
             // Check if is first recurring
-            if (! $invoice['last_recurring_date']) {
+            if (!$invoice['last_recurring_date']) {
                 $last_recurring_date = date('Y-m-d', strtotime($invoice['date']));
             } else {
                 $last_recurring_date = date('Y-m-d', strtotime($invoice['last_recurring_date']));
@@ -763,6 +757,7 @@ class Cron_model extends App_Model
             $re_create_at = date('Y-m-d', strtotime('+' . $invoice['recurring'] . ' ' . strtoupper($invoice['recurring_type']), strtotime($last_recurring_date)));
 
             if (date('Y-m-d') >= $re_create_at) {
+
                 // Recurring invoice date is okey lets convert it to new invoice
                 $_invoice                     = $this->invoices_model->get($invoice['id']);
                 $new_invoice_data             = [];
@@ -793,6 +788,9 @@ class Cron_model extends App_Model
                 $new_invoice_data['discount_percent'] = $_invoice->discount_percent;
                 $new_invoice_data['discount_total']   = $_invoice->discount_total;
                 $new_invoice_data['discount_type']    = $_invoice->discount_type;
+                if (property_exists($_invoice, 'discount_label')) {
+                    $new_invoice_data['discount_label'] = $_invoice->discount_label;
+                }
                 $new_invoice_data['terms']            = clear_textarea_breaks($_invoice->terms);
                 $new_invoice_data['sale_agent']       = $_invoice->sale_agent;
                 // Since version 1.0.6
@@ -824,7 +822,6 @@ class Cron_model extends App_Model
                 $new_invoice_data['newitems']              = [];
                 $key                                       = 1;
                 $custom_fields_items                       = get_custom_fields('items');
-
                 foreach ($_invoice->items as $item) {
                     $new_invoice_data['newitems'][$key]['description']      = $item['description'];
                     $new_invoice_data['newitems'][$key]['long_description'] = clear_textarea_breaks($item['long_description']);
@@ -832,7 +829,6 @@ class Cron_model extends App_Model
                     $new_invoice_data['newitems'][$key]['unit']             = $item['unit'];
                     $new_invoice_data['newitems'][$key]['taxname']          = [];
                     $taxes                                                  = get_invoice_item_taxes($item['id']);
-
                     foreach ($taxes as $tax) {
                         // tax name is in format TAX1|10.00
                         array_push($new_invoice_data['newitems'][$key]['taxname'], $tax['taxname']);
@@ -843,7 +839,7 @@ class Cron_model extends App_Model
                     foreach ($custom_fields_items as $cf) {
                         $new_invoice_data['newitems'][$key]['custom_fields']['items'][$cf['id']] = get_custom_field_value($item['id'], $cf['id'], 'items', false);
 
-                        if (! defined('COPY_CUSTOM_FIELDS_LIKE_HANDLE_POST')) {
+                        if (!defined('COPY_CUSTOM_FIELDS_LIKE_HANDLE_POST')) {
                             define('COPY_CUSTOM_FIELDS_LIKE_HANDLE_POST', true);
                         }
                     }
@@ -858,12 +854,12 @@ class Cron_model extends App_Model
                         'cancel_overdue_reminders' => $_invoice->cancel_overdue_reminders,
                     ]);
 
+
                     $tags = get_tags_in($_invoice->id, 'invoice');
                     handle_tags_save($tags, $id, 'invoice');
 
                     // Get the old expense custom field and add to the new
                     $custom_fields = get_custom_fields('invoice');
-
                     foreach ($custom_fields as $field) {
                         $value = get_custom_field_value($invoice['id'], $field['id'], 'invoice', false);
                         if ($value != '') {
@@ -909,12 +905,10 @@ class Cron_model extends App_Model
             $email_send_to_by_staff_and_invoice = [];
             // Get all active staff members
             $staff = $this->staff_model->get('', ['active' => 1]);
-
             foreach ($staff as $member) {
                 $sent = false;
                 load_admin_language($member['staffid']);
                 $recurring_invoices_email_data = _l('not_recurring_invoices_cron_activity_heading') . ' - ' . $date . '<br /><br />';
-
                 foreach ($_renewals_ids_data as $renewed_invoice_data) {
                     if ($renewed_invoice_data['addedfrom'] == $member['staffid'] || $renewed_invoice_data['sale_agent'] == $member['staffid'] || is_admin($member['staffid'])) {
                         $unique_send = '[' . $member['staffid'] . '-' . $renewed_invoice_data['from'] . ']';
@@ -959,8 +953,7 @@ class Cron_model extends App_Model
                     );
 
                     break;
-
-                case 'estimate':
+                    case 'estimate':
                     $this->estimates_model->send_estimate_to_client(
                         $email['rel_id'],
                         $email['template'],
@@ -984,7 +977,7 @@ class Cron_model extends App_Model
     {
         $tasks_reminder_notification_hour = get_option('tasks_reminder_notification_hour');
 
-        if (! $this->shouldRunAutomations($tasks_reminder_notification_hour)) {
+        if (!$this->shouldRunAutomations($tasks_reminder_notification_hour)) {
             return;
         }
 
@@ -1099,7 +1092,7 @@ class Cron_model extends App_Model
     {
         $invoice_auto_operations_hour = get_option('invoice_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($invoice_auto_operations_hour)) {
+        if (!$this->shouldRunAutomations($invoice_auto_operations_hour)) {
             return;
         }
 
@@ -1113,7 +1106,6 @@ class Cron_model extends App_Model
         $invoices = $this->db->get()->result_array();
 
         $now = time();
-
         foreach ($invoices as $invoice) {
             if (empty($invoice['duedate'])) {
                 continue;
@@ -1159,7 +1151,7 @@ class Cron_model extends App_Model
 
     private function invoice_due()
     {
-        if (! $this->shouldRunAutomations(get_option('invoice_auto_operations_hour'))) {
+        if (!$this->shouldRunAutomations(get_option('invoice_auto_operations_hour'))) {
             return;
         }
 
@@ -1173,8 +1165,8 @@ class Cron_model extends App_Model
         // We dont need invoices with no duedate and where the duedate is less the current date
         // e.q. is already overdue and partially paid invoice
         $this->db->where('(duedate IS NOT NULL and duedate > "' . date('Y-m-d') . '")')
-            ->where_in('status', [Invoices_model::STATUS_UNPAID, Invoices_model::STATUS_PARTIALLY])
-            ->where('cancel_overdue_reminders', 0);
+                ->where_in('status', [Invoices_model::STATUS_UNPAID, Invoices_model::STATUS_PARTIALLY])
+                ->where('cancel_overdue_reminders', 0);
 
         $invoices = $this->db->get()->result_array();
 
@@ -1183,7 +1175,7 @@ class Cron_model extends App_Model
                 continue;
             }
 
-            if (! $invoice['last_due_reminder']) {
+            if (!$invoice['last_due_reminder']) {
                 $due_date               = new DateTime($invoice['duedate']);
                 $diff                   = $due_date->diff(new DateTime(date('Y-m-d')))->format('%a');
                 $date_and_due_date_diff = floor((strtotime($invoice['duedate']) - strtotime($invoice['date'])) / (60 * 60 * 24));
@@ -1207,7 +1199,7 @@ class Cron_model extends App_Model
     {
         $proposals_auto_operations_hour = get_option('proposals_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($proposals_auto_operations_hour)) {
+        if (!$this->shouldRunAutomations($proposals_auto_operations_hour)) {
             return;
         }
 
@@ -1245,7 +1237,7 @@ class Cron_model extends App_Model
     {
         $estimates_auto_operations_hour = get_option('estimates_auto_operations_hour');
 
-        if (! $this->shouldRunAutomations($estimates_auto_operations_hour)) {
+        if (!$this->shouldRunAutomations($estimates_auto_operations_hour)) {
             return;
         }
 
@@ -1256,7 +1248,6 @@ class Cron_model extends App_Model
         $estimates = $this->db->get()->result_array();
         $this->load->model('estimates_model');
         $now = new DateTime(date('Y-m-d'));
-
         foreach ($estimates as $estimate) {
             if ($estimate['expirydate'] != null) {
                 if (date('Y-m-d') > $estimate['expirydate']) {
@@ -1299,12 +1290,6 @@ class Cron_model extends App_Model
         }
 
         if (empty($mail->last_run) || (time() > $mail->last_run + ($mail->check_every * 60))) {
-            if (! function_exists('imap_open')) {
-                log_activity('Leads Email Integration Cron Job: Imap PHP extension is not installed.');
-
-                return false;
-            }
-
             $this->load->model('spam_filters_model');
 
             $this->db->where('id', 1);
@@ -1314,7 +1299,7 @@ class Cron_model extends App_Model
 
             $password = $this->encryption->decrypt($mail->password);
 
-            if (! $password) {
+            if (!$password) {
                 log_activity('Failed to decrypt email integration password, navigateo to Setup->Leads->Email Integration and re-add the password.');
 
                 return false;
@@ -1343,14 +1328,14 @@ class Cron_model extends App_Model
 
             if ($mail->only_loop_on_unseen_emails == 1) {
                 $search = new SearchExpression();
-                $search->addCondition(new Unseen());
+                $search->addCondition(new Unseen);
 
                 $messages = $mailbox->getMessages($search);
             } else {
                 $messages = $mailbox->getMessages();
             }
 
-            include_once APPPATH . 'third_party/simple_html_dom.php';
+            include_once(APPPATH . 'third_party/simple_html_dom.php');
 
             foreach ($messages as $message) {
                 try {
@@ -1364,7 +1349,7 @@ class Cron_model extends App_Model
                         foreach ($html->find('[id^="field_"],[id^="custom_field_"]') as $data) {
                             if (isset($data->plaintext)) {
                                 $value = strip_tags(trim($data->plaintext));
-                                if ($value && isset($data->attr['id']) && ! empty($data->attr['id'])) {
+                                if ($value && isset($data->attr['id']) && !empty($data->attr['id'])) {
                                     $formFields[$data->attr['id']] = $this->security->xss_clean($value);
                                 }
                             }
@@ -1404,7 +1389,6 @@ class Cron_model extends App_Model
 
                     /**
                      * Check the the fromAddress is null, perhaps invalid address?
-                     *
                      * @see https://github.com/ddeboer/imap/issues/370
                      */
                     if (is_null($fromAddress)) {
@@ -1441,14 +1425,14 @@ class Cron_model extends App_Model
                             load_admin_language();
 
                             $task_data = [
-                                'name'        => $fromName . ' - ' . $fromAddress,
-                                'priority'    => get_option('default_task_priority'),
-                                'dateadded'   => date('Y-m-d H:i:s'),
-                                'startdate'   => date('Y-m-d'),
-                                'addedfrom'   => $mail->responsible,
-                                'status'      => 1,
-                                'description' => $body,
-                            ];
+                            'name'        => $fromName . ' - ' . $fromAddress,
+                            'priority'    => get_option('default_task_priority'),
+                            'dateadded'   => date('Y-m-d H:i:s'),
+                            'startdate'   => date('Y-m-d'),
+                            'addedfrom'   => $mail->responsible,
+                            'status'      => 1,
+                            'description' => $body,
+                        ];
 
                             $task_data = hooks()->apply_filters('before_add_task', $task_data);
                             $this->db->insert(db_prefix() . 'tasks', $task_data);
@@ -1456,9 +1440,9 @@ class Cron_model extends App_Model
                             $task_id = $this->db->insert_id();
                             if ($task_id) {
                                 $assignee_data = [
-                                    'taskid'   => $task_id,
-                                    'assignee' => $mail->responsible,
-                                ];
+                                'taskid'   => $task_id,
+                                'assignee' => $mail->responsible,
+                            ];
 
                                 $this->tasks_model->add_task_assignees($assignee_data, true);
                                 $this->handleLeadsEmailIntegrationAttachments($message, false, $task_id);
@@ -1474,7 +1458,6 @@ class Cron_model extends App_Model
                         } else {
                             $message->markAsSeen();
                         }
-
                         // Exists no need to do anything
                         continue;
                     }
@@ -1511,12 +1494,12 @@ class Cron_model extends App_Model
                         }
                         // More the one time email from this lead, insert into the lead emails log table
                         $this->db->insert(db_prefix() . 'lead_integration_emails', [
-                            'leadid'    => $lead->id,
-                            'subject'   => $message->getSubject(),
-                            'body'      => $body,
-                            'dateadded' => date('Y-m-d H:i:s'),
-                            'emailid'   => $message->getNumber(),
-                        ]);
+                        'leadid'    => $lead->id,
+                        'subject'   => $message->getSubject(),
+                        'body'      => $body,
+                        'dateadded' => date('Y-m-d H:i:s'),
+                        'emailid'   => $message->getNumber(),
+                    ]);
 
                         $inserted_email_id = $this->db->insert_id();
                         if ($mail->delete_after_import == 1) {
@@ -1528,29 +1511,28 @@ class Cron_model extends App_Model
                         $this->_notification_lead_email_integration('not_received_one_or_more_messages_lead', $mail, $lead->id);
                         $this->handleLeadsEmailIntegrationAttachments($message, $lead->id);
                         hooks()->do_action('existing_lead_email_inserted_from_email_integration', [
-                            'email'    => $message,
-                            'lead'     => $lead,
-                            'email_id' => $inserted_email_id,
-                        ]);
-
+                        'email'    => $message,
+                        'lead'     => $lead,
+                        'email_id' => $inserted_email_id,
+                    ]);
                         // Exists not need to do anything except to add the email
                         continue;
                     }
 
                     // Lets insert into the leads table
                     $lead_data = [
-                        'name'                               => $fromName,
-                        'assigned'                           => $mail->responsible,
-                        'dateadded'                          => date('Y-m-d H:i:s'),
-                        'status'                             => $mail->lead_status,
-                        'source'                             => $mail->lead_source,
-                        'addedfrom'                          => 0,
-                        'email'                              => $fromAddress,
-                        'is_imported_from_email_integration' => 1,
-                        'email_integration_uid'              => $message->getNumber(),
-                        'lastcontact'                        => null,
-                        'is_public'                          => $mail->mark_public,
-                    ];
+                    'name'                               => $fromName,
+                    'assigned'                           => $mail->responsible,
+                    'dateadded'                          => date('Y-m-d H:i:s'),
+                    'status'                             => $mail->lead_status,
+                    'source'                             => $mail->lead_source,
+                    'addedfrom'                          => 0,
+                    'email'                              => $fromAddress,
+                    'is_imported_from_email_integration' => 1,
+                    'email_integration_uid'              => $message->getNumber(),
+                    'lastcontact'                        => null,
+                    'is_public'                          => $mail->mark_public,
+                ];
 
                     $lead_data = hooks()->apply_filters('before_insert_lead_from_email_integration', $lead_data);
 
@@ -1580,8 +1562,8 @@ class Cron_model extends App_Model
 
                             $this->db->where('id', $insert_id);
                             $this->db->update(db_prefix() . 'leads', [
-                                $field => $value,
-                            ]);
+                            $field => $value,
+                        ]);
                         }
 
                         foreach ($lead_form_custom_fields as $cf_id => $value) {
@@ -1594,12 +1576,12 @@ class Cron_model extends App_Model
                         }
 
                         $this->db->insert(db_prefix() . 'lead_integration_emails', [
-                            'leadid'    => $insert_id,
-                            'subject'   => $message->getSubject(),
-                            'body'      => $body,
-                            'dateadded' => date('Y-m-d H:i:s'),
-                            'emailid'   => $message->getNumber(),
-                        ]);
+                        'leadid'    => $insert_id,
+                        'subject'   => $message->getSubject(),
+                        'body'      => $body,
+                        'dateadded' => date('Y-m-d H:i:s'),
+                        'emailid'   => $message->getNumber(),
+                    ]);
 
                         if ($mail->delete_after_import == 1) {
                             $message->delete();
@@ -1633,12 +1615,6 @@ class Cron_model extends App_Model
 
     public function auto_import_imap_tickets()
     {
-        if (! function_exists('imap_open')) {
-            log_activity('Tickets Auto Import Cron Job: Imap PHP extension is not installed.');
-
-            return false;
-        }
-
         $this->db->select('host,encryption,password,email,delete_after_import,imap_username,folder')
             ->from(db_prefix() . 'departments')
             ->where('host !=', '')
@@ -1654,14 +1630,14 @@ class Cron_model extends App_Model
 
             $password = $this->encryption->decrypt($dept['password']);
 
-            if (! $password) {
+            if (!$password) {
                 log_activity('Failed to decrypt department password, navigate to Setup->Support->Departments and re-add the password for ' . $dept['email'] . ' department');
 
                 continue;
             }
 
             $imap = new Imap(
-                ! empty($dept['imap_username']) ? $dept['imap_username'] : $dept['email'],
+                !empty($dept['imap_username']) ? $dept['imap_username'] : $dept['email'],
                 $password,
                 $dept['host'],
                 $dept['encryption']
@@ -1680,7 +1656,7 @@ class Cron_model extends App_Model
             );
 
             $search = new SearchExpression();
-            $search->addCondition(new Unseen());
+            $search->addCondition(new Unseen);
 
             $messages = $mailbox->getMessages($search);
 
@@ -1703,11 +1679,11 @@ class Cron_model extends App_Model
                     }
 
                     if (
-                        class_exists('EmailReplyParser\EmailReplyParser')
-                        && get_option('ticket_import_reply_only') === '1'
-                        && (mb_substr_count($message->getSubject(), 'FWD:') == 0 && mb_substr_count($message->getSubject(), 'FW:') == 0)
-                    ) {
-                        $parsedBody = EmailReplyParser\EmailReplyParser::parseReply(
+                    class_exists('EmailReplyParser\EmailReplyParser')
+                    && get_option('ticket_import_reply_only') === '1'
+                    && (mb_substr_count($message->getSubject(), 'FWD:') == 0 && mb_substr_count($message->getSubject(), 'FW:') == 0)
+                ) {
+                        $parsedBody = \EmailReplyParser\EmailReplyParser::parseReply(
                             $this->prepare_imap_email_body_html($body)
                         );
 
@@ -1719,16 +1695,16 @@ class Cron_model extends App_Model
                             $body = $parsedBody;
                         }
                     }
-
+                  
                     $body = $this->prepare_imap_email_body_html($body);
-
+            
                     $data['attachments'] = [];
 
                     foreach ($message->getAttachments() as $attachment) {
                         $data['attachments'][] = [
-                            'filename' => $attachment->getFilename(),
-                            'data'     => $attachment->getDecodedContent(),
-                        ];
+                        'filename' => $attachment->getFilename(),
+                        'data'     => $attachment->getDecodedContent(),
+                    ];
                     }
 
                     $data['subject'] = $message->getSubject();
@@ -1767,7 +1743,6 @@ class Cron_model extends App_Model
 
                     /**
                      * Check the the fromAddress is null, perhaps invalid address?
-                     *
                      * @see https://github.com/ddeboer/imap/issues/370
                      */
                     if (is_null($fromAddress)) {
@@ -1781,31 +1756,35 @@ class Cron_model extends App_Model
 
                     $data = hooks()->apply_filters('imap_auto_import_ticket_data', $data, $message);
 
-                    try {
-                        // Perform any cleanup before trying to insert the ticket
-                        // In case of any weird errors, helps not re-importing the ticket hundreds of times.
-                        if ($dept['delete_after_import'] == 0) {
-                            $message->markAsSeen();
-                        } else {
-                            $message->delete();
-                            $connection->expunge();
-                        }
+                  
 
-                        $this->tickets_model->insert_piped_ticket($data);
-                    } catch (Exception $e) {
+                    try {
+                        $status = $this->tickets_model->insert_piped_ticket($data);
+
+                        if ($status == 'Ticket Imported Successfully' || $status == 'Ticket Reply Imported Successfully') {
+                            if ($dept['delete_after_import'] == 0) {
+                                $message->markAsSeen();
+                            } else {
+                                $message->delete();
+                                $connection->expunge();
+                            }
+                        } else {
+                            // Set unseen message in all cases to prevent looping throught the message again
+                            $message->markAsSeen();
+                        }
+                    } catch (\Exception $e) {
                         // Set unseen message in all cases to prevent looping throught the message again
                         $message->markAsSeen();
                     }
                 } catch (MessageDoesNotExistException $e) {
                     continue;
                 } catch (UnexpectedEncodingException|UnsupportedCharsetException $e) {
-                    log_activity('Failed to auto importing tickets for department ' . $dept['email'] . '. Error: ' . $e->getMessage());
+                    log_activity('Failed to auto importing tickets for department ' . $dept['email'] . '. Error:' . $e->getMessage());
                     $message->markAsSeen();
 
                     continue;
                 }
             }
-
             $this->currentImapMessage = null;
         }
     }
@@ -1825,7 +1804,6 @@ class Cron_model extends App_Model
     private function _maybe_fix_duplicate_tasks_assignees_and_followers()
     {
         $query = $this->db->query('SELECT `staffid`, `taskid`, COUNT(*) AS c FROM ' . db_prefix() . 'task_assigned GROUP BY `staffid`, `taskid` HAVING c > 1')->result_array();
-
         foreach ($query as $res) {
             $this->db->where('staffid', $res['staffid']);
             $this->db->where('taskid', $res['taskid']);
@@ -1833,7 +1811,6 @@ class Cron_model extends App_Model
             $this->db->delete(db_prefix() . 'task_assigned');
         }
         $query = $this->db->query('SELECT `staffid`, `taskid`, COUNT(*) AS c FROM ' . db_prefix() . 'task_followers GROUP BY `staffid`, `taskid` HAVING c > 1')->result_array();
-
         foreach ($query as $res) {
             $this->db->where('staffid', $res['staffid']);
             $this->db->where('taskid', $res['taskid']);
@@ -1844,13 +1821,13 @@ class Cron_model extends App_Model
 
     private function _notification_lead_email_integration($description, $mail, $leadid)
     {
-        if (! empty($mail->notify_type)) {
+        if (!empty($mail->notify_type)) {
             if ($mail->notify_type == 'assigned') {
                 $ids   = [$mail->responsible];
                 $field = 'staffid';
             } else {
                 $ids = unserialize($mail->notify_ids);
-                if (! is_array($ids) || count($ids) == 0) {
+                if (!is_array($ids) || count($ids) == 0) {
                     return;
                 }
                 if ($mail->notify_type == 'specific_staff') {
@@ -1891,7 +1868,7 @@ class Cron_model extends App_Model
                 get_upload_path_by_type('task') . $task_id . '/' :
                 get_upload_path_by_type('lead') . $leadid . '/';
 
-            if (! file_exists($path)) {
+            if (!file_exists($path)) {
                 mkdir($path, 0755);
                 file_put_contents($path . 'index.html', '');
             }
@@ -1943,23 +1920,18 @@ class Cron_model extends App_Model
         return ($this->lock_handle && flock($this->lock_handle, LOCK_EX | LOCK_NB))
             || (defined('APP_DISABLE_CRON_LOCK') && APP_DISABLE_CRON_LOCK);
     }
-
+    
     private function prepare_imap_email_body_html($body)
     {
-        $body = trim($body);
-        $body = str_replace('&nbsp;', ' ', $body);
+        $body = trim($body);        
+        $body = str_replace('&nbsp;', ' ', $body);        
         $body = trim(remove_html_invisible_tags($body));
         // Remove opening <html> tag.
         $body = preg_replace('/^<html[^>]*>/', '', $body);
         // Remove everything before and including the opening <body> tag, and everything after and including the closing </body> tag.
         $body = preg_replace('/.*<body[^>]*>(.*?)<\/body>.*/is', '$1', $body);
-        $body = trim($body);
-        // Remove duplicate new lines
-        $body = preg_replace("/[\r\n]+/", "\n", $body);
-        // new lines with <br />
-        $body = preg_replace('/\n(\s*\n)+/', '<br />', $body);
 
-        return preg_replace('/\n/', '<br>', $body);
+        return trim($body);
     }
 
     private function shouldRunAutomations($auto_operation_hour)
@@ -1970,15 +1942,18 @@ class Cron_model extends App_Model
 
         $auto_operation_hour = intval($auto_operation_hour);
         $hour_now            = date('G');
+        if ($hour_now != $auto_operation_hour && $this->manually === false) {
+            return false;
+        }
 
-        return ! ($hour_now != $auto_operation_hour && $this->manually === false);
+        return true;
     }
 
     private function hasTimeoutOccurred()
     {
         $lastError = error_get_last();
 
-        if (! $lastError) {
+        if (!$lastError) {
             return false;
         }
 
