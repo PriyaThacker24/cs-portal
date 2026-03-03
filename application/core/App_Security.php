@@ -73,7 +73,24 @@ class App_Security extends CI_Security
             die;
         }
 
-        // parent::csrf_show_error();
+        $uri     = load_class('URI', 'core');
+        $uriStr  = (string) $uri->uri_string();
+        $admin   = preg_quote(ADMIN_URI, '#');
+        $isAuth  = preg_match('#^(authentication/(login|register|forgot_password|reset_password|set_password)|' . $admin . '/authentication(?!/logout))#i', $uriStr);
+
+        if ($isAuth) {
+            $CI = get_instance();
+            if (isset($CI->session)) {
+                $msg = function_exists('_l') ? _l('session_expired_refresh') : 'The page has expired. Please try again.';
+                $CI->session->set_flashdata('message-warning', $msg);
+            }
+            $loginUrl = (strpos($uriStr, ADMIN_URI . '/') === 0)
+                ? rtrim(config_item('base_url'), '/') . '/' . ADMIN_URI . '/authentication'
+                : rtrim(config_item('base_url'), '/') . '/authentication/login';
+            header('Location: ' . $loginUrl, true, 302);
+            exit;
+        }
+
         $heading = ' 419 Page Expired!';
         $message = 'Sorry, the page has expired, return to previous page and refresh to continue.';
         show_error($message, 403, $heading);

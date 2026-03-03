@@ -167,12 +167,12 @@ if (get_option('show_amount_due_on_invoice') == 1 && $invoice->status != Invoice
    </tr>';
 }
 
-if (!empty($invoice->amount_rupees)) {
+/* if (!empty($invoice->amount_rupees)) {
     $tbltotal .= '<tr>
        <td align="right" width="85%"><strong>INR Amount</strong></td>
        <td align="right" width="15%">' . $invoice->amount_rupees . '</td>
    </tr>';
-}
+} */
 
 $tbltotal .= '</table>';
 $pdf->writeHTML($tbltotal, true, false, false, false, '');

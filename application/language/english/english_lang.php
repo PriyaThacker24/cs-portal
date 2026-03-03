@@ -77,6 +77,7 @@ $lang['client_password']                         = 'Password';
 $lang['client_password_change_populate_note']    = 'Note: if you populate this field, password will be changed on this contact.';
 $lang['client_password_last_changed']            = 'Password last changed:';
 $lang['login_as_client']                         = 'Login as client';
+$lang['login_as_admin']                          = 'Login As Admin';
 $lang['client_invoices_tab']                     = 'Invoices';
 $lang['contracts_invoices_tab']                  = 'Contracts';
 $lang['contracts_tickets_tab']                   = 'Tickets';
@@ -2371,6 +2372,7 @@ $lang['contract_sent_to_client_fail']             = 'Failed to send contract';
 
 # Version 1.1.3
 $lang['client_invalid_username_or_password'] = 'Invalid username or password';
+$lang['session_expired_refresh']              = 'The token has expired. Please try again.';
 $lang['client_old_password_incorrect']       = 'Your old password is incorrect';
 $lang['client_password_changed']             = 'Your password has been changed';
 

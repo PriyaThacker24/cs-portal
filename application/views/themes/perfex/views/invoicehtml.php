@@ -235,7 +235,7 @@
                                 </td>
                             </tr>
                             <?php } ?>
-                            <?php if (!empty($invoice->amount_rupees)) { ?>
+                            <?php /* if (!empty($invoice->amount_rupees)) { ?>
                             <tr>
                                 <td>
                                     <span class="bold tw-text-neutral-700">INR Amount</span>
@@ -244,7 +244,7 @@
                                     <?php echo e($invoice->amount_rupees); ?>
                                 </td>
                             </tr>
-                            <?php } ?>
+                            <?php } */ ?>
                         </tbody>
                     </table>
                 </div>

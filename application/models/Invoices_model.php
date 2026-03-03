@@ -1890,4 +1890,19 @@ class Invoices_model extends App_Model
             'active' => 1, 'invoice_emails' => 1,
         ]);
     }
+
+    /**
+     * Save formatted invoice number to database
+     *
+     * @param  int $id invoice id
+     *
+     * @return void
+     */
+    public function save_formatted_number($id)
+    {
+        $formattedNumber = format_invoice_number($id);
+
+        $this->db->where('id', $id);
+        $this->db->update(db_prefix() . 'invoices', ['formatted_number' => $formattedNumber]);
+    }
 }

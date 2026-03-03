@@ -11,6 +11,11 @@
                 <span class="icon-bar"></span>
             </button>
             <?php get_dark_company_logo('', 'navbar-brand logo'); ?>
+            <?php if (! is_client_logged_in()) { ?>
+            <a href="<?= admin_url('authentication'); ?>" class="btn btn-primary btn-sm navbar-btn pull-right">
+                <?= _l('login_as_admin'); ?>
+            </a>
+            <?php } ?>
         </div>
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="theme-navbar-collapse">
