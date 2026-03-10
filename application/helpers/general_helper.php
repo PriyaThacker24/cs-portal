@@ -616,6 +616,28 @@ function _l($line, $label = '', $log_errors = true)
 }
 
 /**
+ * Format date as dd/mm/yyyy (for invoice/payment listings)
+ *
+ * @param string $date Valid date
+ *
+ * @return string
+ */
+function _d_ddmmyyyy($date)
+{
+    if ($date == '' || is_null($date) || $date == '0000-00-00') {
+        return '';
+    }
+
+    try {
+        $dateTime = new DateTime($date);
+
+        return $dateTime->format('d/m/Y');
+    } catch (Exception $e) {
+        return $date;
+    }
+}
+
+/**
  * Format date to selected dateformat
  *
  * @param string $date Valid date

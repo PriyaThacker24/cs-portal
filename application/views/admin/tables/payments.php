@@ -157,7 +157,7 @@ return App_table::find('payments')
 
             $row[] = !empty($aRow['amount_rupees']) ? e($aRow['amount_rupees']) : '-';
 
-            $row[] = e(_d($aRow['date']));
+            $row[] = e(_d_ddmmyyyy($aRow['date']));
 
             $row['DT_RowClass'] = 'has-row-options';
 

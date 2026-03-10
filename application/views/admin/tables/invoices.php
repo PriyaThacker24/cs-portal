@@ -118,7 +118,7 @@ return App_table::find('invoices')
 
             $row[] = e($aRow['year']);
 
-            $row[] = e(_d($aRow['date']));
+            $row[] = e(_d_ddmmyyyy($aRow['date']));
 
             if (empty($aRow['deleted_customer_name'])) {
                 $row[] = '<a href="' . admin_url('clients/client/' . $aRow['clientid']) . '">' . e($aRow['company']) . '</a>';
@@ -130,13 +130,13 @@ return App_table::find('invoices')
 
             $row[] = render_tags($aRow['tags']);
 
-            $row[] = e(_d($aRow['duedate']));
+            $row[] = e(_d_ddmmyyyy($aRow['duedate']));
 
             $row[] = format_invoice_status($aRow[db_prefix() . 'invoices.status']);
 
             // Custom fields add values
             foreach ($customFieldsColumns as $customFieldColumn) {
-                $row[] = (strpos($customFieldColumn, 'date_picker_') !== false ? _d($aRow[$customFieldColumn]) : $aRow[$customFieldColumn]);
+                $row[] = (strpos($customFieldColumn, 'date_picker_') !== false ? _d_ddmmyyyy($aRow[$customFieldColumn]) : $aRow[$customFieldColumn]);
             }
 
             $row['DT_RowClass'] = 'has-row-options';
