@@ -235,16 +235,37 @@
                                 </td>
                             </tr>
                             <?php } ?>
-                            <?php /* if (!empty($invoice->amount_rupees)) { ?>
+                            <?php
+                            $paymentInrAmounts = [];
+                            if (!empty($invoice->payments) && is_array($invoice->payments)) {
+                                foreach ($invoice->payments as $payment) {
+                                    if (empty($payment['amount_rupees'])) {
+                                        continue;
+                                    }
+                                    $normalizedPaymentInrAmount = preg_replace('/[^0-9.]/', '', (string) $payment['amount_rupees']);
+                                    if (!is_numeric($normalizedPaymentInrAmount)) {
+                                        continue;
+                                    }
+                                    $paymentInrAmounts[] = $normalizedPaymentInrAmount;
+                                }
+                            }
+                            if (empty($paymentInrAmounts) && !empty($invoice->amount_rupees)) {
+                                $normalizedInvoiceInrAmount = preg_replace('/[^0-9.]/', '', (string) $invoice->amount_rupees);
+                                if (is_numeric($normalizedInvoiceInrAmount)) {
+                                    $paymentInrAmounts[] = $normalizedInvoiceInrAmount;
+                                }
+                            }
+                            ?>
+                            <?php if (!empty($paymentInrAmounts)) { ?>
                             <tr>
                                 <td>
                                     <span class="bold tw-text-neutral-700">INR Amount</span>
                                 </td>
                                 <td>
-                                    <?php echo e($invoice->amount_rupees); ?>
+                                    <?php echo e(implode(', ', $paymentInrAmounts)); ?>
                                 </td>
                             </tr>
-                            <?php } */ ?>
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>

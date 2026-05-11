@@ -458,14 +458,6 @@
                     <?php $value = (isset($invoice) ? $invoice->adminnote : ''); ?>
                     <?php echo render_textarea('adminnote', 'invoice_add_edit_admin_note', $value); ?>
                     
-                    <?php 
-                    $value = '';
-                    if (isset($invoice) && property_exists($invoice, 'amount_rupees') && !empty($invoice->amount_rupees)) {
-                        $value = $invoice->amount_rupees;
-                    }
-                    ?>
-                    <?php echo render_input('amount_rupees', 'INR Amount', $value, 'text'); ?>
-
                 </div>
             </div>
         </div>

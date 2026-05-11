@@ -167,6 +167,33 @@ if (get_option('show_amount_due_on_invoice') == 1 && $invoice->status != Invoice
    </tr>';
 }
 
+// Show same INR list as invoice preview (from payment INR values, fallback to invoice INR).
+$paymentInrAmounts = [];
+if (!empty($invoice->payments) && is_array($invoice->payments)) {
+    foreach ($invoice->payments as $payment) {
+        if (empty($payment['amount_rupees'])) {
+            continue;
+        }
+        $normalizedPaymentInrAmount = preg_replace('/[^0-9.]/', '', (string) $payment['amount_rupees']);
+        if (!is_numeric($normalizedPaymentInrAmount)) {
+            continue;
+        }
+        $paymentInrAmounts[] = $normalizedPaymentInrAmount;
+    }
+}
+if (empty($paymentInrAmounts) && !empty($invoice->amount_rupees)) {
+    $normalizedInvoiceInrAmount = preg_replace('/[^0-9.]/', '', (string) $invoice->amount_rupees);
+    if (is_numeric($normalizedInvoiceInrAmount)) {
+        $paymentInrAmounts[] = $normalizedInvoiceInrAmount;
+    }
+}
+if (!empty($paymentInrAmounts)) {
+    $tbltotal .= '<tr>
+       <td align="right" width="85%"><strong>INR Amount</strong></td>
+       <td align="right" width="15%">' . implode(', ', $paymentInrAmounts) . '</td>
+   </tr>';
+}
+
 /* if (!empty($invoice->amount_rupees)) {
     $tbltotal .= '<tr>
        <td align="right" width="85%"><strong>INR Amount</strong></td>
