@@ -18,7 +18,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 *
 */
 //define('APP_BASE_URL', 'https://phpstack-1517221-6071824.cloudwaysapps.com/');
-define('APP_BASE_URL', 'https://portal.concatstring.com/');
+define('APP_BASE_URL', 'http://cs-portal.local/');
 /*
 * --------------------------------------------------------------------------
 * Encryption Key
@@ -43,17 +43,17 @@ define('APP_DB_HOSTNAME', 'localhost');
 /**
  * The username used to connect to the database
  */
-define('APP_DB_USERNAME', 'gjwcawhnbj');
+define('APP_DB_USERNAME', 'root');
 
 /**
  * The password used to connect to the database
  */
-define('APP_DB_PASSWORD', 'E5WTnmJZc6');
+define('APP_DB_PASSWORD', 'root');
 
 /**
  * The name of the database you want to connect to
  */
-define('APP_DB_NAME', 'gjwcawhnbj');
+define('APP_DB_NAME', 'local');
 
 /**
  * @since  2.3.0

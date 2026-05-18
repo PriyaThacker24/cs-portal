@@ -44,7 +44,30 @@ $config['debug_output'] = 'html';                       // PHPMailer's SMTP debu
 
 $config['smtp_auto_tls'] = false;                     // Whether to enable TLS encryption automatically if a server supports it, even if smtp_crypto` is not set to 'tls'.
 
-$config['smtp_conn_options'] = [];                 // SMTP connection options, an array passed to the function stream_context_create() when onnecting via SMTP.
+// TLS: php.ini may set openssl.cafile to a path that does not exist on this install (e.g. Local WP
+// wp-includes/certificates/ca-bundle.crt). PHPMailer then fails at STARTTLS with "failed loading cafile".
+$smtpSslContext = [];
+$caCandidates   = [
+    '/etc/ssl/cert.pem',
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/pki/tls/certs/ca-bundle.crt',
+    '/usr/local/etc/openssl@3/cert.pem',
+    '/usr/local/etc/openssl/cert.pem',
+];
+foreach ($caCandidates as $caFile) {
+    if (is_readable($caFile)) {
+        $smtpSslContext['cafile'] = $caFile;
+        break;
+    }
+}
+$config['smtp_conn_options'] = $smtpSslContext !== []
+    ? [
+        'ssl' => $smtpSslContext + [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ],
+    ]
+    : [];
 
 $config['wordwrap'] = true;
 $config['mailtype'] = 'html';
