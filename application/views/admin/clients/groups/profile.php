@@ -22,18 +22,8 @@
                         </a>
                     </li>
                     <li role="presentation">
-                        <a href="#address_tab" aria-controls="address_tab" role="tab" data-toggle="tab">
-                            Address
-                        </a>
-                    </li>
-                    <li role="presentation">
                         <a href="#billing_tab" aria-controls="billing_tab" role="tab" data-toggle="tab">
-                            Billing
-                        </a>
-                    </li>
-                    <li role="presentation">
-                        <a href="#login_account_tab" aria-controls="login_account_tab" role="tab" data-toggle="tab">
-                            Login Account
+                            Billing Address
                         </a>
                     </li>
                 </ul>
@@ -124,14 +114,15 @@
                         <?php } ?>
                         <?php echo render_input('customer_email', 'Email Address', $primary_email, 'email'); ?>
                         
-                        <?php // Assign Admin field ?>
+                        <?php // Assign Sales field ?>
+                        <?= form_hidden('customer_admins_submitted', '1'); ?>
                         <div class="form-group select-placeholder">
                             <label for="customer_admins" class="control-label"><?= _l('assign_admin'); ?></label>
                             <?php
                             $selected = [];
                             if (isset($client) && isset($customer_admins)) {
                                 foreach ($customer_admins as $c_admin) {
-                                    array_push($selected, $c_admin['staff_id']);
+                                    $selected[] = (int) $c_admin['staff_id'];
                                 }
                             }
                             echo render_select('customer_admins[]', $staff ?? [], ['staffid', ['firstname', 'lastname']], '', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
@@ -140,67 +131,17 @@
                     </div>
                 </div>
             </div>
-            <div role="tabpanel" class="tab-pane" id="address_tab">
-                <div class="row">
-                    <div class="col-md-12">
-                        <?php $countries = get_all_countries();
-                        if (isset($client)) {
-                            $selectedCountry = $client->country ?? get_option('customer_default_country');
-                        } else {
-                            $customer_default_country = get_option('customer_default_country');
-                            $selectedCountry = $customer_default_country;
-                        }
-                        ?>
-                        <?= render_textarea('address', 'Address Line 1', isset($client) ? ($client->address ?? '') : ''); ?>
-                        <?= render_input('address_line_2', 'Address Line 2', isset($client) ? ($client->address_line_2 ?? '') : ''); ?>
-                        <?= render_input('city', 'City', isset($client) ? ($client->city ?? '') : ''); ?>
-                        <?= render_input('state', 'State', isset($client) ? ($client->state ?? '') : ''); ?>
-                        <?php echo render_select('country', $countries, ['country_id', ['short_name']], 'Country', $selectedCountry, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
-                        <?= render_input('zip', 'Postal Code', isset($client) ? ($client->zip ?? '') : ''); ?>
-                        <?= render_textarea('formatted_address', 'Formatted Address', '', ['readonly' => true]); ?>
-                    </div>
-                </div>
-            </div>
             <div role="tabpanel" class="tab-pane" id="billing_tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h4 class="tw-font-semibold tw-text-base tw-text-neutral-700 tw-flex tw-justify-between tw-items-center tw-mt-0 tw-mb-6">
-                            Billing Address
-                            <a href="#" class="billing-copy-from-address tw-text-sm tw-text-neutral-500 hover:tw-text-neutral-700 active:tw-text-neutral-700">
-                                Copy from Address
-                            </a>
-                        </h4>
                         <?php $countries = get_all_countries();
                         $selected = isset($client) ? ($client->billing_country ?? '') : ''; ?>
-                        <?= render_textarea('billing_street', 'Address Line 1', isset($client) ? ($client->billing_street ?? '') : ''); ?>
+                        <?= render_input('billing_street', 'Address Line 1', isset($client) ? clear_textarea_breaks($client->billing_street ?? '') : ''); ?>
                         <?= render_input('billing_street_2', 'Address Line 2', isset($client) ? ($client->billing_street_2 ?? '') : ''); ?>
                         <?= render_input('billing_city', 'City', isset($client) ? ($client->billing_city ?? '') : ''); ?>
                         <?= render_input('billing_state', 'State', isset($client) ? ($client->billing_state ?? '') : ''); ?>
                         <?php echo render_select('billing_country', $countries, ['country_id', ['short_name']], 'Country', $selected, ['data-none-selected-text' => _l('dropdown_non_selected_tex')]); ?>
                         <?= render_input('billing_zip', 'Postal Code', isset($client) ? ($client->billing_zip ?? '') : ''); ?>
-                    </div>
-                </div>
-            </div>
-            <div role="tabpanel" class="tab-pane" id="login_account_tab">
-                <div class="row">
-                    <div class="col-md-12">
-                        <?php // Password field for all customers ?>
-                        <?php 
-                        $password_value = '';
-                        if (isset($client)) {
-                            // Get password from primary contact (passwords are hashed, so we show empty but indicate if one exists)
-                            $primary_id = get_primary_contact_user_id($client->userid);
-                            if ($primary_id) {
-                                $primary_contact = $this->clients_model->get_contact($primary_id);
-                                if ($primary_contact && !empty($primary_contact->password)) {
-                                    // Password exists but is hashed, so we leave it empty
-                                    // User can set a new password if needed
-                                    $password_value = '';
-                                }
-                            }
-                        }
-                        ?>
-                        <?php echo render_input('login_password', 'Password', $password_value, 'password', ['placeholder' => 'Leave blank to keep current password']); ?>
                     </div>
                 </div>
             </div>
@@ -246,47 +187,3 @@
 <?php } ?>
 <?php } ?>
 <?php $this->load->view('admin/clients/client_group'); ?>
-<script>
-    (function() {
-        // Auto-generate formatted address for both new and existing customers
-        function updateFormattedAddress() {
-            var parts = [];
-            var a1 = $('textarea[name="address"]').val();
-            var a2 = $('input[name="address_line_2"]').val();
-            var city = $('input[name="city"]').val();
-            var state = $('input[name="state"]').val();
-            var country = $('select[name="country"]').val();
-            var zip = $('input[name="zip"]').val();
-            
-            if (a1) parts.push(a1);
-            if (a2) parts.push(a2);
-            if (city) parts.push(city);
-            if (state) parts.push(state);
-            if (zip) parts.push(zip);
-            if (country) {
-                var countryText = $('select[name="country"] option:selected').text();
-                if (countryText) parts.push(countryText);
-            }
-            
-            $('textarea[name="formatted_address"]').val(parts.join(', '));
-        }
-
-        $(function() {
-            // Update formatted address on input changes
-            $('body').on('input change', 'textarea[name="address"], input[name="address_line_2"], input[name="city"], input[name="state"], select[name="country"], input[name="zip"]', updateFormattedAddress);
-            updateFormattedAddress();
-
-            // Copy from Address to Billing
-            $('.billing-copy-from-address').on('click', function(e) {
-                e.preventDefault();
-                $('textarea[name="billing_street"]').val($('textarea[name="address"]').val());
-                $('input[name="billing_street_2"]').val($('input[name="address_line_2"]').val());
-                $('input[name="billing_city"]').val($('input[name="city"]').val());
-                $('input[name="billing_state"]').val($('input[name="state"]').val());
-                $('input[name="billing_zip"]').val($('input[name="zip"]').val());
-                $('select[name="billing_country"]').selectpicker('val', $('select[name="country"]').selectpicker('val'));
-                $('select[name="billing_country"]').selectpicker('refresh');
-            });
-        });
-    })();
-</script>

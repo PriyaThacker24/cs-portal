@@ -8,16 +8,16 @@ $info_right_column = '';
 $info_left_column  = '';
 
 $info_right_column .= '<span style="font-weight:bold;font-size:27px;">' . _l('invoice_pdf_heading') . '</span><br />';
-$info_right_column .= '<b style="color:#4e4e4e;"># ' . $invoice_number . '</b>';
+$info_right_column .= '<b style="color:#4e4e4e;">#' . $invoice_number . '</b>';
 
 if (get_option('show_status_on_pdf_ei') == 1) {
     $info_right_column .= '<br /><span style="color:rgb(' . invoice_status_color_pdf($status) . ');text-transform:uppercase;">' . format_invoice_status($status, '', false) . '</span>';
 }
 
-if ($status != Invoices_model::STATUS_PAID && $status != Invoices_model::STATUS_CANCELLED && get_option('show_pay_link_to_invoice_pdf') == 1
-    && found_invoice_mode($payment_modes, $invoice->id, false)) {
-    $info_right_column .= ' - <a style="color:#84c529;text-decoration:none;text-transform:uppercase;" href="' . site_url('invoice/' . $invoice->id . '/' . $invoice->hash) . '"><1b>' . _l('view_invoice_pdf_link_pay') . '</1b></a>';
-}
+// if ($status != Invoices_model::STATUS_PAID && $status != Invoices_model::STATUS_CANCELLED && get_option('show_pay_link_to_invoice_pdf') == 1
+//     && found_invoice_mode($payment_modes, $invoice->id, false)) {
+//     $info_right_column .= ' - <a style="color:#84c529;text-decoration:none;text-transform:uppercase;" href="' . site_url('invoice/' . $invoice->id . '/' . $invoice->hash) . '"><1b>' . _l('view_invoice_pdf_link_pay') . '</1b></a>';
+// }
 
 // Add logo
 $info_left_column .= pdf_logo_url();
@@ -260,6 +260,9 @@ if (found_invoice_mode($payment_modes, $invoice->id, true, true)) {
             }
         }
         if (isset($mode['show_on_pdf']) && $mode['show_on_pdf'] == 1) {
+            if (invoice_payment_mode_is_bank($mode)) {
+                continue;
+            }
             $pdf->Ln(1);
             $pdf->Cell(0, 0, $mode['name'], 0, 1, 'L', 0, '', 0);
             $pdf->Ln(2);
@@ -284,4 +287,14 @@ if (!empty($invoice->terms)) {
     $pdf->SetFont($font_name, '', $font_size);
     $pdf->Ln(2);
     $pdf->writeHTMLCell('', '', '', '', $invoice->terms, 0, 1, false, true, 'L', true);
+}
+
+if (invoice_has_bank_payment_mode($invoice, $payment_modes)) {
+    $pdf->Ln(4);
+    $pdf->SetFont($font_name, 'B', $font_size);
+    $pdf->Cell(0, 0, 'Bank Details', 0, 1, 'L', 0, '', 0);
+    $pdf->SetFont($font_name, '', $font_size);
+    $pdf->Ln(2);
+    $bankDetailsWidth = ($dimensions['wk'] / 2) - $dimensions['lm'];
+    $pdf->writeHTMLCell($bankDetailsWidth, '', '', '', get_invoice_bank_details_html(), 0, 1, false, true, 'L', true);
 }

@@ -725,3 +725,102 @@ function user_can_view_invoice($id, $staff_id = false)
 
     return false;
 }
+
+/**
+ * Check if a payment mode represents bank transfer.
+ *
+ * @param array|object $mode
+ * @return bool
+ */
+function invoice_payment_mode_is_bank($mode)
+{
+    $name = strtolower(trim(is_object($mode) ? ($mode->name ?? '') : ($mode['name'] ?? '')));
+
+    return $name === 'bank' || strpos($name, 'bank') !== false;
+}
+
+/**
+ * Check if bank transfer is among the invoice allowed payment modes.
+ *
+ * @param object $invoice
+ * @param array|null $payment_modes
+ * @return bool
+ */
+function invoice_has_bank_payment_mode($invoice, $payment_modes = null)
+{
+    if (empty($invoice)) {
+        return false;
+    }
+
+    $CI = &get_instance();
+
+    if ($payment_modes === null) {
+        $CI->load->model('payment_modes_model');
+        $payment_modes = $CI->payment_modes_model->get();
+    }
+
+    $allowedModes = $invoice->allowed_payment_modes ?? null;
+    if ($allowedModes === null || $allowedModes === '') {
+        return false;
+    }
+
+    if (!is_array($allowedModes)) {
+        $allowedModes = @unserialize($allowedModes);
+    }
+
+    if (!is_array($allowedModes) || count($allowedModes) === 0) {
+        return false;
+    }
+
+    foreach ($payment_modes as $mode) {
+        if (!is_numeric($mode['id'])) {
+            continue;
+        }
+
+        $modeId = (string) $mode['id'];
+        $isAllowed = false;
+
+        foreach ($allowedModes as $allowedMode) {
+            if ((string) $allowedMode === $modeId) {
+                $isAllowed = true;
+                break;
+            }
+        }
+
+        if ($isAllowed && is_payment_mode_allowed_for_invoice($mode['id'], $invoice->id) && invoice_payment_mode_is_bank($mode)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Bank details HTML for invoice PDF and preview.
+ *
+ * @return string
+ */
+function get_invoice_bank_details_html()
+{
+    $rows = [
+        'Account Number'         => '084405002618',
+        'Account Holder\'s name' => 'CONCATSTRING SOLUTIONS PRIVATE LIMITED',
+        'Contact'                => '7600044533',
+        'IFSC Code'              => 'ICIC0000844',
+        'Address'                => 'B/4 Vrajbhumi Society, Naroda, Ahmedabad-382330',
+        'Email Id'               => 'INFO@CONCATSTRING.COM',
+        'Swift code'             => 'ICICINBBNRI',
+        'Branch Name'            => 'Ahmedabad - Naroda',
+        'Bank Name'              => 'ICICI Bank Limited',
+    ];
+
+    $lines = [];
+    foreach ($rows as $label => $value) {
+        $valueHtml = '<span>' . e($value) . '</span>';
+        $lines[]   = '<strong>' . e($label) . ':</strong> ' . $valueHtml;
+    }
+
+    $details = '<div style="color:#424242;font-size:11px;line-height:1.6;">' . implode('<br />', $lines) . '</div>';
+
+    return hooks()->apply_filters('invoice_bank_details_html', $details);
+}

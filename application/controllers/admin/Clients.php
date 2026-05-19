@@ -90,35 +90,25 @@ class Clients extends AdminController
                 // Capture customer_name and customer_email before unsetting for contact creation
                 $customerName  = isset($data['customer_name']) ? trim($data['customer_name']) : '';
                 $customerEmail = isset($data['customer_email']) ? trim($data['customer_email']) : '';
-                $loginPassword = isset($data['login_password']) ? trim($data['login_password']) : '';
-                
-                // Capture customer_admins before unsetting
-                $customerAdmins = isset($data['customer_admins']) && is_array($data['customer_admins']) ? $data['customer_admins'] : [];
-                
+
+                $customerAdminsSubmitted = !empty($data['customer_admins_submitted']);
+                $customerAdmins          = $this->parse_customer_admins_from_post($data);
+
                 // Unset UI-only fields that shouldn't be saved to the client table
                 unset(
                     $data['customer_name'],
                     $data['customer_email'],
                     $data['customer_admins'],
-                    $data['formatted_address'],
-                    $data['login_password']
+                    $data['customer_admins_submitted']
                 );
-                
-                // Check if address_line_2 and billing_street_2 columns exist in database
-                // Create them if they don't exist, so data can be saved
+
+                // Ensure billing_street_2 column exists so data can be saved
                 try {
                     $client_fields = $this->db->list_fields(db_prefix() . 'clients');
-                    if (!in_array('address_line_2', $client_fields)) {
-                        // Column doesn't exist, create it
-                        $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `address_line_2` VARCHAR(200) NULL AFTER `address`');
-                    }
                     if (!in_array('billing_street_2', $client_fields)) {
-                        // Column doesn't exist, create it
                         $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `billing_street_2` VARCHAR(200) NULL AFTER `billing_street`');
                     }
                 } catch (Exception $e) {
-                    // If column creation fails, unset these fields to be safe
-                    unset($data['address_line_2']);
                     unset($data['billing_street_2']);
                 }
 
@@ -129,24 +119,19 @@ class Clients extends AdminController
                 }
                 $id = $this->clients_model->add($data);
                 
-                // If Name/Email/Password provided, create a primary contact
-                if ($id && ($customerName !== '' || $customerEmail !== '' || $loginPassword !== '')) {
+                // If Name/Email provided, create a primary contact
+                if ($id && ($customerName !== '' || $customerEmail !== '')) {
                     $nameParts  = explode(' ', $customerName, 2);
                     $first_name = $nameParts[0] ?? '';
                     $last_name  = $nameParts[1] ?? '';
-                    
+
                     $contactData = [
                         'firstname'  => $first_name,
                         'lastname'   => $last_name,
                         'email'      => $customerEmail,
                         'is_primary' => 1,
                     ];
-                    
-                    // Add password if provided
-                    if (!empty($loginPassword)) {
-                        $contactData['password'] = $loginPassword;
-                    }
-                    
+
                     // Reuse phone number from the company profile if available
                     if (!empty($data['phonenumber'])) {
                         $contactData['phonenumber'] = $data['phonenumber'];
@@ -156,15 +141,16 @@ class Clients extends AdminController
                 }
                 
                 // Handle customer admins assignment
-                if ($id) {
+                if ($id && $customerAdminsSubmitted) {
                     if (!empty($customerAdmins)) {
-                        // Assign selected admins
                         $assign['customer_admins'] = $customerAdmins;
                         $this->clients_model->assign_admins($assign, $id);
                     } elseif (staff_cant('view', 'customers')) {
-                        // Default: assign current staff member if they can't view customers
                         $assign['customer_admins']   = [];
                         $assign['customer_admins'][] = get_staff_user_id();
+                        $this->clients_model->assign_admins($assign, $id);
+                    } else {
+                        $assign['customer_admins'] = [];
                         $this->clients_model->assign_admins($assign, $id);
                     }
                 }
@@ -188,35 +174,25 @@ class Clients extends AdminController
                 // Capture customer_name and customer_email before unsetting for contact update
                 $customerName  = isset($data['customer_name']) ? trim($data['customer_name']) : '';
                 $customerEmail = isset($data['customer_email']) ? trim($data['customer_email']) : '';
-                $loginPassword = isset($data['login_password']) ? trim($data['login_password']) : '';
-                
-                // Capture customer_admins before unsetting
-                $customerAdmins = isset($data['customer_admins']) && is_array($data['customer_admins']) ? $data['customer_admins'] : [];
-                
+
+                $customerAdminsSubmitted = !empty($data['customer_admins_submitted']);
+                $customerAdmins          = $this->parse_customer_admins_from_post($data);
+
                 // Unset UI-only fields that shouldn't be saved to the client table
                 unset(
                     $data['customer_name'],
                     $data['customer_email'],
                     $data['customer_admins'],
-                    $data['formatted_address'],
-                    $data['login_password']
+                    $data['customer_admins_submitted']
                 );
-                
-                // Check if address_line_2 and billing_street_2 columns exist in database
-                // Create them if they don't exist, so data can be saved
+
+                // Ensure billing_street_2 column exists so data can be saved
                 try {
                     $client_fields = $this->db->list_fields(db_prefix() . 'clients');
-                    if (!in_array('address_line_2', $client_fields)) {
-                        // Column doesn't exist, create it
-                        $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `address_line_2` VARCHAR(200) NULL AFTER `address`');
-                    }
                     if (!in_array('billing_street_2', $client_fields)) {
-                        // Column doesn't exist, create it
                         $this->db->query('ALTER TABLE `' . db_prefix() . 'clients` ADD `billing_street_2` VARCHAR(200) NULL AFTER `billing_street`');
                     }
                 } catch (Exception $e) {
-                    // If column creation fails, unset these fields to be safe
-                    unset($data['address_line_2']);
                     unset($data['billing_street_2']);
                 }
 
@@ -283,57 +259,20 @@ class Clients extends AdminController
                                 $contactData['phonenumber'] = $data['phonenumber'];
                             }
 
-                            if (!empty($loginPassword)) {
-                                $contactData['password'] = $loginPassword;
-                            }
+                            $this->clients_model->add_contact($contactData, $id);
+                        }
+                    }
+                }
 
-                            $this->clients_model->add_contact($contactData, $id);
-                        }
-                    }
-                }
-                
-                // Handle password update separately if provided
-                if (!empty($loginPassword)) {
-                    $primary_id = get_primary_contact_user_id($id);
-                    if ($primary_id) {
-                        // Verify contact exists before updating
-                        $primary_contact = $this->clients_model->get_contact($primary_id);
-                        if ($primary_contact) {
-                            $this->clients_model->update_contact(['password' => $loginPassword], $primary_id, true);
-                        }
-                    } else {
-                        // No primary contact, try to find or create one
-                        $contacts = $this->clients_model->get_contacts($id);
-                        if (!empty($contacts) && isset($contacts[0]['id'])) {
-                            $firstContactId = $contacts[0]['id'];
-                            // Verify contact exists before updating
-                            $first_contact = $this->clients_model->get_contact($firstContactId);
-                            if ($first_contact) {
-                                $this->clients_model->update_contact(['password' => $loginPassword, 'is_primary' => 1], $firstContactId, true);
-                            }
-                        } else {
-                            // Create a new primary contact with password
-                            $contactData = [
-                                'firstname'  => '',
-                                'lastname'   => '',
-                                'email'      => '',
-                                'password'   => $loginPassword,
-                                'is_primary' => 1,
-                            ];
-                            $this->clients_model->add_contact($contactData, $id);
-                        }
-                    }
-                }
-                
-                $success = $this->clients_model->update($data, $id);
-                
-                // Handle customer admins assignment
-                if ($success && !empty($customerAdmins)) {
+                $success       = $this->clients_model->update($data, $id);
+                $adminsUpdated = false;
+
+                if ($customerAdminsSubmitted) {
                     $assign['customer_admins'] = $customerAdmins;
-                    $this->clients_model->assign_admins($assign, $id);
+                    $adminsUpdated             = $this->clients_model->assign_admins($assign, $id);
                 }
-                
-                if ($success == true) {
+
+                if ($success || $adminsUpdated) {
                     set_alert('success', _l('updated_successfully', _l('client')));
                 }
                 redirect(admin_url('clients/client/' . $id));
@@ -1478,5 +1417,24 @@ class Clients extends AdminController
         $viewData['html'] = $this->load->view('admin/clients/groups/_statement', $data, true);
 
         echo json_encode($viewData);
+    }
+
+    /**
+     * Normalize Assign Sales (customer_admins) values from POST.
+     *
+     * @param array $data
+     * @return array<int>
+     */
+    private function parse_customer_admins_from_post($data)
+    {
+        if (!isset($data['customer_admins'])) {
+            return [];
+        }
+
+        $customerAdmins = is_array($data['customer_admins'])
+            ? $data['customer_admins']
+            : [$data['customer_admins']];
+
+        return array_values(array_filter(array_map('intval', $customerAdmins)));
     }
 }

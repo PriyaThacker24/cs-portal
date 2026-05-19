@@ -445,6 +445,9 @@
                          if (is_numeric($mode['id'])) {
                              if (!is_payment_mode_allowed_for_invoice($mode['id'], $invoice->id)) {
                                  continue;
+                             }
+                             if (invoice_payment_mode_is_bank($mode)) {
+                                 continue;
                              } ?>
                             <p class="bold"><?php echo e($mode['name']); ?></p>
                             <?php if (!empty($mode['description'])) { ?>
@@ -454,6 +457,12 @@
                             <?php }
                          }
                      } ?>
+                            <?php if (invoice_has_bank_payment_mode($invoice, $payment_modes)) { ?>
+                            <p class="bold tw-mt-3">Bank Details</p>
+                            <div class="mbot15">
+                                <?php echo get_invoice_bank_details_html(); ?>
+                            </div>
+                            <?php } ?>
                         </div>
                         <?php } ?>
                     </div>

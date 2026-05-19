@@ -43,6 +43,8 @@ class Invoices extends AdminController
     /* List all recurring invoices */
     public function recurring($id = '')
     {
+        access_denied('invoices');
+
         if (staff_cant('view', 'invoices')
             && staff_cant('view_own', 'invoices')
             && get_option('allow_staff_view_invoices_assigned') == '0') {
@@ -69,10 +71,8 @@ class Invoices extends AdminController
         $this->load->model('payment_modes_model');
         $data['payment_modes'] = $this->payment_modes_model->get('', [], true);
 
-        if($this->input->get('recurring')) {
-            $this->app->get_table_data('recurring_invoices', [
-                'data'     => $data,
-            ]);
+        if ($this->input->get('recurring')) {
+            ajax_access_denied();
         } else {
             App_table::find('invoices')->output([
                 'clientid' => $clientid,

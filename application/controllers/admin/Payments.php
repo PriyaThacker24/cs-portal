@@ -15,6 +15,8 @@ class Payments extends AdminController
     }
 
     public function batch_payment_modal() {
+        access_denied('payments');
+
         $this->load->model('invoices_model');
         $data['invoices'] = $this->invoices_model->get_unpaid_invoices();
         $data['customers'] = $this->db->select('userid,' . get_sql_select_client_company())
@@ -25,12 +27,14 @@ class Payments extends AdminController
 
 	public function add_batch_payment()
 	{
+		access_denied('payments');
+
 		if ($this->input->method() !== 'post') {
 			show_404();
 		}
 
-		if (staff_cant('create', 'payment')) {
-			access_denied('Create Payment');
+		if (staff_cant('create', 'payments')) {
+			access_denied('payments');
 		}
 		$totalAdded = $this->payments_model->add_batch_payment($this->input->post());
         if ($totalAdded > 0) {

@@ -716,6 +716,8 @@ class Cron_model extends App_Model
 
     public function recurring_invoices()
     {
+        return;
+
         $invoice_hour_auto_operations = get_option('invoice_auto_operations_hour');
 
         if (!$this->shouldRunAutomations($invoice_hour_auto_operations)) {
