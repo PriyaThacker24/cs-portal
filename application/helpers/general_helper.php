@@ -638,6 +638,32 @@ function _d_ddmmyyyy($date)
 }
 
 /**
+ * Convert dd/mm/yyyy (or d/m/Y) payment date input to SQL Y-m-d.
+ *
+ * @param string $date
+ * @return string|null
+ */
+function to_sql_date_ddmmyyyy($date)
+{
+    if ($date == '' || $date == null) {
+        return null;
+    }
+
+    if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $date)) {
+        return $date;
+    }
+
+    foreach (['d/m/Y', 'd-m-Y', 'j/n/Y', 'j-n-Y'] as $format) {
+        $dateTimeInstance = DateTime::createFromFormat($format, trim($date));
+        if ($dateTimeInstance !== false) {
+            return $dateTimeInstance->format('Y-m-d');
+        }
+    }
+
+    return to_sql_date($date);
+}
+
+/**
  * Format date to selected dateformat
  *
  * @param string $date Valid date

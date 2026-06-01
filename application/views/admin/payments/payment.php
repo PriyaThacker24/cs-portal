@@ -17,7 +17,7 @@
 
                             <?php echo render_input('amount', 'payment_edit_amount_received', $payment->amount, 'number'); ?>
                             <?php echo render_input('amount_rupees', 'INR Amount', isset($payment->amount_rupees) ? $payment->amount_rupees : '', 'text'); ?>
-                            <?php echo render_date_input('date', 'payment_edit_date', _d($payment->date)); ?>
+                            <?php echo render_date_input('date', 'payment_edit_date', _d_ddmmyyyy($payment->date)); ?>
                             <?php echo render_select('paymentmode', $payment_modes, ['id', 'name'], 'payment_mode', $payment->paymentmode); ?>
                             <i class="fa-regular fa-circle-question pull-left tw-mt-0.5 tw-mr-1" data-toggle="tooltip"
                                 data-title="<?php echo _l('payment_method_info'); ?>"></i>
@@ -113,7 +113,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <p class="tw-text-neutral-500"><?php echo _l('payment_date'); ?> <span
-                                            class="pull-right bold"><?php echo e(_d($payment->date)); ?></span></p>
+                                            class="pull-right bold"><?php echo e(_d_ddmmyyyy($payment->date)); ?></span></p>
                                     <hr class="tw-my-2" />
                                     <p class="tw-text-neutral-500"><?php echo _l('payment_view_mode'); ?>
                                         <span class="pull-right bold">
@@ -195,6 +195,14 @@
 <?php init_tail(); ?>
 <script>
 $(function() {
+    var $paymentDate = $('form .datepicker');
+    if ($paymentDate.data('xdsoft_datetimepicker')) {
+        $paymentDate.datetimepicker('destroy');
+    }
+    appDatepicker({
+        element_date: $paymentDate,
+        date_format: 'd/m/Y',
+    });
     appValidateForm($('form'), {
         amount: 'required',
         date: 'required'

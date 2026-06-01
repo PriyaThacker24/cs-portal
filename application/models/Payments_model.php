@@ -195,9 +195,14 @@ class Payments_model extends App_Model
             $this->session->unset_userdata('do_not_send_email_template');
         }
 
+        // Admin-recorded payments: never notify customer contacts (email/SMS from this block).
+        if (is_staff_logged_in() && $subscription == false) {
+            $do_not_send_email_template = true;
+        }
+
         if (is_staff_logged_in()) {
             if (isset($data['date'])) {
-                $data['date'] = to_sql_date($data['date']);
+                $data['date'] = to_sql_date_ddmmyyyy($data['date']);
             } else {
                 $data['date'] = date('Y-m-d H:i:s');
             }
@@ -391,7 +396,7 @@ class Payments_model extends App_Model
     {
         $payment      = $this->get($id);
         $updated      = false;
-        $data['date'] = to_sql_date($data['date']);
+        $data['date'] = to_sql_date_ddmmyyyy($data['date']);
         $data['note'] = nl2br($data['note']);
 
         $data = hooks()->apply_filters('before_payment_updated', $data, $id);
@@ -469,7 +474,7 @@ class Payments_model extends App_Model
                 continue;
             }
 
-            $data['date']         = to_sql_date($data['date']);
+            $data['date']         = to_sql_date_ddmmyyyy($data['date']);
             $data['daterecorded'] = date('Y-m-d H:i:s');
             $data                 = hooks()->apply_filters('before_payment_recorded', $data);
 

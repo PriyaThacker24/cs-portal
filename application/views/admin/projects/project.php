@@ -10,28 +10,7 @@
             </h4>
             <div class="panel_s">
                 <div class="panel-body">
-                    <div class="horizontal-scrollable-tabs panel-full-width-tabs">
-                        <div class="scroller arrow-left"><i class="fa fa-angle-left"></i></div>
-                        <div class="scroller arrow-right"><i class="fa fa-angle-right"></i></div>
-                        <div class="horizontal-tabs">
-                            <ul class="nav nav-tabs nav-tabs-horizontal" role="tablist">
-                                <li role="presentation" class="active">
-                                    <a href="#tab_project" aria-controls="tab_project" role="tab" data-toggle="tab">
-                                        <?= _l('project'); ?>
-                                    </a>
-                                </li>
-                                <li role="presentation">
-                                    <a href="#tab_settings" aria-controls="tab_settings" role="tab" data-toggle="tab">
-                                        <?= _l('project_settings'); ?>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="tab-content tw-mt-3">
-                        <div role="tabpanel" class="tab-pane active" id="tab_project">
-
-
+                    <div id="tab_project">
                             <?php
                         $disable_type_edit = '';
 if (isset($project)) {
@@ -168,7 +147,7 @@ if ($selected != '') {
                                 <div class="col-md-6">
                                     <div class="form-group select-placeholder">
                                         <label
-                                            for="manager_id">Manager</label>
+                                            for="manager_id"><?= _l('project_manager_or_team_lead'); ?></label>
                                         <div class="clearfix"></div>
                                         <?php
                                         // Get manager_id from project: use saved value when editing, no default when adding
@@ -392,7 +371,7 @@ if (isset($project_members)) {
 } else {
     array_push($selected, get_staff_user_id());
 }
-echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastname']], 'project_members', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
+echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastname']], 'project_resources', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
 ?>
                                 </div>
                             </div>
@@ -401,55 +380,10 @@ echo render_select('project_members[]', $staff, ['staffid', ['firstname', 'lastn
                                     <?php $value = (isset($project) ? _d($project->start_date) : _d(date('Y-m-d'))); ?>
                                     <?= render_date_input('start_date', 'project_start_date', $value, [], [], '', 'required'); ?>
                                 </div>
-                                <div class="col-md-6">
-                                    <?php 
-                                    $value = (isset($project) ? _d($project->deadline) : '');
-                                    $start_date_value = (isset($project) ? $project->start_date : date('Y-m-d'));
-                                    $deadline_attrs = [
-                                        'data-date-min-date' => $start_date_value, 
-                                        'data-date-start-date-ref' => 'start_date',
-                                        'placeholder' => _l('project_deadline')
-                                    ];
-                                    ?>
-                                    <?= render_date_input('deadline', 'project_deadline', $value, $deadline_attrs); ?>
-                                </div>
                             </div>
                             <?php if (isset($project) && $project->date_finished != null && $project->status == 4) { ?>
                             <?= render_datetime_input('date_finished', 'project_completed_date', _dt($project->date_finished)); ?>
                             <?php } ?>
-                            <div class="form-group">
-                                <label for="tags" class="control-label"><i class="fa fa-tag" aria-hidden="true"></i>
-                                    <?= _l('tags'); ?></label>
-                                <?php
-                                $tags_value = '';
-                                if (isset($project)) {
-                                    // Format: Project name – Customer name – Sales person name
-                                    // Use first project member, fallback to addedfrom
-                                    $sales_person_id = $project->addedfrom; // Default fallback
-                                    if (isset($project_members) && !empty($project_members) && is_array($project_members)) {
-                                        // Use first member from form data
-                                        $first_member_id = reset($project_members);
-                                        if (!empty($first_member_id) && is_numeric($first_member_id)) {
-                                            $sales_person_id = (int) $first_member_id;
-                                        }
-                                    } else {
-                                        // Get first member from database
-                                        $members = $this->projects_model->get_project_members($project->id);
-                                        if (!empty($members) && isset($members[0]['staff_id'])) {
-                                            $sales_person_id = (int) $members[0]['staff_id'];
-                                        }
-                                    }
-                                    $format_tag = $project->name . ' – ' . get_company_name($project->clientid) . ' – ' . get_staff_full_name($sales_person_id);
-                                    $existing_tags = get_tags_in($project->id, 'project');
-                                    $existing_tags = array_values(array_filter($existing_tags, function($t) use ($format_tag) { return $t !== $format_tag; }));
-                                    array_unshift($existing_tags, $format_tag);
-                                    $tags_value = prep_tags_input($existing_tags);
-                                }
-                                ?>
-                                <input type="text" class="tagsinput" id="tags" name="tags"
-                                    value="<?= $tags_value; ?>"
-                                    data-role="tagsinput">
-                            </div>
                             <?php $rel_id_custom_field = (isset($project) ? $project->id : false); ?>
                             <?= render_custom_fields('projects', $rel_id_custom_field); ?>
                             <div class="form-group">
@@ -517,182 +451,18 @@ if (isset($project)) {
 
                             <?php if (is_email_template_active('assigned-to-project')) { ?>
                             <div class="checkbox checkbox-primary tw-mb-0">
-                                <input type="checkbox" name="send_created_email" id="send_created_email">
+                                <input type="checkbox" name="send_created_email" id="send_created_email"<?php if (! isset($project)) {
+                                    echo ' checked';
+                                } ?>>
                                 <label
                                     for="send_created_email"><?= _l('project_send_created_email'); ?></label>
                             </div>
                             <?php } ?>
+                            <?php
+                            $default_contact_notification = isset($project) ? (int) $project->contact_notification : 1;
+                            ?>
+                            <input type="hidden" name="contact_notification" value="<?= $default_contact_notification; ?>">
                         </div>
-                        <div role="tabpanel" class="tab-pane" id="tab_settings">
-                            <div id="project-settings-area">
-                                <div class="form-group select-placeholder">
-                                    <label for="contact_notification" class="control-label">
-                                        <span class="text-danger">*</span>
-                                        <?= _l('projects_send_contact_notification'); ?>
-                                    </label>
-                                    <select name="contact_notification" id="contact_notification"
-                                        class="form-control selectpicker"
-                                        data-none-selected-text="<?= _l('dropdown_non_selected_tex'); ?>"
-                                        required>
-                                        <?php
-                    $options = [
-                        ['id' => 1, 'name' => _l('project_send_all_contacts_with_notifications_enabled')],
-                        ['id' => 2, 'name' => _l('project_send_specific_contacts_with_notification')],
-                        ['id' => 0, 'name' => _l('project_do_not_send_contacts_notifications')],
-                    ];
-
-foreach ($options as $option) { ?>
-                                        <option
-                                            value="<?= e($option['id']); ?>"
-                                            <?php if ((isset($project) && $project->contact_notification == $option['id'])) {
-                                                echo ' selected';
-                                            } ?>><?= e($option['name']); ?>
-                                        </option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                                <!-- hide class -->
-                                <div class="form-group select-placeholder <?= (isset($project) && $project->contact_notification == 2) ? '' : 'hide' ?>"
-                                    id="notify_contacts_wrapper">
-                                    <label for="notify_contacts" class="control-label"><span
-                                            class="text-danger">*</span>
-                                        <?= _l('project_contacts_to_notify') ?></label>
-                                    <select name="notify_contacts[]" data-id="notify_contacts" id="notify_contacts"
-                                        class="ajax-search" data-width="100%" data-live-search="true"
-                                        data-none-selected-text="<?= _l('dropdown_non_selected_tex'); ?>"
-                                        multiple>
-                                        <?php
-                                        $notify_contact_ids = ($project->notify_contacts ?? null) ?
-                                            unserialize($project->notify_contacts) :
-                                                [];
-?>
-                                        <?php foreach ($notify_contact_ids as $contact_id) { ?>
-                                        <?php $rel_data = get_relation_data('contact', $contact_id); ?>
-                                        <?php $rel_val  = get_relation_values($rel_data, 'contact'); ?>
-                                        <option
-                                            value="<?= $rel_val['id']; ?>"
-                                            selected>
-                                            <?= $rel_val['name']; ?>
-                                        </option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                                <?php foreach ($settings as $setting) {
-                                    $checked = ' checked';
-                                    if (isset($project)) {
-                                        if ($project->settings->{$setting} == 0) {
-                                            $checked = '';
-                                        }
-                                    } else {
-                                        foreach ($last_project_settings as $last_setting) {
-                                            if ($setting == $last_setting['name']) {
-                                                // hide_tasks_on_main_tasks_table is not applied on most used settings to prevent confusions
-                                                if ($last_setting['value'] == 0 || $last_setting['name'] == 'hide_tasks_on_main_tasks_table') {
-                                                    $checked = '';
-                                                }
-                                            }
-                                        }
-                                        if (count($last_project_settings) == 0 && $setting == 'hide_tasks_on_main_tasks_table') {
-                                            $checked = '';
-                                        }
-                                    } ?>
-                                <?php if ($setting != 'available_features') { ?>
-                                <div class="checkbox">
-                                    <input type="checkbox"
-                                        name="settings[<?= e($setting); ?>]"
-                                        <?= e($checked); ?>
-                                    id="<?= e($setting); ?>">
-                                    <label for="<?= e($setting); ?>">
-                                        <?php if ($setting == 'hide_tasks_on_main_tasks_table') { ?>
-                                        <?= _l('hide_tasks_on_main_tasks_table'); ?>
-                                        <?php } else { ?>
-                                        <?= e(_l('project_allow_client_to', _l('project_setting_' . $setting))); ?>
-                                        <?php } ?>
-                                    </label>
-                                </div>
-                                <?php } else { ?>
-                                <div class="form-group mtop15 select-placeholder project-available-features">
-                                    <label
-                                        for="available_features"><?= _l('visible_tabs'); ?></label>
-                                    <select
-                                        name="settings[<?= e($setting); ?>][]"
-                                        id="<?= e($setting); ?>"
-                                        multiple="true" class="selectpicker" id="available_features" data-width="100%"
-                                        data-actions-box="true" data-hide-disabled="true">
-                                        <?php foreach (get_project_tabs_admin() as $tab) {
-                                            $selected = '';
-                                            if (isset($tab['collapse'])) { ?>
-                                        <optgroup
-                                            label="<?= e($tab['name']); ?>">
-                                            <?php foreach ($tab['children'] as $tab_dropdown) {
-                                                $selected = '';
-                                                if (isset($project) && (
-                                                    (isset($project->settings->available_features[$tab_dropdown['slug']])
-                                                                && $project->settings->available_features[$tab_dropdown['slug']] == 1)
-                                                            || ! isset($project->settings->available_features[$tab_dropdown['slug']])
-                                                )) {
-                                                    $selected = ' selected';
-                                                } elseif (! isset($project) && count($last_project_settings) > 0) {
-                                                    foreach ($last_project_settings as $last_project_setting) {
-                                                        if ($last_project_setting['name'] == $setting) {
-                                                            if (isset($last_project_setting['value'][$tab_dropdown['slug']])
-                                                                    && $last_project_setting['value'][$tab_dropdown['slug']] == 1) {
-                                                                $selected = ' selected';
-                                                            }
-                                                        }
-                                                    }
-                                                } elseif (! isset($project)) {
-                                                    $selected = ' selected';
-                                                } ?>
-                                            <option
-                                                value="<?= e($tab_dropdown['slug']); ?>"
-                                                <?= e($selected); ?><?php if (isset($tab_dropdown['linked_to_customer_option']) && is_array($tab_dropdown['linked_to_customer_option']) && count($tab_dropdown['linked_to_customer_option']) > 0) { ?>
-                                                data-linked-customer-option="<?= implode(',', $tab_dropdown['linked_to_customer_option']); ?>"
-                                                <?php } ?>><?= e($tab_dropdown['name']); ?>
-                                            </option>
-                                            <?php
-                                            } ?>
-                                        </optgroup>
-                                        <?php } else {
-                                            if (isset($project) && (
-                                                (isset($project->settings->available_features[$tab['slug']])
-                             && $project->settings->available_features[$tab['slug']] == 1)
-                            || ! isset($project->settings->available_features[$tab['slug']])
-                                            )) {
-                                                $selected = ' selected';
-                                            } elseif (! isset($project) && count($last_project_settings) > 0) {
-                                                foreach ($last_project_settings as $last_project_setting) {
-                                                    if ($last_project_setting['name'] == $setting) {
-                                                        if (isset($last_project_setting['value'][$tab['slug']])
-                                    && $last_project_setting['value'][$tab['slug']] == 1) {
-                                                            $selected = ' selected';
-                                                        }
-                                                    }
-                                                }
-                                            } elseif (! isset($project)) {
-                                                $selected = ' selected';
-                                            } ?>
-                                        <option
-                                            value="<?= e($tab['slug']); ?>"
-                                            <?php if ($tab['slug'] == 'project_overview') {
-                                                echo ' disabled selected';
-                                            } ?>
-                                            <?= e($selected); ?>
-                                            <?php if (isset($tab['linked_to_customer_option']) && is_array($tab['linked_to_customer_option']) && count($tab['linked_to_customer_option']) > 0) { ?>
-                                            data-linked-customer-option="<?= implode(',', $tab['linked_to_customer_option']); ?>"
-                                            <?php } ?>>
-                                            <?= e($tab['name']); ?>
-                                        </option>
-                                        <?php } ?>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                                <?php } ?>
-                                <hr class="tw-my-3 -tw-mx-8" />
-                                <?php } ?>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="panel-footer text-right">
                     <button type="submit" data-form="#project_form" class="btn btn-primary" autocomplete="off"
@@ -712,11 +482,6 @@ foreach ($options as $option) { ?>
     <?php } ?>
 
     $(function() {
-
-        $contacts_select = $('#notify_contacts'),
-            $contacts_wrapper = $('#notify_contacts_wrapper'),
-            $clientSelect = $('#clientid'),
-            $contact_notification_select = $('#contact_notification');
 
         // Owner and Manager: use hidden inputs for submit so selected value is always sent (selectpicker often does not sync to native select)
         // Run after selectpicker is initialized (next tick)
@@ -741,45 +506,6 @@ foreach ($options as $option) { ?>
             }
         }, 0);
 
-        init_ajax_search('contacts', $contacts_select, {
-            rel_id: $contacts_select.val(),
-            type: 'contacts',
-            extra: {
-                client_id: function() {
-                    return $clientSelect.val();
-                }
-            }
-        });
-
-        if ($clientSelect.val() == '') {
-            $contacts_select.prop('disabled', true);
-            $contacts_select.selectpicker('refresh');
-        } else {
-            $contacts_select.siblings().find('input[type="search"]').val(' ').trigger('keyup');
-        }
-
-        $clientSelect.on('changed.bs.select', function() {
-            if ($clientSelect.selectpicker('val') == '') {
-                $contacts_select.prop('disabled', true);
-            } else {
-                $contacts_select.siblings().find('input[type="search"]').val(' ').trigger('keyup');
-                $contacts_select.prop('disabled', false);
-            }
-            deselect_ajax_search($contacts_select[0]);
-            $contacts_select.find('option').remove();
-            $contacts_select.selectpicker('refresh');
-        });
-
-        $contact_notification_select.on('changed.bs.select', function() {
-            if ($contact_notification_select.selectpicker('val') == 2) {
-                $contacts_select.siblings().find('input[type="search"]').val(' ').trigger('keyup');
-                $contacts_wrapper.removeClass('hide');
-            } else {
-                $contacts_wrapper.addClass('hide');
-                deselect_ajax_search($contacts_select[0]);
-            }
-        });
-
         $('select[name="billing_type"]').on('change', function() {
             var type = $(this).val();
             if (type == 1) {
@@ -794,80 +520,11 @@ foreach ($options as $option) { ?>
             }
         });
 
-        // Update deadline min date when start date changes
-        var $startDate = $('#start_date');
-        var $deadline = $('#deadline');
-        
-        function updateDeadlineMinDate() {
-            var startDateValue = $startDate.val();
-            if (startDateValue) {
-                // Convert to YYYY-MM-DD format if needed
-                var dateParts = startDateValue.split(/[-\/]/);
-                if (dateParts.length === 3) {
-                    // Handle different date formats
-                    var year = dateParts[0].length === 4 ? dateParts[0] : dateParts[2];
-                    var month = dateParts[0].length === 4 ? dateParts[1] : dateParts[0];
-                    var day = dateParts[0].length === 4 ? dateParts[2] : dateParts[1];
-                    var formattedDate = year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
-                    
-                    // Update the data attribute and reinitialize datepicker
-                    $deadline.attr('data-date-min-date', formattedDate);
-                    
-                    // Destroy and reinitialize datepicker with new min date
-                    if ($deadline.data('xdsoft_datetimepicker')) {
-                        $deadline.data('xdsoft_datetimepicker').destroy();
-                    }
-                    
-                    var deadlineOpts = {
-                        timepicker: false,
-                        scrollInput: false,
-                        lazyInit: true,
-                        format: app.options.date_format,
-                        dayOfWeekStart: app.options.calendar_first_day,
-                        minDate: formattedDate
-                    };
-                    
-                    $deadline.datetimepicker(deadlineOpts);
-                }
-            }
-        }
-        
-        // Initialize deadline min date on page load
-        if ($startDate.val()) {
-            updateDeadlineMinDate();
-        }
-        
-        // Update deadline min date when start date changes
-        $startDate.on('change', function() {
-            updateDeadlineMinDate();
-            
-            // If deadline is set and is before new start date, clear it
-            var deadlineValue = $deadline.val();
-            if (deadlineValue) {
-                var startDateValue = $startDate.val();
-                if (startDateValue && deadlineValue) {
-                    var startDateObj = new Date(startDateValue);
-                    var deadlineObj = new Date(deadlineValue);
-                    if (deadlineObj < startDateObj) {
-                        $deadline.val('');
-                    }
-                }
-            }
-        });
-
-
         appValidateForm($('#project_form'), {
             name: 'required',
             clientid: 'required',
             start_date: 'required',
             billing_type: 'required',
-            'notify_contacts[]': {
-                required: {
-                    depends: function() {
-                        return !$contacts_wrapper.hasClass('hide');
-                    }
-                }
-            },
         });
 
         $('select[name="status"]').on('change', function() {
@@ -1021,22 +678,16 @@ foreach ($options as $option) { ?>
                     validate_client_form();
                 }, 100);
                 
-                // Reset form when modal is hidden
+                // Reset and remove modal so the latest form markup loads next time
                 $('#client-modal').on('hidden.bs.modal', function() {
-                    $('#client-form')[0].reset();
-                    $('#client-form').find('.has-error').removeClass('has-error');
-                    $('#client-form').find('.text-danger').remove();
-                    $('#client-form').find('.alert-danger').remove();
+                    $(this).remove();
                 });
                 
                 $('#client-modal').modal('show');
             });
         } else {
-            // Clear any previous errors
-            $('#client-form').find('.alert-danger').remove();
-            // Re-initialize validation
-            validate_client_form();
-            $('#client-modal').modal('show');
+            $('#client-modal').remove();
+            open_add_customer_modal();
         }
     }
 
@@ -1048,13 +699,16 @@ foreach ($options as $option) { ?>
             $form.data('validator').destroy();
         }
         
-        var vRules = {};
-        if (app.options.company_is_required == 1) {
-            vRules = {
-                company: 'required',
-            }
+        var vRules = {
+            company: 'required',
+        };
+
+        if ($form.find('[name="customer_email"]').length) {
+            vRules.customer_email = {
+                email: true,
+            };
         }
-        
+
         // Set up validation with submit handler
         appValidateForm($form, vRules, clientFormHandler);
     }

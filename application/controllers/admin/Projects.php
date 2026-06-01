@@ -133,12 +133,43 @@ class Projects extends AdminController
         }
     }
 
+    /**
+     * Create a new project (admin/projects/project-new).
+     */
+    public function project_new()
+    {
+        if (staff_cant('create', 'projects')) {
+            access_denied('Projects');
+        }
+
+        $this->project_form('');
+    }
+
+    /**
+     * Edit an existing project (admin/projects/project/{id}).
+     */
     public function project($id = '')
+    {
+        if ($id === '' || $id === null) {
+            redirect(admin_url('projects/project-new'));
+
+            return;
+        }
+
+        $this->project_form($id);
+    }
+
+    /**
+     * Shared create/edit project form handler.
+     *
+     * @param int|string $id Project ID for edit; empty string for create.
+     */
+    private function project_form($id = '')
     {
         // Check if user has ANY permission (staff-level OR project-level)
         // This allows users with project-level permissions to access the form
         $has_any_permission = false;
-        
+
         // Check staff-level permissions
         if (staff_can('edit', 'projects') || staff_can('create', 'projects')) {
             $has_any_permission = true;
@@ -150,7 +181,7 @@ class Projects extends AdminController
                 }
             }
         }
-        
+
         if (!$has_any_permission) {
             access_denied('Projects');
         }
@@ -195,7 +226,7 @@ class Projects extends AdminController
 
                     if (is_array($id) && isset($id['error']) && $id['error']) {
                         set_alert('danger', $id['message']);
-                        redirect(admin_url('projects/project'));
+                        redirect(admin_url('projects/project-new'));
                     } elseif ($id) {
                         set_alert('success', _l('added_successfully', _l('project')));
                         redirect(admin_url('projects/view/' . $id));

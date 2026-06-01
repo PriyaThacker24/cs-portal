@@ -25,7 +25,7 @@
                     }
                     ?>
                 </td>
-                <td><?php echo e(_d($payment['date'])); ?></td>
+                <td><?php echo e(_d_ddmmyyyy($payment['date'])); ?></td>
                 <td><?php
     echo e(
         app_format_money($payment['amount'], $invoice->currency_name)

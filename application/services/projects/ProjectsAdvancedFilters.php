@@ -70,6 +70,10 @@ class ProjectsAdvancedFilters
             $clauses[] = $createdByClause;
         }
 
+        if ($managerClause = $this->buildManagerClause()) {
+            $clauses[] = $managerClause;
+        }
+
         if (empty($clauses)) {
             return '';
         }
@@ -218,12 +222,14 @@ class ProjectsAdvancedFilters
     }
 
     /**
-     * Build WHERE clause for project owner filter.
+     * Build WHERE clause for project owner filter (tblprojects.owner_id only).
+     *
+     * Owner is distinct from manager (manager_id) and project members (project_members).
      *
      * Supports three operator types:
-     * - is: Filter by active users (project members or creator)
-     * - deactive_user: Filter by deactive/inactive users
-     * - deleted_user: Filter by deleted users (orphaned staff references)
+     * - is: Filter by active users assigned as project owner
+     * - deactive_user: Filter by deactive/inactive owners
+     * - deleted_user: Filter by deleted users (orphaned owner_id references)
      *
      * @return string SQL snippet for owner filtering
      */
@@ -236,10 +242,9 @@ class ProjectsAdvancedFilters
             return '';
         }
 
-        $config = $this->filters['owner'];
+        $config   = $this->filters['owner'];
         $operator = $config['operator'] ?? 'is';
 
-        // Determine which value array to use based on operator
         $ownerValues = [];
 
         switch ($operator) {
@@ -259,7 +264,6 @@ class ProjectsAdvancedFilters
             return '';
         }
 
-        // Sanitize owner IDs - must be numeric
         $sanitizedOwners = [];
         foreach ($ownerValues as $ownerId) {
             $ownerInt = (int) $ownerId;
@@ -272,21 +276,19 @@ class ProjectsAdvancedFilters
             return '';
         }
 
-        $dbPrefix = db_prefix();
+        $projectsTable = db_prefix() . 'projects';
+        if (! $this->ci->db->field_exists('owner_id', $projectsTable)) {
+            return '';
+        }
+
+        $column    = $projectsTable . '.owner_id';
         $ownerList = implode(',', $sanitizedOwners);
 
-        // Build the clause to match projects where:
-        // 1. The project was created by (addedfrom) any of the selected owners, OR
-        // 2. Any of the selected owners is a project member
-        $clause = "(
-            {$dbPrefix}projects.addedfrom IN ({$ownerList})
-            OR {$dbPrefix}projects.id IN (
-                SELECT project_id FROM {$dbPrefix}project_members 
-                WHERE staff_id IN ({$ownerList})
-            )
-        )";
+        if (count($sanitizedOwners) === 1) {
+            return $column . ' = ' . $sanitizedOwners[0];
+        }
 
-        return $clause;
+        return $column . ' IN (' . $ownerList . ')';
     }
 
     /**
@@ -643,6 +645,48 @@ class ProjectsAdvancedFilters
                 }
                 return $column . ' IN (' . $staffList . ')';
         }
+    }
+
+    /**
+     * Filter projects by tblprojects.manager_id (when column exists).
+     */
+    protected function buildManagerClause(): string
+    {
+        if (
+            empty($this->filters['manager'])
+            || ! is_array($this->filters['manager'])
+        ) {
+            return '';
+        }
+
+        $projectsTable = db_prefix() . 'projects';
+        if (! $this->ci->db->field_exists('manager_id', $projectsTable)) {
+            return '';
+        }
+
+        $config = $this->filters['manager'];
+        $ids    = $this->extractFilterValues($config, 'value');
+        if (empty($ids)) {
+            return '';
+        }
+
+        $sanitized = [];
+        foreach ($ids as $id) {
+            $idInt = (int) $id;
+            if ($idInt > 0) {
+                $sanitized[] = $idInt;
+            }
+        }
+        if (empty($sanitized)) {
+            return '';
+        }
+
+        $column = db_prefix() . 'projects.manager_id';
+        if (count($sanitized) === 1) {
+            return $column . ' = ' . $sanitized[0];
+        }
+
+        return $column . ' IN (' . implode(',', $sanitized) . ')';
     }
 }
 

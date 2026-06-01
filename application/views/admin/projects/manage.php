@@ -12,7 +12,7 @@
                     <div class="_buttons">
                         <div class="md:tw-flex md:tw-items-center">
                             <?php if (staff_can('create', 'projects')) { ?>
-                            <a href="<?= admin_url('projects/project'); ?>"
+                            <a href="<?= admin_url('projects/project-new'); ?>"
                                 class="btn btn-primary pull-left display-block mright5">
                                 <i class="fa-regular fa-plus tw-mr-1"></i>
                                 <?= _l('new_project'); ?>
@@ -86,8 +86,33 @@
 <script>
     $(function() {
         var table = initDataTable('.table-projects', admin_url + 'projects/table', undefined, undefined, {},
-            <?= hooks()->apply_filters('projects_table_default_order', json_encode([5, 'asc'])); ?>
+            <?= hooks()->apply_filters('projects_table_default_order', json_encode([3, 'asc'])); ?>
         );
+
+        if (table && typeof ProjectsFilter !== 'undefined') {
+            var settings = table.settings()[0];
+            var originalAjaxData = settings.ajax.data;
+            settings.ajax.data = function(d) {
+                if (typeof originalAjaxData === 'function') {
+                    originalAjaxData(d);
+                }
+                var cf = ProjectsFilter.getCurrentFilters() || {};
+                var hasActiveFilters = Object.keys(cf).some(function(k) {
+                    return k !== 'match';
+                });
+                if (hasActiveFilters) {
+                    var payload = $.extend({ match: cf.match || 'any' }, cf);
+                    d.filters = JSON.stringify(payload);
+                } else {
+                    delete d.filters;
+                }
+                return d;
+            };
+            var cf0 = ProjectsFilter.getCurrentFilters() || {};
+            if (Object.keys(cf0).some(function(k) { return k !== 'match'; })) {
+                table.ajax.reload(null, false);
+            }
+        }
 
         // Override language settings to use "projects" instead of "entries"
         if (table) {

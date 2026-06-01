@@ -36,29 +36,30 @@ function app_init_admin_sidebar_menu_items()
         'badge'    => [],
     ]);
 
-    if ((staff_can('view',  'proposals') || staff_can('view_own',  'proposals'))
-        || (staff_has_assigned_proposals() && get_option('allow_staff_view_proposals_assigned') == 1)
-    ) {
-        $CI->app_menu->add_sidebar_children_item('sales', [
-            'slug'     => 'proposals',
-            'name'     => _l('proposals'),
-            'href'     => admin_url('proposals'),
-            'position' => 5,
-            'badge'    => [],
-        ]);
-    }
+    // Hidden: proposals, estimates, credit notes, items (Sales submenu)
+    // if ((staff_can('view',  'proposals') || staff_can('view_own',  'proposals'))
+    //     || (staff_has_assigned_proposals() && get_option('allow_staff_view_proposals_assigned') == 1)
+    // ) {
+    //     $CI->app_menu->add_sidebar_children_item('sales', [
+    //         'slug'     => 'proposals',
+    //         'name'     => _l('proposals'),
+    //         'href'     => admin_url('proposals'),
+    //         'position' => 5,
+    //         'badge'    => [],
+    //     ]);
+    // }
 
-    if ((staff_can('view',  'estimates') || staff_can('view_own',  'estimates'))
-        || (staff_has_assigned_estimates() && get_option('allow_staff_view_estimates_assigned') == 1)
-    ) {
-        $CI->app_menu->add_sidebar_children_item('sales', [
-            'slug'     => 'estimates',
-            'name'     => _l('estimates'),
-            'href'     => admin_url('estimates'),
-            'position' => 10,
-            'badge'    => [],
-        ]);
-    }
+    // if ((staff_can('view',  'estimates') || staff_can('view_own',  'estimates'))
+    //     || (staff_has_assigned_estimates() && get_option('allow_staff_view_estimates_assigned') == 1)
+    // ) {
+    //     $CI->app_menu->add_sidebar_children_item('sales', [
+    //         'slug'     => 'estimates',
+    //         'name'     => _l('estimates'),
+    //         'href'     => admin_url('estimates'),
+    //         'position' => 10,
+    //         'badge'    => [],
+    //     ]);
+    // }
 
     if ((staff_can('view',  'invoices') || staff_can('view_own',  'invoices'))
         || (staff_has_assigned_invoices() && get_option('allow_staff_view_invoices_assigned') == 1)
@@ -85,25 +86,25 @@ function app_init_admin_sidebar_menu_items()
         ]);
     }
 
-    if (staff_can('view',  'credit_notes') || staff_can('view_own',  'credit_notes')) {
-        $CI->app_menu->add_sidebar_children_item('sales', [
-            'slug'     => 'credit_notes',
-            'name'     => _l('credit_notes'),
-            'href'     => admin_url('credit_notes'),
-            'position' => 25,
-            'badge'    => [],
-        ]);
-    }
+    // if (staff_can('view',  'credit_notes') || staff_can('view_own',  'credit_notes')) {
+    //     $CI->app_menu->add_sidebar_children_item('sales', [
+    //         'slug'     => 'credit_notes',
+    //         'name'     => _l('credit_notes'),
+    //         'href'     => admin_url('credit_notes'),
+    //         'position' => 25,
+    //         'badge'    => [],
+    //     ]);
+    // }
 
-    if (staff_can('view',  'items')) {
-        $CI->app_menu->add_sidebar_children_item('sales', [
-            'slug'     => 'items',
-            'name'     => _l('items'),
-            'href'     => admin_url('invoice_items'),
-            'position' => 30,
-            'badge'    => [],
-        ]);
-    }
+    // if (staff_can('view',  'items')) {
+    //     $CI->app_menu->add_sidebar_children_item('sales', [
+    //         'slug'     => 'items',
+    //         'name'     => _l('items'),
+    //         'href'     => admin_url('invoice_items'),
+    //         'position' => 30,
+    //         'badge'    => [],
+    //     ]);
+    // }
 
     // if (staff_can('view',  'subscriptions') || staff_can('view_own',  'subscriptions')) {
     //     $CI->app_menu->add_sidebar_menu_item('subscriptions', [

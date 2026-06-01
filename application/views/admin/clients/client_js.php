@@ -254,24 +254,18 @@ $(function() {
     $('.client-form').on('submit', function() {
         $('select[name="default_currency"]').prop('disabled', false);
 
-        var $customerAdmins = $(this).find('select[name="customer_admins[]"]');
+        var $customerAdmins = $(this).find('select[name="customer_admins"]');
         if ($customerAdmins.length) {
-            var selectedAdmins = $customerAdmins.selectpicker('val');
-            $customerAdmins.selectpicker('val', selectedAdmins || []);
+            var selectedAdmin = $customerAdmins.selectpicker('val');
+            $customerAdmins.selectpicker('val', selectedAdmin || '');
         }
     });
 
-    var $customerAdminsSelect = $('.client-form select[name="customer_admins[]"]');
+    var $customerAdminsSelect = $('.client-form select[name="customer_admins"]');
     if ($customerAdminsSelect.length) {
-        var selectedCustomerAdmins = [];
-        $customerAdminsSelect.find('option:selected').each(function() {
-            var staffId = $(this).val();
-            if (staffId) {
-                selectedCustomerAdmins.push(staffId);
-            }
-        });
-        if (selectedCustomerAdmins.length) {
-            $customerAdminsSelect.selectpicker('val', selectedCustomerAdmins);
+        var selectedCustomerAdmin = $customerAdminsSelect.find('option:selected').val();
+        if (selectedCustomerAdmin) {
+            $customerAdminsSelect.selectpicker('val', selectedCustomerAdmin);
         }
     }
 

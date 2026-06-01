@@ -113,19 +113,40 @@
                         <?= render_input('website', 'Website', $value); ?>
                         <?php } ?>
                         <?php echo render_input('customer_email', 'Email Address', $primary_email, 'email'); ?>
-                        
-                        <?php // Assign Sales field ?>
+
+                        <?php
+                        $currency_attrs = ['data-none-selected-text' => _l('system_default_string')];
+                        $currency_selected = isset($client) ? ($client->default_currency ?? '') : '';
+                        echo render_select(
+                            'default_currency',
+                            $currencies ?? [],
+                            ['id', 'name', 'symbol'],
+                            'invoice_add_edit_currency',
+                            $currency_selected,
+                            $currency_attrs
+                        );
+                        ?>
+
                         <?= form_hidden('customer_admins_submitted', '1'); ?>
                         <div class="form-group select-placeholder">
                             <label for="customer_admins" class="control-label"><?= _l('assign_admin'); ?></label>
                             <?php
-                            $selected = [];
-                            if (isset($client) && isset($customer_admins)) {
-                                foreach ($customer_admins as $c_admin) {
-                                    $selected[] = (int) $c_admin['staff_id'];
-                                }
+                            $sales_selected = '';
+                            if (isset($client) && isset($customer_admins) && ! empty($customer_admins)) {
+                                $sales_selected = (int) $customer_admins[0]['staff_id'];
                             }
-                            echo render_select('customer_admins[]', $staff ?? [], ['staffid', ['firstname', 'lastname']], '', $selected, ['multiple' => true, 'data-actions-box' => true], [], '', '', false);
+                            echo render_select(
+                                'customer_admins',
+                                $staff ?? [],
+                                ['staffid', ['firstname', 'lastname']],
+                                '',
+                                $sales_selected,
+                                ['data-live-search' => 'true', 'data-width' => '100%'],
+                                [],
+                                '',
+                                '',
+                                false
+                            );
                             ?>
                         </div>
                     </div>

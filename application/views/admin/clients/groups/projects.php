@@ -4,7 +4,7 @@
 </h4>
 <?php if (isset($client)) { ?>
 <?php if (staff_can('create', 'projects')) { ?>
-<a href="<?= admin_url('projects/project?customer_id=' . $client->userid); ?>"
+<a href="<?= admin_url('projects/project-new?customer_id=' . $client->userid); ?>"
     class="btn btn-primary mbot15<?= $client->active == 0 ? ' disabled' : ''; ?>">
     <i class="fa-regular fa-plus tw-mr-1"></i>
     <?= _l('new_project'); ?>

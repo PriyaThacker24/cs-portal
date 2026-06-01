@@ -13,13 +13,24 @@ return App_table::find('projects')
         $hasPermissionDeleteGlobal = staff_can('delete',  'projects');
         $hasPermissionCreate = staff_can('create',  'projects');
 
+        $p = db_prefix();
+        $taskProgressSubquery = '(SELECT CASE '
+            . 'WHEN COUNT(*) = 0 THEN 100 '
+            . 'WHEN SUM(IF(' . $p . 'tasks.status = 5, 1, 0)) >= COUNT(*) THEN 100 '
+            . 'ELSE ROUND(SUM(IF(' . $p . 'tasks.status = 5, 1, 0)) * 100.0 / COUNT(*), 2) '
+            . 'END FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id)';
+        $progressSelect = 'CASE '
+            . 'WHEN ' . $p . 'projects.status = 4 THEN 100 '
+            . 'WHEN ' . $p . 'projects.progress_from_tasks = 1 THEN ' . $taskProgressSubquery . ' '
+            . 'ELSE COALESCE(' . $p . 'projects.progress, 0) '
+            . 'END AS calc_progress_display';
+
         $aColumns = [
             db_prefix() . 'projects.id as id',
             'name',
             get_sql_select_client_company(),
-            '(SELECT GROUP_CONCAT(name SEPARATOR ",") FROM ' . db_prefix() . 'taggables JOIN ' . db_prefix() . 'tags ON ' . db_prefix() . 'taggables.tag_id = ' . db_prefix() . 'tags.id WHERE rel_id = ' . db_prefix() . 'projects.id and rel_type="project" ORDER by tag_order ASC) as tags',
             'start_date',
-            'deadline',
+            $progressSelect,
             '(SELECT GROUP_CONCAT(CONCAT(firstname, \' \', lastname) SEPARATOR ",") FROM ' . db_prefix() . 'project_members JOIN ' . db_prefix() . 'staff on ' . db_prefix() . 'staff.staffid = ' . db_prefix() . 'project_members.staff_id WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members',
             'status',
         ];
@@ -76,8 +87,12 @@ return App_table::find('projects')
         // Check if owner_id and manager_id columns exist before adding them to query
         $additionalSelect = [
             'clientid',
+            db_prefix() . 'clients.company as client_agency_name',
+            '(SELECT CONCAT(TRIM(COALESCE(' . db_prefix() . 'contacts.firstname, \'\')), \' \', TRIM(COALESCE(' . db_prefix() . 'contacts.lastname, \'\'))) FROM ' . db_prefix() . 'contacts WHERE ' . db_prefix() . 'contacts.userid = ' . db_prefix() . 'projects.clientid AND ' . db_prefix() . 'contacts.is_primary = 1 LIMIT 1) as primary_contact_fullname',
             '(SELECT GROUP_CONCAT(staff_id SEPARATOR ",") FROM ' . db_prefix() . 'project_members WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members_ids',
             db_prefix() . 'projects.addedfrom as addedfrom',
+            '(SELECT COUNT(*) FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id AND ' . $p . 'tasks.status = 5) as progress_tasks_completed',
+            '(SELECT COUNT(*) FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id AND ' . $p . 'tasks.status <> 5) as progress_tasks_remaining',
         ];
         
         // Try to add owner_id and manager_id if columns exist
@@ -133,44 +148,62 @@ return App_table::find('projects')
 
             $row[] = $name;
 
-            $row[] = '<a href="' . admin_url('clients/client/' . $aRow['clientid']) . '">' . e($aRow['company']) . '</a>';
-
-            // Format: Project name – Customer name – Sales person name
-            // Use first project member, fallback to addedfrom
-            $projectName = e($aRow['name']);
-            $customerName = e($aRow['company']);
-            $salesPersonName = '';
-            
-            // Get first member from members list (members are already in the query)
-            if (isset($aRow['members']) && !empty($aRow['members'])) {
-                $members = explode(',', $aRow['members']);
-                if (!empty($members[0])) {
-                    // Get the first member's ID from members_ids
-                    if (isset($aRow['members_ids']) && !empty($aRow['members_ids'])) {
-                        $members_ids = explode(',', $aRow['members_ids']);
-                        if (!empty($members_ids[0])) {
-                            $first_member_id = (int) $members_ids[0];
-                            $salesPersonName = get_staff_full_name($first_member_id);
-                        }
-                    }
+            $agencyName   = isset($aRow['client_agency_name']) ? trim((string) $aRow['client_agency_name']) : '';
+            $contactName  = isset($aRow['primary_contact_fullname']) ? trim(preg_replace('/\s+/', ' ', (string) $aRow['primary_contact_fullname'])) : '';
+            $customerLink = admin_url('clients/client/' . $aRow['clientid']);
+            $customerHtml = '<a href="' . $customerLink . '">';
+            if ($agencyName !== '') {
+                $customerHtml .= '<span class="tw-font-medium">' . e($agencyName) . '</span>';
+                if ($contactName !== '') {
+                    $customerHtml .= '<br /><small class="tw-text-neutral-500">' . e($contactName) . '</small>';
                 }
+            } else {
+                $customerHtml .= '<span class="tw-font-medium">' . e($contactName !== '' ? $contactName : $aRow['company']) . '</span>';
             }
-            
-            // Fallback to addedfrom if no members
-            if (empty($salesPersonName) && isset($aRow['addedfrom']) && !empty($aRow['addedfrom'])) {
-                $salesPersonName = get_staff_full_name($aRow['addedfrom']);
-            }
-            
-            if (empty($salesPersonName)) {
-                $salesPersonName = 'N/A';
-            }
-            $formattedTag = $projectName . ' – ' . $customerName . ' – ' . $salesPersonName;
-            // Display as plain text without tag styling
-            $row[] = '<span class="tw-text-neutral-700">' . e($formattedTag) . '</span>';
+            $customerHtml .= '</a>';
+            $row[] = $customerHtml;
 
             $row[] = e(_d($aRow['start_date']));
 
-            $row[] = e(_d($aRow['deadline']));
+            $progressVal = isset($aRow['calc_progress_display']) ? (float) $aRow['calc_progress_display'] : 0;
+            $progressVal = min(100, max(0, $progressVal));
+            // Avoid grey sliver at the end from float SQL / rounding (e.g. 99.97%).
+            $fillWidth = $progressVal;
+            if ($fillWidth >= 99.5) {
+                $fillWidth = 100.0;
+            }
+            if ($fillWidth > 0 && $fillWidth < 0.5) {
+                $fillWidth = 0.0;
+            }
+
+            $percentForLabel = (int) round($progressVal >= 99.5 ? 100 : $progressVal);
+            $percentLabel    = $percentForLabel . ' %';
+
+            $tasksDone      = isset($aRow['progress_tasks_completed']) ? (int) $aRow['progress_tasks_completed'] : 0;
+            $tasksRemaining = isset($aRow['progress_tasks_remaining']) ? (int) $aRow['progress_tasks_remaining'] : 0;
+
+            $greenHex = '#22c55e';
+            $greyHex  = '#e5e5e5';
+            $isFull   = ($fillWidth >= 100);
+            $isEmpty  = ($fillWidth <= 0);
+
+            $trackBg = ($isFull ? $greenHex : $greyHex);
+            $trackClass = 'project-table-progress-track tw-relative tw-flex-1 tw-min-w-[100px] tw-overflow-hidden';
+            $trackStyle = 'height: 1rem; border-radius: 5px; background-color: ' . e($trackBg) . ';';
+            $fillStyle = 'background-color: ' . $greenHex . '; width: ' . e((string) $fillWidth) . '%; height: 100%; border-radius: 5px;';
+            if ($isEmpty) {
+                $fillStyle = 'background-color: ' . $greenHex . '; width: 0; height: 100%; border-radius: 5px;';
+            }
+
+            $row[] = '<div class="project-table-progress-wrap tw-flex tw-items-center tw-gap-2 tw-min-w-[220px] tw-max-w-[320px]">'
+                . '<span class="tw-tabular-nums tw-text-sm tw-font-medium tw-text-neutral-800 tw-shrink-0 tw-min-w-[1.25rem] tw-text-right">' . e((string) $tasksDone) . '</span>'
+                . '<div class="' . $trackClass . '" style="' . $trackStyle . '">'
+                . '<div class="project-table-progress-fill tw-absolute tw-top-0 tw-bottom-0 tw-left-0" style="' . $fillStyle . '" aria-hidden="true"></div>'
+                . '<span class="tw-absolute tw-inset-0 tw-flex tw-items-center tw-justify-center tw-text-xs tw-font-medium tw-leading-none tw-text-neutral-900 tw-z-[1] tw-pointer-events-none">' . e($percentLabel) . '</span>'
+                . '</div>'
+                . '<span class="tw-tabular-nums tw-text-sm tw-font-medium tw-text-neutral-800 tw-shrink-0 tw-min-w-[1.25rem] tw-text-left">' . e((string) $tasksRemaining) . '</span>'
+                . '</div>'
+                . '<span class="hide">' . e($percentLabel) . ' (' . e((string) $tasksDone) . '/' . e((string) ($tasksDone + $tasksRemaining)) . ')</span>';
 
             $membersOutput = '<div class="tw-flex -tw-space-x-1">';
             $members       = explode(',', $aRow['members']);
@@ -213,7 +246,6 @@ return App_table::find('projects')
     })->setRules([
         App_table_filter::new('name','TextRule')->label(_l('project_name')),
         App_table_filter::new('start_date','DateRule')->label(_l('project_start_date')),
-        App_table_filter::new('deadline','DateRule')->label(_l('project_deadline')),
         App_table_filter::new('billing_type','SelectRule')->label(_l('project_billing_type'))->options(function($ci) {
             return [
                 ['value'=>1,'label'=>_l('project_billing_type_fixed_cost')],
@@ -228,7 +260,7 @@ return App_table::find('projects')
                 ])->all();
         }),
 
-        App_table_filter::new('members', 'MultiSelectRule')->label(_l('project_members'))
+        App_table_filter::new('members', 'MultiSelectRule')->label(_l('project_resources'))
             ->isVisible(fn () => staff_can('view', 'projects'))
             ->options(function ($ci) {
                 return collect($ci->projects_model->get_distinct_projects_members())->map(function ($staff) {

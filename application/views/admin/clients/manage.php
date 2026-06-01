@@ -102,13 +102,6 @@
                             <?= _l('new_client'); ?>
                         </a>
                         <?php } ?>
-                        <?php if (staff_can('create', 'customers')) { ?>
-                        <a href="<?= admin_url('clients/import'); ?>"
-                            class="hidden-xs btn btn-default">
-                            <i class="fa-solid fa-upload tw-mr-1"></i>
-                            <?= _l('import_customers'); ?>
-                        </a>
-                        <?php } ?>
                     </div>
                     <div id="vueApp" class="tw-inline">
                         <app-filters id="<?= $table->id(); ?>"
@@ -181,14 +174,6 @@ $_table_data                         = [
     [
         'name'     => _l('clients_list_phone'),
         'th_attrs' => ['class' => 'toggleable', 'id' => 'th-phone'],
-    ],
-    [
-        'name'     => _l('customer_active'),
-        'th_attrs' => ['class' => 'text-center toggleable', 'id' => 'th-active'],
-    ],
-    [
-        'name'     => _l('customer_groups'),
-        'th_attrs' => ['class' => 'toggleable', 'id' => 'th-groups'],
     ],
     [
         'name'     => _l('date_created'),

@@ -510,26 +510,14 @@ class Clients extends AdminController
                 }
                 
                 if ($client_id == '') {
-                    // Validation rules - same as standard customer form
                     if (get_option('company_is_required') == 1) {
                         $this->form_validation->set_rules('company', _l('clients_company'), 'required');
                     }
-                    
-                    // Validate custom fields
-                    $custom_fields = get_custom_fields('customers', [
-                        'required' => 1,
-                    ]);
-                    
-                    if (is_array($custom_fields) && count($custom_fields) > 0) {
-                        foreach ($custom_fields as $field) {
-                            $field_name = 'custom_fields[customers][' . $field['id'] . ']';
-                            if ($field['type'] == 'checkbox' || $field['type'] == 'multiselect') {
-                                $field_name .= '[]';
-                            }
-                            $this->form_validation->set_rules($field_name, $field['name'], 'required');
-                        }
+
+                    if (! empty($data['customer_email'])) {
+                        $this->form_validation->set_rules('customer_email', _l('client_email'), 'valid_email');
                     }
-                    
+
                     if ($this->form_validation->run() === false) {
                         ob_clean();
                         header('Content-Type: application/json');
@@ -540,19 +528,59 @@ class Clients extends AdminController
                         ]);
                         die;
                     }
-                    
+
+                    $customerName  = isset($data['customer_name']) ? trim($data['customer_name']) : '';
+                    $customerEmail = isset($data['customer_email']) ? trim($data['customer_email']) : '';
+
+                    $customerAdminsSubmitted = ! empty($data['customer_admins_submitted']);
+                    $customerAdmins          = $this->parse_customer_admins_from_post($data);
+
+                    unset(
+                        $data['customer_name'],
+                        $data['customer_email'],
+                        $data['customer_admins'],
+                        $data['customer_admins_submitted']
+                    );
+
+                    $phonenumber = $data['phonenumber'] ?? '';
+
                     $id = $this->clients_model->add($data, false);
-                    
-                    // Clear any output that might have been generated
+
                     ob_clean();
-                    
+
                     if ($id) {
-                        if (staff_cant('view', 'customers')) {
-                            $assign['customer_admins']   = [];
-                            $assign['customer_admins'][] = get_staff_user_id();
-                            $this->clients_model->assign_admins($assign, $id);
+                        if ($customerName !== '' || $customerEmail !== '') {
+                            $nameParts  = explode(' ', $customerName, 2);
+                            $contactData = [
+                                'firstname'  => $nameParts[0] ?? '',
+                                'lastname'   => $nameParts[1] ?? '',
+                                'email'      => $customerEmail,
+                                'is_primary' => 1,
+                            ];
+
+                            if ($phonenumber !== '') {
+                                $contactData['phonenumber'] = $phonenumber;
+                            }
+
+                            $this->clients_model->add_contact($contactData, $id);
                         }
-                        
+
+                        if ($customerAdminsSubmitted) {
+                            if (! empty($customerAdmins)) {
+                                $this->clients_model->assign_admins(['customer_admins' => $customerAdmins], $id);
+                            } elseif (staff_cant('view', 'customers')) {
+                                $this->clients_model->assign_admins([
+                                    'customer_admins' => [get_staff_user_id()],
+                                ], $id);
+                            } else {
+                                $this->clients_model->assign_admins(['customer_admins' => []], $id);
+                            }
+                        } elseif (staff_cant('view', 'customers')) {
+                            $this->clients_model->assign_admins([
+                                'customer_admins' => [get_staff_user_id()],
+                            ], $id);
+                        }
+
                         // Get customer name for auto-selection
                         $client = $this->clients_model->get($id);
                         $client_name = '';
@@ -618,20 +646,19 @@ class Clients extends AdminController
         }
 
         $data['client_id'] = $client_id;
-        
-        // Get customer groups
-        $data['groups'] = $this->clients_model->get_groups();
-        if (!is_array($data['groups'])) {
-            $data['groups'] = [];
+
+        $this->load->model('staff_model');
+        $data['staff'] = $this->staff_model->get('', ['active' => 1]);
+        if (! is_array($data['staff'])) {
+            $data['staff'] = [];
         }
-        
-        // Get currencies
+
         $this->load->model('currencies_model');
         $data['currencies'] = $this->currencies_model->get();
-        if (!is_array($data['currencies'])) {
+        if (! is_array($data['currencies'])) {
             $data['currencies'] = [];
         }
-        
+
         $this->load->view('admin/clients/modals/client', $data);
     }
 

@@ -7,20 +7,17 @@ $activeStaff = $this->staff_model->get('', ['active' => 1]);
 // Get deactive (inactive) staff members
 $deactiveStaff = $this->staff_model->get('', ['active' => 0]);
 
-// Get deleted users - these are staff IDs referenced in projects but no longer exist in staff table
-// This finds orphaned owner references (staff who were deleted without proper data transfer)
-$deletedStaffQuery = $this->db->query(
-    'SELECT DISTINCT pm.staff_id, CONCAT("Deleted User #", pm.staff_id) as full_name 
-     FROM ' . db_prefix() . 'project_members pm 
-     LEFT JOIN ' . db_prefix() . 'staff s ON s.staffid = pm.staff_id 
-     WHERE s.staffid IS NULL
-     UNION
-     SELECT DISTINCT p.addedfrom as staff_id, CONCAT("Deleted User #", p.addedfrom) as full_name 
-     FROM ' . db_prefix() . 'projects p 
-     LEFT JOIN ' . db_prefix() . 'staff s ON s.staffid = p.addedfrom 
-     WHERE s.staffid IS NULL'
-);
-$deletedStaff = $deletedStaffQuery->result_array();
+// Orphaned owner_id values (project owner field) — not project members or manager
+$deletedStaff = [];
+if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
+    $deletedStaffQuery = $this->db->query(
+        'SELECT DISTINCT p.owner_id AS staff_id, CONCAT("Deleted User #", p.owner_id) AS full_name
+         FROM ' . db_prefix() . 'projects p
+         LEFT JOIN ' . db_prefix() . 'staff s ON s.staffid = p.owner_id
+         WHERE p.owner_id IS NOT NULL AND p.owner_id > 0 AND s.staffid IS NULL'
+    );
+    $deletedStaff = $deletedStaffQuery->result_array();
+}
 ?>
 
 <!-- Project Name -->
@@ -70,7 +67,7 @@ $deletedStaff = $deletedStaffQuery->result_array();
 <!-- Owner -->
 <div class="filter-accordion-item" data-filter="owner">
     <button type="button" class="filter-accordion-header" aria-expanded="false">
-        <span class="filter-label"><?= _l('owner'); ?></span>
+        <span class="filter-label"><?= _l('project_owner'); ?></span>
         <i class="fa fa-chevron-down" aria-hidden="true"></i>
     </button>
     <div class="filter-accordion-body" aria-hidden="true">
@@ -115,6 +112,24 @@ $deletedStaff = $deletedStaffQuery->result_array();
                 <?php else : ?>
                     <option value="" disabled><?= _l('no_deleted_users_found'); ?></option>
                 <?php endif; ?>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Project Manager -->
+<div class="filter-accordion-item" data-filter="manager">
+    <button type="button" class="filter-accordion-header" aria-expanded="false">
+        <span class="filter-label"><?= _l('project_manager'); ?></span>
+        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+    </button>
+    <div class="filter-accordion-body" aria-hidden="true">
+        <div class="form-group">
+            <label><?= _l('select_manager'); ?></label>
+            <select class="form-control selectpicker" multiple name="manager_value[]" data-live-search="true" data-actions-box="true" id="manager_filter_select">
+                <?php foreach ($activeStaff as $member) { ?>
+                    <option value="<?= $member['staffid']; ?>"><?= e($member['firstname'] . ' ' . $member['lastname']); ?></option>
+                <?php } ?>
             </select>
         </div>
     </div>

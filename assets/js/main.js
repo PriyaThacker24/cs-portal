@@ -257,7 +257,7 @@ $(function () {
   });
   /** Create New Project **/
   add_hotkey("Shift+P", function () {
-    window.location.href = admin_url + "projects/project";
+    window.location.href = admin_url + "projects/project-new";
   });
   /** Create New Ticket **/
   add_hotkey("Shift+S", function () {

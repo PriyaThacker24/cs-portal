@@ -299,9 +299,19 @@ var ProjectsFilter = (function() {
      * Reset all filters
      */
     function resetFilters() {
-        // Clear all inputs
+        // Clear all inputs (multi-select pickers need deselectAll, not only .val(''))
         $('.filter-accordion-item input[type="text"]').val('');
-        $('.filter-accordion-item select').val('').selectpicker('refresh');
+        $('.filter-accordion-item select').each(function() {
+            var $select = $(this);
+            if ($select.prop('multiple') && typeof $select.selectpicker === 'function') {
+                $select.selectpicker('deselectAll');
+            } else {
+                $select.val('');
+            }
+            if ($select.hasClass('selectpicker')) {
+                $select.selectpicker('refresh');
+            }
+        });
 
         // Remove active indicators and collapse accordions
         $accordionItems.removeClass('has-value is-open');
@@ -311,15 +321,25 @@ var ProjectsFilter = (function() {
         // Reset match condition to "any"
         $('input[name="filter_match"][value="any"]').prop('checked', true);
         
-        // Clear stored filter data
+        // Clear stored filter data (memory + localStorage so refresh does not re-apply)
         currentFilters = {};
+        clearSavedFilters();
         
         // Reload table without filters
-        if (typeof $.fn.DataTable !== 'undefined' && $('.table-projects').length) {
-            $('.table-projects').DataTable().ajax.reload();
-        }
+        reloadTableWithFilters();
         
         alert_float('success', 'Filters reset successfully');
+    }
+
+    /**
+     * Remove persisted filter state.
+     */
+    function clearSavedFilters() {
+        try {
+            localStorage.removeItem('projects_filters');
+        } catch (e) {
+            console.error('Could not clear filters:', e);
+        }
     }
 
     /**
@@ -374,20 +394,27 @@ var ProjectsFilter = (function() {
         });
         
         console.log('Applying filters:', currentFilters);
-        
-        // Save filters to session/localStorage
-        saveFilters();
-        
+
+        var activeFilterCount = Object.keys(currentFilters).filter(function(k) {
+            return k !== 'match';
+        }).length;
+
+        // Persist only when at least one filter is set
+        if (activeFilterCount > 0) {
+            saveFilters();
+        } else {
+            clearSavedFilters();
+        }
+
         // Reload DataTable with filters
         reloadTableWithFilters();
         
         // Close filter panel
         closeFilterPanel();
-        
+
         // Show success message
-        var filterCount = Object.keys(currentFilters).length - 1; // -1 for match condition
-        if (filterCount > 0) {
-            alert_float('success', filterCount + ' filter(s) applied');
+        if (activeFilterCount > 0) {
+            alert_float('success', activeFilterCount + ' filter(s) applied');
         }
     }
 
@@ -582,16 +609,7 @@ var ProjectsFilter = (function() {
      */
     function reloadTableWithFilters() {
         if (typeof $.fn.DataTable !== 'undefined' && $('.table-projects').length) {
-            var table = $('.table-projects').DataTable();
-            
-            // Add filter data to AJAX request as JSON string
-            table.settings()[0].ajax.data = function(d) {
-                // Send filters as JSON string for proper parsing on server
-                d.filters = JSON.stringify(currentFilters);
-                return d;
-            };
-            
-            table.ajax.reload();
+            $('.table-projects').DataTable().ajax.reload();
         }
     }
 
@@ -612,10 +630,19 @@ var ProjectsFilter = (function() {
     function loadSavedFilters() {
         try {
             var saved = localStorage.getItem('projects_filters');
-            if (saved) {
-                currentFilters = JSON.parse(saved);
-                populateFilterUI();
+            if (!saved) {
+                return;
             }
+            currentFilters = JSON.parse(saved);
+            var hasActiveFilters = currentFilters && Object.keys(currentFilters).some(function(k) {
+                return k !== 'match';
+            });
+            if (!hasActiveFilters) {
+                currentFilters = {};
+                clearSavedFilters();
+                return;
+            }
+            populateFilterUI();
         } catch (e) {
             console.error('Could not load filters:', e);
         }
@@ -642,15 +669,15 @@ var ProjectsFilter = (function() {
             
             $.each(filterValue, function(fieldName, value) {
                 var fullFieldName = filterType + '_' + fieldName;
-                var $field = $panel.find('[name="' + fullFieldName + '"]');
-                
+                var $field = $panel.find('[name="' + fullFieldName + '"], [name="' + fullFieldName + '[]"]');
+
                 if ($field.length) {
                     $field.val(value);
-                    
+
                     if ($field.hasClass('selectpicker')) {
                         $field.selectpicker('refresh');
                     }
-                    
+
                     markFilterAsActive($field);
                 }
             });

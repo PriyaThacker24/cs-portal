@@ -144,7 +144,7 @@ class AdminController extends App_Controller
 
         $this->app->add_quick_actions_link([
             'name'       => _l('project'),
-            'url'        => 'projects/project',
+            'url'        => 'projects/project-new',
             'permission' => 'projects',
             'position'   => 35,
             'icon'       => 'fa-solid fa-chart-gantt',

@@ -15,7 +15,7 @@
                     $totalAllowed = 0;
                     echo render_input('amount', 'record_payment_amount_received', $amount, 'number', ['max' => $amount]); ?>
                     <?php echo render_input('amount_rupees', 'INR Amount', '', 'text'); ?>
-                    <?php echo render_date_input('date', 'record_payment_date', _d(date('Y-m-d'))); ?>
+                    <?php echo render_date_input('date', 'record_payment_date', _d_ddmmyyyy(date('Y-m-d'))); ?>
                     <div class="form-group">
                         <label for="paymentmode" class="control-label"><?php echo _l('payment_mode'); ?></label>
                         <select class="selectpicker" name="paymentmode" data-width="100%"
@@ -44,7 +44,7 @@
                     } ?>
                 </div>
                 <div class="col-md-6">
-                    <?php echo render_input('transactionid', 'payment_transaction_id'); ?>
+                    <?php echo render_textarea('transactionid', 'payment_transaction_id', '', ['rows' => 4]); ?>
                     <div class="form-gruoup">
                         <label for="note" class="control-label"><?php echo _l('record_payment_leave_note'); ?></label>
                         <textarea name="note" class="form-control" rows="8"
@@ -53,27 +53,6 @@
                     </div>
                 </div>
                 <div class="col-md-12 tw-mt-3">
-                    <?php
-                    $pr_template = is_email_template_active('invoice-payment-recorded');
-                    $sms_trigger = is_sms_trigger_active(SMS_TRIGGER_PAYMENT_RECORDED);
-                    if ($pr_template || $sms_trigger) { ?>
-                    <div class="checkbox checkbox-primary mtop15">
-                        <input type="checkbox" name="do_not_send_email_template" id="do_not_send_email_template">
-                        <label for="do_not_send_email_template">
-                            <?php
-                            if ($pr_template) {
-                                echo _l('do_not_send_invoice_payment_email_template_contact');
-                                if ($sms_trigger) {
-                                    echo '/';
-                                }
-                            }
-                            if ($sms_trigger) {
-                                echo 'SMS' . ' ' . _l('invoice_payment_recorded');
-                            }
-                            ?>
-                        </label>
-                    </div>
-                    <?php } ?>
                     <div class="checkbox checkbox-primary mtop15 do_not_redirect hide">
                         <input type="checkbox" name="do_not_redirect" id="do_not_redirect" checked>
                         <label for="do_not_redirect"><?php echo _l('do_not_redirect_payment'); ?></label>
@@ -104,7 +83,10 @@
 <script>
 $(function() {
     init_selectpicker();
-    init_datepicker();
+    appDatepicker({
+        element_date: $('#record_payment_form .datepicker'),
+        date_format: 'd/m/Y',
+    });
     appValidateForm($('#record_payment_form'), {
         amount: 'required',
         date: 'required',

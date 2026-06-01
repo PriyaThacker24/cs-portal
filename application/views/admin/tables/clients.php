@@ -18,8 +18,6 @@ return App_table::find('clients')
             'CONCAT(firstname, " ", lastname) as fullname',
             'email',
             db_prefix() . 'clients.phonenumber as phonenumber',
-            db_prefix() . 'clients.active',
-            '(SELECT GROUP_CONCAT(name SEPARATOR ",") FROM ' . db_prefix() . 'customer_groups JOIN ' . db_prefix() . 'customers_groups ON ' . db_prefix() . 'customer_groups.groupid = ' . db_prefix() . 'customers_groups.id WHERE customer_id = ' . db_prefix() . 'clients.userid ORDER by name ASC) as customerGroups',
             db_prefix() . 'clients.datecreated as datecreated',
         ];
 
@@ -61,6 +59,7 @@ return App_table::find('clients')
             db_prefix() . 'clients.zip as zip',
             'registration_confirmed',
             'vat',
+            db_prefix() . 'clients.active as client_is_active',
         ]);
 
         $output  = $result['output'];
@@ -119,29 +118,6 @@ return App_table::find('clients')
             // Primary contact phone
             $row[] = ($aRow['phonenumber'] ? '<a href="tel:' . e($aRow['phonenumber']) . '">' . e($aRow['phonenumber']) . '</a>' : '');
 
-            // Toggle active/inactive customer
-            $toggleActive = '<div class="onoffswitch" data-toggle="tooltip" data-title="' . _l('customer_active_inactive_help') . '">
-    <input type="checkbox"' . ($aRow['registration_confirmed'] == 0 ? ' disabled' : '') . ' data-switch-url="' . admin_url() . 'clients/change_client_status" name="onoffswitch" class="onoffswitch-checkbox" id="' . $aRow['userid'] . '" data-id="' . $aRow['userid'] . '" ' . ($aRow[db_prefix() . 'clients.active'] == 1 ? 'checked' : '') . '>
-    <label class="onoffswitch-label" for="' . $aRow['userid'] . '"></label>
-    </div>';
-
-            // For exporting
-            $toggleActive .= '<span class="hide">' . ($aRow[db_prefix() . 'clients.active'] == 1 ? _l('is_active_export') : _l('is_not_active_export')) . '</span>';
-
-            $row[] = $toggleActive;
-
-            // Customer groups parsing
-            $groupsRow = '';
-            if ($aRow['customerGroups']) {
-                $groups = explode(',', $aRow['customerGroups']);
-
-                foreach ($groups as $group) {
-                    $groupsRow .= '<span class="label label-default mleft5 customer-group-list pointer">' . e($group) . '</span>';
-                }
-            }
-
-            $row[] = $groupsRow;
-
             $row[] = e(_dt($aRow['datecreated']));
 
             // Custom fields add values
@@ -157,7 +133,7 @@ return App_table::find('clients')
                 $row['Data_Toggle'] = 'tooltip';
             }
 
-            if ($aRow[db_prefix() . 'clients.active'] == 0) {
+            if ((int) ($aRow['client_is_active'] ?? 1) === 0) {
                 $row['DT_RowClass'] .= ' secondary';
             }
 

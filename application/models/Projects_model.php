@@ -912,8 +912,14 @@ class Projects_model extends App_Model
                     ]);
                 }
             } else {
+                $last_project_settings = $this->get_last_project_settings();
+                $last_by_name          = [];
+                foreach ($last_project_settings as $last_setting) {
+                    $last_by_name[$last_setting['name']] = $last_setting['value'];
+                }
+
                 foreach ($original_settings as $setting) {
-                    $value_setting = 0;
+                    $value_setting = $last_by_name[$setting] ?? 0;
                     $this->db->insert(db_prefix() . 'project_settings', [
                         'project_id' => $insert_id,
                         'name'       => $setting,
@@ -975,15 +981,7 @@ class Projects_model extends App_Model
             unset($data['notify_project_members_status_change']);
         }
         $affectedRows = 0;
-        if (! isset($data['settings'])) {
-            $this->db->where('project_id', $id);
-            $this->db->update(db_prefix() . 'project_settings', [
-                'value' => 0,
-            ]);
-            if ($this->db->affected_rows() > 0) {
-                $affectedRows++;
-            }
-        } else {
+        if (isset($data['settings'])) {
             $_settings = [];
             $_values   = [];
 

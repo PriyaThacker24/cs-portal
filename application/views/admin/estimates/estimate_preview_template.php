@@ -185,7 +185,7 @@ if ($estimate->sent == 1) {
                                 <?php if (staff_can('create', 'projects') && $estimate->project_id == 0) { ?>
                                 <li>
                                     <a
-                                        href="<?= admin_url("projects/project?via_estimate_id={$estimate->id}&customer_id={$estimate->clientid}") ?>">
+                                        href="<?= admin_url("projects/project-new?via_estimate_id={$estimate->id}&customer_id={$estimate->clientid}") ?>">
                                         <?= _l('estimate_convert_to_project'); ?>
                                     </a>
                                 </li>

@@ -74,6 +74,11 @@ $route['admin/profile/(:num)']    = 'admin/staff/profile/$1';
 $route['admin/tasks/view/(:any)'] = 'admin/tasks/index/$1';
 
 /**
+ * New project form (hyphenated URL; translate_uri_dashes is off globally)
+ */
+$route['admin/projects/project-new'] = 'admin/projects/project_new';
+
+/**
  * Items search rewrite
  */
 $route['admin/items/search'] = 'admin/invoice_items/search';
