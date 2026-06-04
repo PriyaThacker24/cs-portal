@@ -1,10 +1,15 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <div class="mtop40">
-    <div class="col-md-4 col-md-offset-4 text-center">
-        <h1 class="tw-font-bold mbot20 login-heading">
-            <?= _l(get_option('allow_registration') == 1 ? 'clients_login_heading_register' : 'clients_login_heading_no_register');
+    <div class="col-md-4 col-md-offset-4 col-sm-8 col-sm-offset-2">
+        <div class="company-logo text-center">
+            <?php get_dark_company_logo(); ?>
+        </div>
+        <div class="text-center">
+            <h1 class="tw-font-bold mbot20 login-heading">
+                <?= _l(get_option('allow_registration') == 1 ? 'clients_login_heading_register' : 'clients_login_heading_no_register');
 ?>
-        </h1>
+            </h1>
+        </div>
     </div>
     <div class="col-md-4 col-md-offset-4 col-sm-8 col-sm-offset-2">
         <?= form_open($this->uri->uri_string(), ['class' => 'login-form']); ?>

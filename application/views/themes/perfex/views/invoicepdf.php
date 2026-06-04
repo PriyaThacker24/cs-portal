@@ -19,8 +19,17 @@ if (get_option('show_status_on_pdf_ei') == 1) {
 //     $info_right_column .= ' - <a style="color:#84c529;text-decoration:none;text-transform:uppercase;" href="' . site_url('invoice/' . $invoice->id . '/' . $invoice->hash) . '"><1b>' . _l('view_invoice_pdf_link_pay') . '</1b></a>';
 // }
 
-// Add logo
-$info_left_column .= pdf_logo_url();
+// Add logo (selected company) - fallback to company name if logo missing
+$invoiceCompany = organization_company_resolve_for_invoice($invoice);
+$logoHtml = pdf_logo_url($invoiceCompany, false);
+if ($logoHtml !== '') {
+    $info_left_column .= $logoHtml;
+} else {
+    $fallbackName = $invoiceCompany ? organization_company_row_value($invoiceCompany, 'name') : get_option('invoice_company_name');
+    if ($fallbackName !== '') {
+        $info_left_column .= '<span style="font-weight:bold;font-size:22px;color:#111827;">' . e($fallbackName) . '</span>';
+    }
+}
 
 // Write top left logo and right column info/text
 pdf_multi_row($info_left_column, $info_right_column, $pdf, ($dimensions['wk'] / 2) - $dimensions['lm']);
@@ -29,7 +38,7 @@ $pdf->ln(10);
 
 $organization_info = '<div style="color:#424242;">';
 
-$organization_info .= format_organization_info();
+$organization_info .= format_invoice_organization_info(organization_company_resolve_for_invoice($invoice));
 
 $organization_info .= '</div>';
 
@@ -80,8 +89,8 @@ $invoice_info      = hooks()->apply_filters('invoice_pdf_header_after_custom_fie
 $organization_info = hooks()->apply_filters('invoicepdf_organization_info', $organization_info, $invoice);
 $invoice_info      = hooks()->apply_filters('invoice_pdf_info', $invoice_info, $invoice);
 
-$left_info  = $swap == '1' ? $invoice_info : $organization_info;
-$right_info = $swap == '1' ? $organization_info : $invoice_info;
+$left_info  = $organization_info;
+$right_info = $invoice_info;
 
 pdf_multi_row($left_info, $right_info, $pdf, ($dimensions['wk'] / 2) - $dimensions['lm']);
 

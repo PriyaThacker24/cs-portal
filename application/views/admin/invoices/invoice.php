@@ -36,6 +36,65 @@ $(function() {
     init_ajax_search('items', '#item_select.ajax-search', undefined, admin_url + 'items/search');
     
     
+    var organizationCompanyManuallySelected = false;
+
+    function refresh_invoice_organization_company_preview(companyId) {
+        var $preview = $('#invoice-organization-company-preview');
+        if ($preview.length === 0) {
+            return;
+        }
+        requestGetJSON('organization_companies/preview_info/' + (companyId || 0)).done(function(response) {
+            if (response && response.html) {
+                $preview.html(response.html);
+            }
+        });
+    }
+
+    $('body').on('change changed.bs.select', 'select[name="organization_company_id"]', function() {
+        organizationCompanyManuallySelected = true;
+        refresh_invoice_organization_company_preview($(this).val());
+    });
+
+    $(document).on('ajaxSuccess.invoiceOrganizationCompany', function(event, xhr, settings) {
+        if (!settings.url || settings.url.indexOf('invoices/client_change_data') === -1) {
+            return;
+        }
+        var response = xhr.responseJSON;
+        if (!response || !response.organization_company_id) {
+            return;
+        }
+        var $company = $('select[name="organization_company_id"]');
+        if ($company.length === 0) {
+            return;
+        }
+        var currentVal = $company.val();
+        if (!organizationCompanyManuallySelected || !currentVal) {
+            $company.selectpicker('val', response.organization_company_id);
+            $company.selectpicker('refresh');
+            refresh_invoice_organization_company_preview(response.organization_company_id);
+        } else {
+            refresh_invoice_organization_company_preview(currentVal);
+        }
+    });
+
+    if ($('select[name="organization_company_id"]').length) {
+        refresh_invoice_organization_company_preview($('select[name="organization_company_id"]').val());
+    }
+
+    $('#invoice-form').on('submit', function() {
+        var $company = $('select[name="organization_company_id"]');
+        if ($company.length) {
+            var selectedCompany = $company.val();
+            if (selectedCompany) {
+                var $hiddenCompany = $(this).find('input[name="organization_company_id_hidden"]');
+                if ($hiddenCompany.length === 0) {
+                    $hiddenCompany = $('<input type="hidden" name="organization_company_id_hidden">').appendTo(this);
+                }
+                $hiddenCompany.val(selectedCompany);
+            }
+        }
+    });
+
     // Auto-select and disable sales agent when customer changes
     $('body').on('change', '.f_client_id #clientid', function() {
         var val = $(this).val();

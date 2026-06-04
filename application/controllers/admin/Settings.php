@@ -122,6 +122,11 @@ class Settings extends AdminController
             show_404();
         }
 
+        if ($data['group']['id'] === 'company') {
+            $this->load->helper('organization_companies');
+            $data['group']['without_submit_button'] = true;
+        }
+
         if ($data['group']['id'] == 'update') {
             if (! extension_loaded('curl')) {
                 $data['update_errors'][] = 'CURL Extension not enabled';

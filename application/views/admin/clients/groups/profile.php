@@ -1,4 +1,7 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<?php
+$customer_custom_fields = get_custom_fields('customers');
+?>
 
 <?php if (isset($client)) { ?>
 <h4 class="customer-profile-group-heading">
@@ -125,6 +128,17 @@
                             $currency_selected,
                             $currency_attrs
                         );
+                        ?>
+
+                        <?php
+                        $this->load->helper('organization_companies');
+                        if (organization_companies_table_exists() && organization_company_client_column_exists()) {
+                            $this->load->view('admin/includes/organization_company_select', [
+                                'field_name'    => 'organization_company_id',
+                                'selected'      => isset($client) ? (int) ($client->organization_company_id ?? 0) : 0,
+                                'wrapper_class' => 'form-group select-placeholder mtop15',
+                            ]);
+                        }
                         ?>
 
                         <?= form_hidden('customer_admins_submitted', '1'); ?>

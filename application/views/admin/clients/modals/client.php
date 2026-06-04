@@ -24,6 +24,17 @@
                 <?= render_input('customer_email', 'Email Address', '', 'email'); ?>
 
                 <?php
+                $this->load->helper('organization_companies');
+                if (organization_companies_table_exists() && organization_company_client_column_exists()) {
+                    $this->load->view('admin/includes/organization_company_select', [
+                        'field_name'    => 'organization_company_id',
+                        'selected'      => 0,
+                        'wrapper_class' => 'form-group select-placeholder',
+                    ]);
+                }
+                ?>
+
+                <?php
                 $currency_attrs = ['data-none-selected-text' => _l('system_default_string')];
                 echo render_select(
                     'default_currency',

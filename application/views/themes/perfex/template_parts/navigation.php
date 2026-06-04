@@ -10,7 +10,9 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <?php get_dark_company_logo('', 'navbar-brand logo'); ?>
+            <?php if (($bodyclass ?? '') !== 'customers_login') {
+                get_dark_company_logo('', 'navbar-brand logo');
+            } ?>
             <?php if (! is_client_logged_in()) { ?>
             <a href="<?= admin_url('authentication'); ?>" class="btn btn-primary btn-sm navbar-btn pull-right">
                 <?= _l('login_as_admin'); ?>

@@ -70,7 +70,7 @@
                         <?php echo e(format_invoice_number($invoice->id)); ?>
                     </h4>
                     <address class="invoice-html-company-info tw-text-neutral-500 tw-text-normal">
-                        <?php echo format_organization_info(); ?>
+                        <?php echo format_invoice_organization_info(organization_company_resolve_for_invoice($invoice)); ?>
                     </address>
                     <?php hooks()->do_action('after_left_panel_invoicehtml', $invoice); ?>
                 </div>

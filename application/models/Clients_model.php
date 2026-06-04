@@ -1672,6 +1672,14 @@ class Clients_model extends App_Model
             $data['shipping_country'] = 0;
         }
 
+        if (isset($data['organization_company_id'])) {
+            $this->load->helper('organization_companies');
+            $data['organization_company_id'] = organization_company_normalize_id($data['organization_company_id']);
+            if (! organization_company_client_column_exists()) {
+                unset($data['organization_company_id']);
+            }
+        }
+
         return $data;
     }
 

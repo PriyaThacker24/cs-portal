@@ -23,7 +23,15 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
     // Is this custom fields for predefined items Sales->Items
     $items_pr = isset($items_cf_params['items_pr']) && $items_cf_params['items_pr'] ? true : false;
 
+    // e.g. multi-company modal: GST etc. differ per company and must not be required on add
+    $optional_only = ! empty($items_cf_params['optional_only']);
+
+    // Do not prefill defaults or legacy relid 0 when adding a new organization company
+    $blank_on_new = ! empty($items_cf_params['blank_on_new']);
+
     $is_admin = is_admin();
+
+    $cf_has_rel_id = ($rel_id !== false && $rel_id !== null && $rel_id !== '' && (int) $rel_id > 0);
 
     $CI = & get_instance();
     $CI->db->where('active', 1);
@@ -69,7 +77,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
                 $fields_html .= '<a href="' . admin_url('custom_fields/field/' . $field['id']) . '" tabindex="-1" target="_blank" class="custom-field-inline-edit-link"><i class="fa-regular fa-pen-to-square"></i></a>';
             }
 
-            if ($rel_id !== false) {
+            if ($cf_has_rel_id) {
                 if (!is_array($rel_id)) {
                     $value = get_custom_field_value($rel_id, $field['id'], ($items_pr ? 'items_pr' : $belongs_to), false);
                 } else {
@@ -101,7 +109,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
                         }
                     }
                 }
-            } elseif ($field['default_value'] && $field['type'] != 'link') {
+            } elseif ($field['default_value'] && $field['type'] != 'link' && ! ($blank_on_new && ! $cf_has_rel_id)) {
                 if (in_array($field['type'], ['date_picker_time', 'date_picker'])) {
                     if ($timestamp = strtotime($field['default_value'])) {
                         $value = $field['type'] == 'date_picker' ? date('Y-m-d', $timestamp) : date('Y-m-d H:i', $timestamp);
@@ -113,7 +121,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
 
             $_input_attrs = [];
 
-            if ($field['required'] == 1) {
+            if ($field['required'] == 1 && ! $optional_only) {
                 $_input_attrs['data-custom-field-required'] = true;
             }
 
@@ -152,7 +160,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
                 $select_attrs  = '';
                 $select_name   = $cf_name;
 
-                if ($field['required'] == 1) {
+                if ($field['required'] == 1 && ! $optional_only) {
                     $_select_attrs['data-custom-field-required'] = true;
                 }
 
@@ -172,7 +180,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
                     $select_attrs .= $key . '=' . '"' . $val . '" ';
                 }
 
-                if ($field['required'] == 1) {
+                if ($field['required'] == 1 && ! $optional_only) {
                     $field_name = '<small class="req text-danger">* </small>' . $field_name;
                 }
 
@@ -238,7 +246,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
                     $_chk_attrs['data-fieldto'] = $field['fieldto'];
                     $_chk_attrs['data-fieldid'] = $field['id'];
 
-                    if ($field['required'] == 1) {
+                    if ($field['required'] == 1 && ! $optional_only) {
                         $_chk_attrs['data-custom-field-required'] = true;
                     }
 
@@ -269,7 +277,7 @@ function render_custom_fields($belongs_to, $rel_id = false, $where = [], $items_
 
                 $fields_html .= '<a id="custom_fields_' . $field['fieldto'] . '_' . $field['id'] . '_popover" type="button" href="javascript:">' . _l('cf_translate_input_link_tip') . '</a>';
 
-                $fields_html .= '<input type="hidden" ' . ($field['required'] == 1 ? 'data-custom-field-required="1"' : '') . ' value="" id="custom_fields[' . $field['fieldto'] . '][' . $field['id'] . ']" name="custom_fields[' . $field['fieldto'] . '][' . $field['id'] . ']">';
+                $fields_html .= '<input type="hidden" ' . ($field['required'] == 1 && ! $optional_only ? 'data-custom-field-required="1"' : '') . ' value="" id="custom_fields[' . $field['fieldto'] . '][' . $field['id'] . ']" name="custom_fields[' . $field['fieldto'] . '][' . $field['id'] . ']">';
 
                 $field_template = '';
                 $field_template .= '<div id="custom_fields_' . $field['fieldto'] . '_' . $field['id'] . '_popover-content" class="hide cfh-field-popover-template"><div class="form-group">';
@@ -403,6 +411,11 @@ function get_custom_field_value($rel_id, $field_id_or_slug, $field_to, $format =
                 $result = _dt($result);
             }
         }
+    }
+
+    // Company custom fields historically used relid 0 (single company settings).
+    if ($result === '' && $field_to === 'company' && is_numeric($rel_id) && (int) $rel_id > 0) {
+        return get_custom_field_value(0, $field_id_or_slug, $field_to, $format);
     }
 
     return $result;
@@ -539,13 +552,20 @@ function render_custom_fields_items_table_in($item, $part_item_name)
  * @since Version 1.0.4
  * @return array
  */
-function get_company_custom_fields()
+function get_company_custom_fields($rel_id = null)
 {
+    if ($rel_id === null) {
+        $CI = &get_instance();
+        $CI->load->helper('organization_companies');
+        $primary = get_primary_organization_company();
+        $rel_id  = $primary ? (int) $primary->id : 0;
+    }
+
     $fields = get_custom_fields('company');
     $i      = 0;
     foreach ($fields as $field) {
         $fields[$i]['label'] = $field['name'];
-        $fields[$i]['value'] = get_custom_field_value(0, $field['id'], 'company');
+        $fields[$i]['value'] = get_custom_field_value($rel_id, $field['id'], 'company');
         $i++;
     }
 

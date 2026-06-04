@@ -8,14 +8,14 @@ $dimensions = $pdf->getPageDimensions();
 $y = $pdf->getY();
 
 $company_info = '<div style="color:#424242;">';
-$company_info .= format_organization_info();
+$company_info .= format_invoice_organization_info(organization_company_resolve_for_payment($payment));
 $company_info .= '</div>';
 
 // Bill to
 $client_details = format_customer_info($payment->invoice_data, 'payment', 'billing');
 
-$left_info  = $swap == '1' ? $client_details : $company_info;
-$right_info = $swap == '1' ? $company_info : $client_details;
+$left_info  = $company_info;
+$right_info = $client_details;
 
 pdf_multi_row($left_info, $right_info, $pdf, ($dimensions['wk'] / 2) - $dimensions['lm']);
 

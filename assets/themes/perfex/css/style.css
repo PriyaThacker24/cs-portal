@@ -1851,14 +1851,33 @@ body[dir="rtl"].safari .table-responsive .table {
   }
 }
 
-/* Center logo on login page */
-body.customers_login .navbar-header {
-  width: 100%;
-  text-align: center;
+/* Login page logo — match admin /admin/authentication */
+body.customers_login .company-logo {
+  padding: 25px 10px;
+  display: block;
 }
 
-body.customers_login .navbar-brand {
-  float: none;
-  display: inline-block;
+body.customers_login .company-logo img {
   margin: 0 auto;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+body.customers_login .navbar-header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+body.customers_login .navbar-header .navbar-btn.pull-right {
+  float: none;
+  margin-right: 0;
+}
+
+@media (max-width: 767px) {
+  body.customers_login .navbar-header {
+    justify-content: space-between;
+  }
 }

@@ -95,7 +95,7 @@
                         <div class="row">
                             <div class="col-md-6 col-sm-6">
                                 <address class="tw-text-neutral-500">
-                                    <?php echo format_organization_info(); ?>
+                                    <?php echo format_invoice_organization_info(organization_company_resolve_for_payment($payment)); ?>
                                 </address>
                             </div>
                             <div class="col-sm-6 text-right">

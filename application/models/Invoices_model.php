@@ -380,6 +380,16 @@ class Invoices_model extends App_Model
 
         $data['duedate'] = isset($data['duedate']) && empty($data['duedate']) ? null : $data['duedate'];
 
+        $this->load->helper('organization_companies');
+        if (organization_company_invoice_column_exists()) {
+            $data['organization_company_id'] = organization_company_resolve_id_for_invoice_data($data);
+        } elseif (isset($data['organization_company_id'])) {
+            unset($data['organization_company_id']);
+        }
+        if (isset($data['organization_company_id_hidden'])) {
+            unset($data['organization_company_id_hidden']);
+        }
+
         $hook = hooks()->apply_filters('before_invoice_added', [
             'data'  => $data,
             'items' => $items,
@@ -731,6 +741,18 @@ class Invoices_model extends App_Model
     {
         $original_invoice = $this->get($id);
         $updated          = false;
+
+        $this->load->helper('organization_companies');
+        if (organization_company_invoice_column_exists()) {
+            $data['organization_company_id'] = organization_company_resolve_id_for_invoice_data(
+                array_merge(['clientid' => $data['clientid'] ?? $original_invoice->clientid], $data)
+            );
+        } elseif (isset($data['organization_company_id'])) {
+            unset($data['organization_company_id']);
+        }
+        if (isset($data['organization_company_id_hidden'])) {
+            unset($data['organization_company_id_hidden']);
+        }
 
         // Perhaps draft?
         if (isset($data['nubmer'])) {

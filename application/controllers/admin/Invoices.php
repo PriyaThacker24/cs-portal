@@ -107,6 +107,14 @@ class Invoices extends AdminController
             $__data['expenses_to_bill'] = !isset($current_invoice_status) || (isset($current_invoice_status) && $current_invoice_status != Invoices_model::STATUS_CANCELLED) ? $this->invoices_model->get_expenses_to_bill($customer_id) : [];
 
             $data['expenses_bill_info'] = $this->load->view('admin/invoices/bill_expenses', $__data, true);
+
+            $this->load->helper('organization_companies');
+            $data['organization_company_id'] = organization_company_id_from_client($customer_id);
+            if (! $data['organization_company_id']) {
+                $primary = get_primary_organization_company();
+                $data['organization_company_id'] = $primary ? (int) $primary->id : 0;
+            }
+
             echo json_encode($data);
         }
     }

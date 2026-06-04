@@ -50,6 +50,34 @@
                     </div>
                 </div>
                 <?php
+                $this->load->helper('organization_companies');
+                if (organization_companies_table_exists() && organization_company_invoice_column_exists()) {
+                    $org_company_selected = 0;
+                    if (isset($invoice) && ! empty($invoice->organization_company_id)) {
+                        $org_company_selected = (int) $invoice->organization_company_id;
+                    } elseif (isset($invoice) && ! empty($invoice->clientid)) {
+                        $org_company_selected = (int) (organization_company_id_from_client($invoice->clientid) ?: 0);
+                    } elseif (! empty($customer_id)) {
+                        $org_company_selected = (int) (organization_company_id_from_client($customer_id) ?: 0);
+                    }
+                    ?>
+                <div id="invoice-organization-company-wrap">
+                    <?php $this->load->view('admin/includes/organization_company_select', [
+                        'field_name' => 'organization_company_id',
+                        'selected'   => $org_company_selected,
+                        'label_key'  => 'organization_company',
+                    ]); ?>
+                    <div class="panel_s tw-mb-4">
+                        <div class="panel-body">
+                            <p class="bold tw-mb-2"><?= _l('organization_company_preview'); ?></p>
+                            <address id="invoice-organization-company-preview" class="tw-text-neutral-600 tw-mb-0">
+                                <?= format_invoice_organization_info($org_company_selected ?: null); ?>
+                            </address>
+                        </div>
+                    </div>
+                </div>
+                <?php } ?>
+                <?php
             if (!isset($invoice_from_project)) { ?>
                 <div class="form-group select-placeholder projects-wrapper<?php if ((!isset($invoice)) || (isset($invoice) && !customer_has_projects($invoice->clientid))) {
                 echo (isset($customer_id) && (!isset($project_id) || !$project_id)) ?  ' hide' : '';

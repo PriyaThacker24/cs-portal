@@ -104,6 +104,9 @@ echo form_open_multipart($actionUrl, $formAttributes);
                             <?php } ?>
                         </div>
                         <?= form_close(); ?>
+                        <?php if (($group['id'] ?? '') === 'company') {
+                            $this->load->view('admin/settings/includes/organization_company_modal');
+                        } ?>
                     </div>
                 </div>
             </div>
@@ -312,6 +315,308 @@ echo form_open_multipart($actionUrl, $formAttributes);
         }
     });
 </script>
+<?php if (($group['id'] ?? '') === 'company' && organization_companies_table_exists() && staff_can('edit', 'settings')) { ?>
+<script>
+var organizationCompanyDefaultFormat = <?= json_encode(clear_textarea_breaks(get_option('company_info_format'))); ?>;
+
+function organization_company_parse_json(response) {
+    if (typeof response === 'object') {
+        return response;
+    }
+    try {
+        return JSON.parse(response);
+    } catch (e) {
+        return null;
+    }
+}
+
+function organization_company_post_data(extra) {
+    var data = extra || {};
+    if (typeof csrfData !== 'undefined') {
+        data[csrfData.token_name] = csrfData.hash;
+    }
+    return data;
+}
+
+function reset_organization_company_form() {
+    var $form = $('#organization_company_form');
+    $form[0].reset();
+    $form.find('input[name="id"]').val('');
+    $('#organization_company_is_primary').prop('checked', false).prop('disabled', false);
+    $('#organization_company_info_format').val(organizationCompanyDefaultFormat);
+    $('#organization_company_modal .add-title').removeClass('hide');
+    $('#organization_company_modal .edit-title').addClass('hide');
+    $('#organization-company-logo-preview-wrap').addClass('hide');
+    $('#organization-company-logo-preview').attr('src', '');
+    $('#organization-company-logo-remove-btn').addClass('hide').data('id', '');
+    $('#organization_company_logo').val('');
+    $('#organization-company-custom-fields').find('input, textarea, select').each(function() {
+        if ($(this).is(':checkbox') || $(this).is(':radio')) {
+            $(this).prop('checked', false);
+        } else if ($(this).hasClass('selectpicker')) {
+            $(this).selectpicker('val', '');
+        } else {
+            $(this).val('');
+        }
+    });
+}
+
+function organization_company_make_custom_fields_optional() {
+    var $container = $('#organization-company-custom-fields');
+    $container.find('[data-custom-field-required]').removeAttr('data-custom-field-required');
+    $container.find('label .req').remove();
+}
+
+function load_organization_company_custom_fields(companyId, callback) {
+    $.get(admin_url + 'organization_companies/custom_fields_html/' + companyId)
+        .done(function(html) {
+            $('#organization-company-custom-fields').html(html);
+            organization_company_make_custom_fields_optional();
+            if (typeof init_selectpicker === 'function') {
+                init_selectpicker();
+            }
+            if (typeof init_tags_inputs === 'function') {
+                init_tags_inputs();
+            }
+            if (typeof callback === 'function') {
+                callback();
+            }
+        })
+        .fail(function() {
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
+}
+
+function organization_company_find_custom_field_input(fieldId) {
+    var $container = $('#organization-company-custom-fields');
+    var $input = $container.find('[data-fieldid="' + fieldId + '"][data-fieldto="company"]');
+    if ($input.length === 0) {
+        $input = $container.find('[name="custom_fields[company][' + fieldId + ']"]');
+    }
+    if ($input.length === 0) {
+        $input = $container.find('[name="custom_fields[company][' + fieldId + '][]"]');
+    }
+    return $input;
+}
+
+function organization_company_decode_custom_field_value(value) {
+    if (typeof value !== 'string') {
+        return value;
+    }
+    return value.replace(/<br\s*\/?>/gi, '\n');
+}
+
+function fill_organization_company_custom_fields(values) {
+    if (!values) {
+        return;
+    }
+    $.each(values, function(fieldId, value) {
+        if (value === null || value === undefined) {
+            return;
+        }
+        var $input = organization_company_find_custom_field_input(fieldId);
+        if ($input.length === 0) {
+            return;
+        }
+        if (value === '' && $input.val() !== '') {
+            return;
+        }
+        value = organization_company_decode_custom_field_value(value);
+        if ($input.is(':checkbox')) {
+            $input.prop('checked', false);
+            if (value) {
+                var selected = value.toString().split(',');
+                $input.each(function() {
+                    if (selected.indexOf($(this).val()) !== -1) {
+                        $(this).prop('checked', true);
+                    }
+                });
+            }
+        } else if ($input.hasClass('selectpicker')) {
+            $input.selectpicker('val', value);
+            $input.selectpicker('refresh');
+        } else {
+            $input.val(value);
+        }
+    });
+}
+
+function fill_organization_company_form(c) {
+    var $form = $('#organization_company_form');
+    $form.find('input[name="id"]').val(c.id);
+    $form.find('input[name="name"]').val(c.name || '');
+    $form.find('[name="address"]').val(c.address || '');
+    $form.find('input[name="city"]').val(c.city || '');
+    $form.find('input[name="state"]').val(c.state || '');
+    $form.find('input[name="country_code"]').val(c.country_code || '');
+    $form.find('input[name="zip_code"]').val(c.zip_code || '');
+    $form.find('input[name="phone"]').val(c.phone || '');
+    $form.find('input[name="vat"]').val(c.vat || '');
+    if (c.logo_url) {
+        $('#organization-company-logo-preview').attr('src', c.logo_url);
+        $('#organization-company-logo-preview-wrap').removeClass('hide');
+        $('#organization-company-logo-remove-btn').removeClass('hide').data('id', c.id);
+    } else {
+        $('#organization-company-logo-preview-wrap').addClass('hide');
+        $('#organization-company-logo-preview').attr('src', '');
+        $('#organization-company-logo-remove-btn').addClass('hide').data('id', c.id || '');
+    }
+    $('#organization_company_info_format').val(c.company_info_format || organizationCompanyDefaultFormat);
+    $('#organization_company_is_primary').prop('checked', c.is_primary === 1);
+    if (c.is_primary === 1) {
+        $('#organization_company_is_primary').prop('disabled', true);
+    } else {
+        $('#organization_company_is_primary').prop('disabled', false);
+    }
+}
+
+function manage_organization_company(form) {
+    $('#organization_company_is_primary').prop('disabled', false);
+    var formData = new FormData(form);
+    if (typeof csrfData !== 'undefined') {
+        formData.set(csrfData.token_name, csrfData.hash);
+    }
+    $.ajax({
+        url: form.action,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        dataType: 'json'
+    }).done(function(response) {
+        response = organization_company_parse_json(response);
+        if (response && response.success) {
+            alert_float('success', response.message);
+            $('#organization_company_modal').modal('hide');
+            window.location.reload();
+        } else if (response) {
+            alert_float('danger', response.message);
+        } else {
+            alert_float('danger', '<?= _l('organization_company_save_failed'); ?>');
+        }
+    }).fail(function(xhr) {
+        var message = '<?= _l('organization_company_save_failed'); ?>';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+        }
+        alert_float('danger', message);
+    });
+    return false;
+}
+
+$(function() {
+    if ($('#organization_company_form').length === 0) {
+        return;
+    }
+
+    organization_company_make_custom_fields_optional();
+
+    appValidateForm($('#organization_company_form'), {
+        name: 'required'
+    }, manage_organization_company);
+
+    $('#organization-company-add-btn').on('click', function(e) {
+        e.preventDefault();
+        reset_organization_company_form();
+        load_organization_company_custom_fields(0, function() {
+            $('#organization_company_modal').modal('show');
+        });
+    });
+
+    $('body').on('click', '.organization-company-edit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('id');
+        $.get(admin_url + 'organization_companies/get/' + id, null, null, 'json').done(function(response) {
+            response = organization_company_parse_json(response);
+            if (!response || !response.success) {
+                alert_float('danger', '<?= _l('organization_company_load_failed'); ?>');
+                return;
+            }
+            $('#organization_company_modal .add-title').addClass('hide');
+            $('#organization_company_modal .edit-title').removeClass('hide');
+            fill_organization_company_form(response.company);
+            load_organization_company_custom_fields(response.company.id, function() {
+                fill_organization_company_custom_fields(response.company.custom_fields);
+                $('#organization_company_modal').modal('show');
+            });
+        }).fail(function() {
+            alert_float('danger', '<?= _l('organization_company_load_failed'); ?>');
+        });
+    });
+
+    $('body').on('click', '.organization-company-delete', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('id');
+        var name = $(this).data('name') || '';
+        var message = '<?= _l('organization_company_delete_confirm'); ?>';
+        if (name) {
+            message += '\n\n' + name;
+        }
+        if (!confirm(message)) {
+            return;
+        }
+        $.post(admin_url + 'organization_companies/delete/' + id, organization_company_post_data(), null, 'json')
+            .done(function(response) {
+                response = organization_company_parse_json(response);
+                if (response && response.success) {
+                    alert_float('success', response.message);
+                    window.location.reload();
+                } else if (response) {
+                    alert_float('danger', response.message);
+                } else {
+                    alert_float('danger', '<?= _l('problem_deleting', _l('organization_company')); ?>');
+                }
+            }).fail(function() {
+                alert_float('danger', '<?= _l('problem_deleting', _l('organization_company')); ?>');
+            });
+    });
+
+    $('#organization_company_logo').on('change', function() {
+        var file = this.files && this.files[0];
+        if (!file) {
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $('#organization-company-logo-preview').attr('src', e.target.result);
+            $('#organization-company-logo-preview-wrap').removeClass('hide');
+            $('#organization-company-logo-remove-btn').addClass('hide');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $('#organization-company-logo-remove-btn').on('click', function(e) {
+        e.preventDefault();
+        var companyId = $(this).data('id');
+        if (!companyId) {
+            return;
+        }
+        if (!confirm('<?= _l('settings_general_company_remove_logo_tooltip'); ?>')) {
+            return;
+        }
+        $.post(admin_url + 'organization_companies/remove_logo/' + companyId, organization_company_post_data(), null, 'json')
+            .done(function(response) {
+                response = organization_company_parse_json(response);
+                if (response && response.success) {
+                    $('#organization-company-logo-preview-wrap').addClass('hide');
+                    $('#organization-company-logo-preview').attr('src', '');
+                    $('#organization-company-logo-remove-btn').addClass('hide');
+                    $('#organization_company_logo').val('');
+                    alert_float('success', response.message);
+                } else {
+                    alert_float('danger', response && response.message ? response.message : '<?= _l('problem_deleting', _l('settings_general_company_logo')); ?>');
+                }
+            }).fail(function() {
+                alert_float('danger', '<?= _l('problem_deleting', _l('settings_general_company_logo')); ?>');
+            });
+    });
+});
+</script>
+<?php } ?>
 <?php hooks()->do_action('settings_group_end', $group); ?>
 </body>
 
