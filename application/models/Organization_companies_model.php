@@ -214,7 +214,9 @@ class Organization_companies_model extends App_Model
             'country_code'        => organization_company_row_value($company, 'country_code'),
             'zip_code'            => organization_company_row_value($company, 'zip_code'),
             'phone'               => organization_company_row_value($company, 'phone'),
+            'email'               => organization_company_row_value($company, 'email'),
             'vat'                 => organization_company_row_value($company, 'vat'),
+            'gst'                 => organization_company_row_value($company, 'gst'),
             'logo'                => organization_company_row_value($company, 'logo'),
             'logo_url'            => organization_company_logo_url($company),
             'company_info_format' => organization_company_row_value($company, 'company_info_format'),
@@ -243,6 +245,14 @@ class Organization_companies_model extends App_Model
             'vat'          => $data['vat'] ?? '',
             'is_primary'   => ! empty($data['is_primary']) ? 1 : 0,
         ];
+
+        if ($this->db->field_exists('email', $table)) {
+            $payload['email'] = $data['email'] ?? '';
+        }
+
+        if ($this->db->field_exists('gst', $table)) {
+            $payload['gst'] = $data['gst'] ?? '';
+        }
 
         if ($this->db->field_exists('company_info_format', $table)) {
             $payload['company_info_format'] = $data['company_info_format'] ?? '';

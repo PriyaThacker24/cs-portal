@@ -453,7 +453,9 @@ function fill_organization_company_form(c) {
     $form.find('input[name="country_code"]').val(c.country_code || '');
     $form.find('input[name="zip_code"]').val(c.zip_code || '');
     $form.find('input[name="phone"]').val(c.phone || '');
+    $form.find('input[name="email"]').val(c.email || '');
     $form.find('input[name="vat"]').val(c.vat || '');
+    $form.find('input[name="gst"]').val(c.gst || '');
     if (c.logo_url) {
         $('#organization-company-logo-preview').attr('src', c.logo_url);
         $('#organization-company-logo-preview-wrap').removeClass('hide');

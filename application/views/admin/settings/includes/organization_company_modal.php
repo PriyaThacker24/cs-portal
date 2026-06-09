@@ -4,8 +4,6 @@ $this->load->helper('organization_companies');
 if (! organization_companies_table_exists() || ! staff_can('edit', 'settings')) {
     return;
 }
-$default_format = clear_textarea_breaks(get_option('company_info_format'));
-$company_custom_field_definitions = get_custom_fields('company');
 ?>
 <div class="modal fade" id="organization_company_modal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
@@ -21,64 +19,76 @@ $company_custom_field_definitions = get_custom_fields('company');
             <?= form_open_multipart(admin_url('organization_companies/manage'), ['id' => 'organization_company_form']); ?>
             <?= form_hidden('id', ''); ?>
             <div class="modal-body">
-                <?= render_input('name', 'settings_sales_company_name'); ?>
-                <?= render_input('address', 'settings_sales_address'); ?>
-                <?= render_input('city', 'settings_sales_city'); ?>
-                <?= render_input('state', 'billing_state'); ?>
-                <?= render_input('country_code', 'settings_sales_country_code'); ?>
-                <?= render_input('zip_code', 'settings_sales_postal_code'); ?>
-                <?= render_input('phone', 'settings_sales_phonenumber'); ?>
-                <?= render_input('vat', 'company_vat_number'); ?>
-                <div class="form-group">
-                    <label for="organization_company_logo" class="control-label"><?= _l('settings_general_company_logo'); ?></label>
-                    <input type="file"
-                        name="company_logo"
-                        id="organization_company_logo"
-                        class="form-control"
-                        accept=".jpg,.jpeg,.png,.gif,.svg"
-                        data-toggle="tooltip"
-                        title="<?= _l('settings_general_company_logo_tooltip'); ?>">
-                </div>
-                <div id="organization-company-logo-preview-wrap" class="hide mtop10 mbot10">
-                    <div class="tw-flex tw-items-center tw-gap-3">
-                        <img id="organization-company-logo-preview" src="" alt="Company logo" style="max-width:180px;max-height:70px;">
-                        <button type="button" class="btn btn-default btn-sm hide" id="organization-company-logo-remove-btn">
-                            <i class="fa fa-remove"></i> <?= _l('delete'); ?>
-                        </button>
+                <!-- Row 1: Company Name | Company Logo -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <?= render_input('name', 'settings_sales_company_name'); ?>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="organization_company_logo" class="control-label"><?= _l('settings_general_company_logo'); ?></label>
+                            <input type="file"
+                                name="company_logo"
+                                id="organization_company_logo"
+                                class="form-control"
+                                accept=".jpg,.jpeg,.png,.gif,.svg"
+                                data-toggle="tooltip"
+                                title="<?= _l('settings_general_company_logo_tooltip'); ?>">
+                        </div>
+                        <div id="organization-company-logo-preview-wrap" class="hide mtop10 mbot10">
+                            <div class="tw-flex tw-items-center tw-gap-3">
+                                <img id="organization-company-logo-preview" src="" alt="Company logo" style="max-width:180px;max-height:70px;">
+                                <button type="button" class="btn btn-default btn-sm hide" id="organization-company-logo-remove-btn">
+                                    <i class="fa fa-remove"></i> <?= _l('delete'); ?>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="organization-company-custom-fields">
-                    <?= organization_company_render_custom_fields(false); ?>
+                <!-- Row 2: Email | Phone -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <?= render_input('email', 'clients_email'); ?>
+                    </div>
+                    <div class="col-md-6">
+                        <?= render_input('phone', 'settings_sales_phonenumber'); ?>
+                    </div>
                 </div>
 
-                <hr />
+                <!-- Row 3: Address (full width) -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <?= render_input('address', 'settings_sales_address'); ?>
+                    </div>
+                </div>
 
-                <?= render_textarea('company_info_format', 'company_info_format', $default_format, ['rows' => 8, 'style' => 'line-height:20px;', 'id' => 'organization_company_info_format']); ?>
-                <p>
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{company_name}</a>
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{address}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{city}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{state}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{zip_code}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{country_code}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{phone}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{vat_number}</a>,
-                    <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{vat_number_with_label}</a>
-                </p>
-                <?php if (count($company_custom_field_definitions) > 0) { ?>
-                <hr />
-                <p class="font-medium"><b><?= _l('custom_fields'); ?></b></p>
-                <ul class="list-group">
-                    <?php foreach ($company_custom_field_definitions as $field) { ?>
-                    <li class="list-group-item">
-                        <b><?= e($field['name']); ?></b>:
-                        <a href="#" class="settings-textarea-merge-field" data-to="organization_company_info_format">{cf_<?= (int) $field['id']; ?>}</a>
-                    </li>
-                    <?php } ?>
-                </ul>
-                <hr />
-                <?php } ?>
+                <!-- Row 3: City | State -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <?= render_input('city', 'settings_sales_city'); ?>
+                    </div>
+                    <div class="col-md-6">
+                        <?= render_input('state', 'billing_state'); ?>
+                    </div>
+                </div>
+
+                <!-- Row 4: Country Code | Zip Code -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <?= render_input('country_code', 'settings_sales_country_code'); ?>
+                    </div>
+                    <div class="col-md-6">
+                        <?= render_input('zip_code', 'settings_sales_postal_code'); ?>
+                    </div>
+                </div>
+
+                <!-- Row 5: VAT/GST -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <?= render_input('gst', 'company_vat_gst_number'); ?>
+                    </div>
+                </div>
 
                 <div class="checkbox checkbox-primary">
                     <input type="checkbox" name="is_primary" id="organization_company_is_primary" value="1">

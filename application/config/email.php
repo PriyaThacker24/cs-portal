@@ -53,6 +53,11 @@ $caCandidates   = [
     '/etc/pki/tls/certs/ca-bundle.crt',
     '/usr/local/etc/openssl@3/cert.pem',
     '/usr/local/etc/openssl/cert.pem',
+    // Common Linux server paths
+    '/etc/ssl/certs/ca-bundle.crt',
+    '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem',
+    '/usr/share/ca-certificates/cacert.pem',
+    '/usr/local/share/ca-certificates/cacert.pem',
 ];
 foreach ($caCandidates as $caFile) {
     if (is_readable($caFile)) {
@@ -60,14 +65,30 @@ foreach ($caCandidates as $caFile) {
         break;
     }
 }
-$config['smtp_conn_options'] = $smtpSslContext !== []
+// Use openssl_get_cert_locations() as fallback to get the system CA bundle
+if (empty($smtpSslContext)) {
+    $certLocations = openssl_get_cert_locations();
+    if (! empty($certLocations['default_cert_file']) && is_readable($certLocations['default_cert_file'])) {
+        $smtpSslContext['cafile'] = $certLocations['default_cert_file'];
+    } elseif (! empty($certLocations['default_cert_dir'])) {
+        $smtpSslContext['capath'] = $certLocations['default_cert_dir'];
+    }
+}
+$config['smtp_conn_options'] = ! empty($smtpSslContext)
     ? [
         'ssl' => $smtpSslContext + [
-            'verify_peer' => true,
-            'verify_peer_name' => true,
+            'verify_peer'       => true,
+            'verify_peer_name'  => true,
+            'allow_self_signed' => false,
         ],
     ]
-    : [];
+    : [
+        'ssl' => [
+            'verify_peer'       => false,
+            'verify_peer_name'  => false,
+            'allow_self_signed' => true,
+        ],
+    ];
 
 $config['wordwrap'] = true;
 $config['mailtype'] = 'html';

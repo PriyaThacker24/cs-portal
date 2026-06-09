@@ -352,6 +352,8 @@ class Authentication_model extends App_Model
                     return true;
                 }
 
+                log_message('error', 'Forgot password email failed [Email: ' . $email . ', Protocol: ' . get_option('email_protocol') . ', SMTP Host: ' . get_option('smtp_host') . ', SMTP Port: ' . get_option('smtp_port') . ']');
+
                 return false;
             }
 
