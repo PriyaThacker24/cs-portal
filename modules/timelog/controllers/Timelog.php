@@ -368,7 +368,7 @@ class Timelog extends AdminController
                 return;
             }
             
-            // For general log, create task first
+            // For general log, store heading directly — no task row created
             if ($isGeneralLog) {
                 if (empty($taskHeading) || trim($taskHeading) === '') {
                     $this->output
@@ -376,31 +376,7 @@ class Timelog extends AdminController
                         ->set_output(json_encode(['success' => false, 'message' => _l('task_heading') . ' is required']));
                     return;
                 }
-                
-                // Load tasks model
-                $this->load->model('tasks_model');
-                
-                // Create task in the project
-                $taskData = [
-                    'name' => $taskHeading,
-                    'rel_type' => 'project',
-                    'rel_id' => $projectId,
-                    'startdate' => date('Y-m-d'),
-                    'duedate' => date('Y-m-d'),
-                    'status' => 1, // Not Started
-                    'priority' => 2, // Medium
-                    'billable' => ($billingType == 'billable') ? 1 : 0,
-                    'assignees' => [$staffId], // Assign to the selected user
-                ];
-                
-                $taskId = $this->tasks_model->add($taskData);
-                
-                if (!$taskId) {
-                    $this->output
-                        ->set_content_type('application/json')
-                        ->set_output(json_encode(['success' => false, 'message' => _l('error_creating_task')]));
-                    return;
-                }
+                $taskId = 0;
             } else {
                 // Validate task belongs to project
                 $this->db->where('id', $taskId);
@@ -465,15 +441,23 @@ class Timelog extends AdminController
                 'start_time'  => $startTime,
                 'end_time'    => $endTime,
                 'staff_id'    => $staffId,
-                'task_id'     => $taskId, // Created task_id for general log, existing task_id for regular log
+                'task_id'     => $taskId,
                 'hourly_rate' => $hourlyRate,
                 'note'        => $noteContent,
             ];
-            
+
+            if (in_array('project_id', $columns)) {
+                $insertData['project_id'] = (int) $projectId;
+            }
+
+            if ($isGeneralLog && in_array('task_name', $columns)) {
+                $insertData['task_name'] = trim($taskHeading);
+            }
+
             if (in_array('bill_type', $columns)) {
                 $insertData['bill_type'] = $billType;
             }
-            
+
             if (in_array('status', $columns)) {
                 $insertData['status'] = 'pending';
             }
@@ -657,30 +641,40 @@ class Timelog extends AdminController
             return;
         }
         
-        // Get timelog data
-        $this->db->select('
-            ' . db_prefix() . 'taskstimers.id,
-            ' . db_prefix() . 'taskstimers.task_id,
-            ' . db_prefix() . 'taskstimers.start_time,
-            ' . db_prefix() . 'taskstimers.end_time,
-            ' . db_prefix() . 'taskstimers.staff_id,
-            ' . db_prefix() . 'taskstimers.note,
-            ' . db_prefix() . 'taskstimers.bill_type,
-            ' . db_prefix() . 'tasks.rel_id as project_id,
-            ' . db_prefix() . 'tasks.name as task_name
-        ');
-        $this->db->from(db_prefix() . 'taskstimers');
-        $this->db->join(db_prefix() . 'tasks', db_prefix() . 'tasks.id = ' . db_prefix() . 'taskstimers.task_id', 'left');
-        $this->db->where(db_prefix() . 'taskstimers.id', $timelog_id);
+        // Get timelog data — use COALESCE so general logs (task_id=0) return
+        // their task_name and project_id from the taskstimers columns directly.
+        $tt   = db_prefix() . 'taskstimers';
+        $tk   = db_prefix() . 'tasks';
+        $cols = $this->db->list_fields($tt);
+        $has_task_name  = in_array('task_name',  $cols);
+        $has_project_id = in_array('project_id', $cols);
+
+        $task_name_sel  = $has_task_name  ? "COALESCE({$tk}.name, {$tt}.task_name)"          : "{$tk}.name";
+        $project_id_sel = $has_project_id ? "COALESCE({$tk}.rel_id, {$tt}.project_id)"        : "{$tk}.rel_id";
+
+        $this->db->select("
+            {$tt}.id,
+            {$tt}.task_id,
+            {$tt}.start_time,
+            {$tt}.end_time,
+            {$tt}.staff_id,
+            {$tt}.note,
+            {$tt}.bill_type,
+            {$project_id_sel} as project_id,
+            {$task_name_sel}   as task_name
+        ");
+        $this->db->from($tt);
+        $this->db->join($tk, "{$tk}.id = {$tt}.task_id", 'left');
+        $this->db->where("{$tt}.id", $timelog_id);
         $timelog = $this->db->get()->row();
-        
+
         if (!$timelog) {
             $this->output
                 ->set_content_type('application/json')
                 ->set_output(json_encode(['success' => false, 'message' => _l('timelog_not_found')]));
             return;
         }
-        
+
         // Check permissions - user can edit their own timelogs or if they have edit permission
         $can_edit = false;
         if ($timelog->staff_id == get_staff_user_id()) {
@@ -688,28 +682,30 @@ class Timelog extends AdminController
         } elseif (staff_can('edit', 'timesheets') || is_admin()) {
             $can_edit = true;
         }
-        
+
         if (!$can_edit) {
             $this->output
                 ->set_content_type('application/json')
                 ->set_output(json_encode(['success' => false, 'message' => _l('access_denied')]));
             return;
         }
-        
+
         // Calculate duration in hours
-        $duration = $timelog->end_time - $timelog->start_time;
-        $hours = floor($duration / 3600);
-        $minutes = floor(($duration % 3600) / 60);
+        $duration  = $timelog->end_time - $timelog->start_time;
+        $hours     = floor($duration / 3600);
+        $minutes   = floor(($duration % 3600) / 60);
         $daily_log = sprintf('%02d:%02d', $hours, $minutes);
-        
+
         // Format date
         $date = date('Y-m-d', $timelog->start_time);
-        
-        // Check if it's a general log (task name starts with "General Log:")
-        $is_general_log = (strpos($timelog->task_name, 'General Log:') === 0);
+
+        // General logs are identified by task_id = 0 (new approach).
+        // Legacy entries may still carry the "General Log:" prefix in task_name.
+        $is_general_log = ($timelog->task_id == 0)
+            || (strpos((string) $timelog->task_name, 'General Log:') === 0);
         $task_heading = '';
         if ($is_general_log) {
-            $task_heading = str_replace('General Log: ', '', $timelog->task_name);
+            $task_heading = ltrim(preg_replace('/^General Log:\s*/u', '', (string) $timelog->task_name));
         }
         
         $this->output
@@ -832,32 +828,9 @@ class Timelog extends AdminController
                 return;
             }
             
-            // Handle general log task creation/update
-            if ($isGeneralLog && !empty($taskHeading)) {
-                // Check if task already exists for this general log
-                $this->db->where('id', $existing_timelog->task_id);
-                $existing_task = $this->db->get(db_prefix() . 'tasks')->row();
-                
-                if ($existing_task && strpos($existing_task->name, 'General Log:') === 0) {
-                    // Update existing general log task
-                    $this->db->where('id', $existing_timelog->task_id);
-                    $this->db->update(db_prefix() . 'tasks', [
-                        'name' => 'General Log: ' . $taskHeading
-                    ]);
-                    $taskId = $existing_timelog->task_id;
-                } else {
-                    // Create new general log task (shouldn't happen, but handle it)
-                    $taskId = $this->tasks_model->add([
-                        'name' => 'General Log: ' . $taskHeading,
-                        'rel_type' => 'project',
-                        'rel_id' => $projectId,
-                        'status' => Tasks_model::STATUS_COMPLETE,
-                        'priority' => 2,
-                        'addedfrom' => get_staff_user_id(),
-                        'startdate' => date('Y-m-d', $logDate),
-                        'duedate' => date('Y-m-d', $logDate),
-                    ]);
-                }
+            // For general log, keep task_id = 0; heading is stored in task_name column
+            if ($isGeneralLog) {
+                $taskId = 0;
             }
             
             // Calculate start_time and end_time
@@ -873,14 +846,24 @@ class Timelog extends AdminController
             $noteContent = !empty($notes) ? nl2br(e($notes)) : null;
             
             // Update timelog
+            $timerColumns = $this->db->list_fields(db_prefix() . 'taskstimers');
+
             $updateData = [
                 'start_time' => $startTime,
-                'end_time' => $endTime,
-                'staff_id' => $staffId,
-                'task_id' => $taskId,
-                'note' => $noteContent,
-                'bill_type' => $billType,
+                'end_time'   => $endTime,
+                'staff_id'   => $staffId,
+                'task_id'    => $taskId,
+                'note'       => $noteContent,
+                'bill_type'  => $billType,
             ];
+
+            if (in_array('project_id', $timerColumns)) {
+                $updateData['project_id'] = (int) $projectId;
+            }
+
+            if ($isGeneralLog && in_array('task_name', $timerColumns)) {
+                $updateData['task_name'] = trim($taskHeading);
+            }
             
             $this->db->where('id', $timelog_id);
             $this->db->update(db_prefix() . 'taskstimers', $updateData);

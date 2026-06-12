@@ -33,12 +33,27 @@ class Timelog_model extends App_Model
         $weekStart = $dateStart; // Keep for backward compatibility in return data
         $weekEnd = $dateEnd;
         
-        // Check if status and bill_type columns exist
+        // Check which optional columns exist
         $columns = $this->db->list_fields(db_prefix() . 'taskstimers');
-        $has_status_column = in_array('status', $columns);
-        $has_bill_type_column = in_array('bill_type', $columns);
-        
-        // Build query
+        $has_status_column    = in_array('status',     $columns);
+        $has_bill_type_column = in_array('bill_type',  $columns);
+        $has_task_name_column = in_array('task_name',  $columns);
+        $has_project_id_column = in_array('project_id', $columns);
+
+        // Build query — use COALESCE so migrated general logs (task_id=0) still
+        // show their task_name and project even though the tasks JOIN misses them.
+        $task_name_expr    = $has_task_name_column
+            ? 'COALESCE(' . db_prefix() . 'tasks.name, ' . db_prefix() . 'taskstimers.task_name)'
+            : db_prefix() . 'tasks.name';
+
+        $project_id_expr   = $has_project_id_column
+            ? 'COALESCE(' . db_prefix() . 'projects.id, ' . db_prefix() . 'taskstimers.project_id)'
+            : db_prefix() . 'projects.id';
+
+        $project_name_expr = $has_project_id_column
+            ? 'COALESCE(' . db_prefix() . 'projects.name, (SELECT name FROM ' . db_prefix() . 'projects WHERE id = ' . db_prefix() . 'taskstimers.project_id LIMIT 1))'
+            : db_prefix() . 'projects.name';
+
         $selectFields = '
             ' . db_prefix() . 'taskstimers.id,
             ' . db_prefix() . 'taskstimers.task_id,
@@ -46,20 +61,20 @@ class Timelog_model extends App_Model
             ' . db_prefix() . 'taskstimers.end_time,
             ' . db_prefix() . 'taskstimers.staff_id,
             ' . db_prefix() . 'taskstimers.note,
-            ' . db_prefix() . 'tasks.name as task_name,
+            ' . $task_name_expr . ' as task_name,
             ' . db_prefix() . 'tasks.addedfrom as task_created_by,
-            ' . db_prefix() . 'projects.name as project_name,
-            ' . db_prefix() . 'projects.id as project_id,
+            ' . $project_name_expr . ' as project_name,
+            ' . $project_id_expr . ' as project_id,
             CONCAT(' . db_prefix() . 'staff.firstname, " ", ' . db_prefix() . 'staff.lastname) as staff_name,
             DATE(FROM_UNIXTIME(' . db_prefix() . 'taskstimers.start_time)) as log_date,
             (' . db_prefix() . 'taskstimers.end_time - ' . db_prefix() . 'taskstimers.start_time) as duration_seconds,
             CONCAT(created_by_staff.firstname, " ", created_by_staff.lastname) as created_by_name
         ';
-        
+
         if ($has_status_column) {
             $selectFields .= ', ' . db_prefix() . 'taskstimers.status as approval_status';
         }
-        
+
         if ($has_bill_type_column) {
             $selectFields .= ', ' . db_prefix() . 'taskstimers.bill_type';
         }
@@ -96,15 +111,26 @@ class Timelog_model extends App_Model
             try {
                 $filterData = is_string($filters['advanced_filters']) ? json_decode($filters['advanced_filters'], true) : $filters['advanced_filters'];
                 
-                // Handle Project filter separately (not in ProjectTimelogAdvancedFilters)
+                // Handle Project filter separately (not in ProjectTimelogAdvancedFilters).
+                // General logs (task_id=0) have NULL from the projects JOIN (which goes through
+                // tasks.rel_id), so we must also match against taskstimers.project_id for them.
                 if (isset($filterData['project']) && !empty($filterData['project']['value'])) {
                     $projectIds = is_array($filterData['project']['value']) ? $filterData['project']['value'] : [$filterData['project']['value']];
-                    $operator = isset($filterData['project']['operator']) ? $filterData['project']['operator'] : 'is';
-                    
+                    $operator   = isset($filterData['project']['operator']) ? $filterData['project']['operator'] : 'is';
+                    $idsStr     = implode(',', array_map('intval', $projectIds));
+                    $tt         = db_prefix() . 'taskstimers';
+                    $pp         = db_prefix() . 'projects';
+
                     if ($operator === 'is_not') {
-                        $this->db->where_not_in(db_prefix() . 'projects.id', $projectIds);
+                        $this->db->where(
+                            "({$pp}.id NOT IN ({$idsStr}) OR ({$tt}.task_id = 0 AND {$tt}.project_id NOT IN ({$idsStr})))",
+                            null, false
+                        );
                     } else {
-                        $this->db->where_in(db_prefix() . 'projects.id', $projectIds);
+                        $this->db->where(
+                            "({$pp}.id IN ({$idsStr}) OR ({$tt}.task_id = 0 AND {$tt}.project_id IN ({$idsStr})))",
+                            null, false
+                        );
                     }
                 }
                 
@@ -130,7 +156,13 @@ class Timelog_model extends App_Model
         
         // Legacy simple filters (for backward compatibility)
         if (!empty($filters['project_id']) && empty($filters['advanced_filters'])) {
-            $this->db->where(db_prefix() . 'projects.id', $filters['project_id']);
+            $pid = (int) $filters['project_id'];
+            $tt  = db_prefix() . 'taskstimers';
+            $pp  = db_prefix() . 'projects';
+            $this->db->where(
+                "({$pp}.id = {$pid} OR ({$tt}.task_id = 0 AND {$tt}.project_id = {$pid}))",
+                null, false
+            );
         }
         
         if (!empty($filters['staff_id']) && empty($filters['advanced_filters'])) {

@@ -39,6 +39,11 @@ return App_table::find('related_tasks')
             $where[] = get_tasks_where_string();
         }
 
+        // For project tasks tab: admins see all tasks; non-admin staff see only their assigned tasks
+        if ($rel_type == 'project' && !is_admin()) {
+            $where[] = 'AND id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid=' . get_staff_user_id() . ')';
+        }
+
         if (! $this->ci->input->post('tasks_related_to')) {
             array_push($where, 'AND rel_id="' . $this->ci->db->escape_str($rel_id) . '" AND rel_type="' . $this->ci->db->escape_str($rel_type) . '"');
         } else {

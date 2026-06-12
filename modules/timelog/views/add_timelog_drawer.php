@@ -70,7 +70,7 @@
                             <div class="form-group">
                                 <label for="timelog_date"><?= _l('date'); ?> <span class="text-danger">*</span></label>
                                 <div class="timelog-date-input">
-                                    <input type="text" id="timelog_date" name="date" class="form-control datepicker" autocomplete="off" required value="<?= date('d/m/Y'); ?>" data-date-end-date="<?= date('Y-m-d'); ?>">
+                                    <input type="text" id="timelog_date" name="date" class="form-control datepicker" autocomplete="off" required value="<?= date('d/m/Y'); ?>">
                                     <span class="input-group-addon">
                                         <i class="fa fa-calendar calendar-icon"></i>
                                     </span>

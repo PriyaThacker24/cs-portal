@@ -559,17 +559,18 @@ var TimelogModule = (function() {
      */
     function openTimelogDrawer(editMode) {
         editMode = editMode || false;
-        
+
         // Reset form if not in edit mode
         if (!editMode) {
             resetTimelogForm();
         }
         $('#timelog_drawer_overlay').fadeIn(300);
         $('#timelog_drawer').addClass('open');
-        
-        // Load projects
-        loadUserProjects();
-        
+
+        // If a project context is set (e.g. project timesheets tab), pre-select it
+        var contextProjectId = $('#current_project_id').val() || '';
+        loadUserProjects(contextProjectId);
+
         // Trigger event for datepicker initialization
         $(document).trigger('drawerOpened');
     }
@@ -607,9 +608,14 @@ var TimelogModule = (function() {
     }
     
     /**
-     * Load projects assigned to logged-in user
+     * Load projects assigned to logged-in user.
+     * @param {string|number} preSelectedId  When non-empty, auto-select this project and
+     *                                       hide the project row (project-context mode).
      */
-    function loadUserProjects() {
+    function loadUserProjects(preSelectedId) {
+        preSelectedId = preSelectedId || '';
+        var $projectGroup = $('#timelog_project').closest('.form-group');
+
         $.ajax({
             url: admin_url + 'timelog/get_user_projects',
             type: 'POST',
@@ -618,12 +624,26 @@ var TimelogModule = (function() {
                 if (response.success && response.projects) {
                     var $select = $('#timelog_project');
                     $select.empty().append('<option value="">' + (typeof _l !== 'undefined' ? _l('select_project') : 'Select Project') + '</option>');
-                    
+
                     $.each(response.projects, function(index, project) {
                         $select.append('<option value="' + project.id + '">' + project.name + '</option>');
                     });
-                    
-                    $select.selectpicker('refresh');
+
+                    if (preSelectedId) {
+                        // Project context — hide the picker row, pre-select silently,
+                        // then show other fields and load tasks/users directly
+                        // (avoid trigger('change') which races with selectpicker refresh)
+                        $projectGroup.hide();
+                        $select.val(preSelectedId).selectpicker('refresh');
+
+                        $('#timelog_other_fields').show();
+                        $('#timelog_task').val('').selectpicker('refresh');
+                        loadProjectTasks(preSelectedId);
+                        loadProjectUsers(preSelectedId);
+                    } else {
+                        $projectGroup.show();
+                        $select.selectpicker('refresh');
+                    }
                 }
             },
             error: function() {
@@ -823,13 +843,18 @@ var TimelogModule = (function() {
                             var part2 = parseInt(dateParts[1], 10);
                             var part3 = parseInt(dateParts[2], 10);
                             
-                            if (part1 > 12) {
-                                // d/m/Y format (day > 12)
+                            if (part1 > 31) {
+                                // Y/m/d or Y-m-d format (4-digit year first)
+                                day = dateParts[2];
+                                month = dateParts[1];
+                                year = dateParts[0];
+                            } else if (part1 > 12) {
+                                // d/m/Y format (day > 12, cannot be month)
                                 day = dateParts[0];
                                 month = dateParts[1];
                                 year = dateParts[2];
                             } else if (part2 > 12) {
-                                // m/d/Y format (month > 12, so part2 is day)
+                                // m/d/Y format (part2 > 12, must be day)
                                 month = dateParts[0];
                                 day = dateParts[1];
                                 year = dateParts[2];
@@ -1580,6 +1605,9 @@ var TimelogModule = (function() {
         $('#timelog_other_fields').hide();
         $('#timelog_task_group').show();
         $('#timelog_task_heading_group').hide();
+        // Restore project row visibility — loadUserProjects will hide it again
+        // if a project context is active.
+        $('#timelog_project').closest('.form-group').show();
         $('#timelog_project, #timelog_task, #timelog_user').selectpicker('refresh');
         $('.form-group').removeClass('has-error');
         $('.help-block .error-message').remove();

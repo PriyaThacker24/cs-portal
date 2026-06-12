@@ -61,9 +61,16 @@
                     <?= render_input('search', '', '', 'search', ['data-name' => 'search', 'onkeyup' => 'tasks_kanban();', 'placeholder' => _l('search_tasks')], [], 'no-margin') ?>
                 </div>
                 <?php } else { ?>
-                <div class="pull-right">
-                    <!-- Zoho-Style Filter Panel -->
-                    <?php $this->load->view('admin/tasks/tasks_filter_panel'); ?>
+                <div class="pull-right tw-flex tw-items-center tw-gap-1">
+                    <!-- App Filters (Vue-based) for status summary click and saved filters -->
+                    <div class="tw-inline">
+                        <app-filters id="<?= $tasks_table->id(); ?>"
+                            view="<?= $tasks_table->viewName(); ?>"
+                            :rules="extra.tasksRules || <?= app\services\utilities\Js::from($tasks_table->findRule('status')->setValue([4])); ?>"
+                            :saved-filters="<?= $tasks_table->filtersJs(); ?>"
+                            :available-rules="<?= $tasks_table->rulesJs(); ?>">
+                        </app-filters>
+                    </div>
                 </div>
                 <?php } ?>
             </div>
@@ -101,7 +108,6 @@
     </div>
 </div>
 <?php init_tail(); ?>
-<script src="<?= base_url('assets/js/tasks-filter.js'); ?>"></script>
 <script>
     taskid = '<?= e($taskid); ?>';
     $(function() {

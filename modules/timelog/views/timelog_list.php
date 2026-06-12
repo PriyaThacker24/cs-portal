@@ -92,9 +92,13 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                         <tr class="timelog-row timelog-group-body-row">
                             <td><input type="checkbox" class="timelog-checkbox" value="<?= $log['id']; ?>"></td>
                             <td class="log-title">
-                                <a href="<?= admin_url('tasks/view/' . $log['task_id']); ?>" onclick="init_task_modal(<?= $log['task_id']; ?>); return false;">
+                                <?php if (!empty($log['task_id'])) { ?>
+                                    <a href="<?= admin_url('tasks/view/' . $log['task_id']); ?>" onclick="init_task_modal(<?= $log['task_id']; ?>); return false;">
+                                        <?= e($log['task_name']); ?>
+                                    </a>
+                                <?php } else { ?>
                                     <?= e($log['task_name']); ?>
-                                </a>
+                                <?php } ?>
                             </td>
                             <td class="project-name">
                                     <?php if (!empty($log['project_id'])) { ?>
