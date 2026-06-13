@@ -1,0 +1,1677 @@
+task_id,name,project_id,status,assignees,comments,csv_row
+1660,"User Portal Development",24,4,2,0,2
+1661,"Super Admin Development",24,4,2,0,3
+1662,"Careers Automation for CS Website",24,1,3,0,4
+1663,"Setup Github and Staging Environment",24,1,2,0,5
+1664,"Logo and Branding Design",24,1,2,0,6
+1665,"Landing Page Design Using Claude",24,1,2,0,7
+1666,"Certification and Compliances",24,1,1,0,8
+1667,"Security Improvement",24,1,1,0,9
+1668,"Fillable PDFs - 3",58,6,1,1,10
+1669,"Create PDF Document",37,5,2,0,11
+1670,"MAP University Page",92,5,3,0,12
+1671,"MAP Management System Page",92,5,3,0,13
+1672,"MAP Pricing Page",92,5,4,0,14
+1673,"MAP Get Started  Page",92,5,5,0,15
+1674,"MAP Contact us page",92,5,1,0,16
+1675,"Client Feedback",92,5,3,0,17
+1676,"Client Doc Change",92,5,2,0,18
+1677,"Hubspot CRM Contacts Create",92,5,4,0,19
+1678,"MAP Workshop registration",92,5,3,0,20
+1679,"Feedback 15 Jan 2026",92,5,2,1,21
+1680,"Middlware Setup",92,5,3,0,22
+1681,"Add Ability to Mark Workshop as Full",92,5,2,1,23
+1682,"Add Vital Factor Consultants Section to Team Page",92,5,3,1,24
+1683,"Add Location to MAP Program Pages",92,5,2,0,25
+1684,"Remove certain fields for returning clients",92,5,2,1,26
+1685,"Replace the word order with registration throughout the flow",92,13,1,0,27
+1686,"Add Reason description field on selection of No manager checkbox",92,5,4,0,28
+1687,"Remove sumit's email for new order notifications",92,13,1,0,29
+1688,"Client Feedback 07-05-2026",92,3,4,1,30
+1689,"Team Page Fixes",92,13,1,0,31
+1690,"Home Page Design",34,5,1,0,32
+1691,"Home Page Development",34,5,1,0,33
+1692,"Other Development Tasks",34,4,1,0,34
+1693,"Action plan for the project",34,4,1,0,35
+1694,"Website Updates and Unit Testing",34,5,2,0,36
+1695,"About Us page Design",34,5,2,0,37
+1696,"Contact us page Design",34,5,2,0,38
+1697,"Social Media Post Design",34,1,2,0,39
+1698,"About Us Page - Development",69,6,3,0,40
+1699,"Updated About page design to adjust",69,6,1,0,41
+1700,"Blog + Blog Detail page Development",69,6,3,0,42
+1701,"Create Data Privacy Page",69,6,1,0,43
+1702,"Data Privacy Page",69,6,1,0,44
+1703,"Blog Detail Page",69,6,1,0,45
+1704,"Create Coming Soon Page",69,6,2,0,46
+1705,"Remove the slider and make the images static",69,6,1,0,47
+1706,"Create Tou PP and Cookies Pages",69,6,1,0,48
+1707,"Theme Improvement",69,6,2,0,49
+1708,"404 Page",69,6,1,0,50
+1709,"Email Templates",69,6,2,1,51
+1710,"Homepage and Nav edits",69,6,2,1,52
+1711,"Coming Soon Page",69,6,4,1,53
+1712,"404 Page",69,6,2,0,54
+1713,"About Page",69,6,2,0,55
+1714,"Theme Standards Fixes",69,6,2,0,56
+1715,"Website Animations",69,6,2,0,57
+1716,"[Coming Soon Page - Pre launch] Perfomance improvement",69,6,5,0,58
+1717,"Work on the ADA compliance",69,6,4,0,59
+1718,"Theme Color Correction",69,6,2,0,60
+1719,"[Coming Soon Page] Copy and Content Updates",69,6,4,0,61
+1720,"EMail Template",69,6,1,0,62
+1721,"The Lifespan Magazine",69,6,3,0,63
+1722,"Cookie Conscent",69,6,3,0,64
+1723,"General Updates",69,6,3,0,65
+1724,"Website Updates",69,6,2,11,66
+1725,"Product Images add and Sync with Shipedge",135,6,3,0,67
+1726,"Email template Create.",135,6,2,0,68
+1727,"Site Maintenance",80,5,4,0,69
+1728,"Home Page Development",80,5,2,0,70
+1729,"Home Page - Redesign",80,5,1,0,71
+1730,"Home page Development",80,5,2,0,72
+1731,"About Us Page - Redesign",80,5,1,0,73
+1732,"About Us Page - Development",80,5,1,0,74
+1733,"Products Page - Redesign",80,5,1,0,75
+1734,"Products Page - Development",80,5,3,0,76
+1735,"Shop page - Redesign",80,5,1,0,77
+1736,"Shop page - Development",80,5,2,0,78
+1737,"Blogs Page - Redesign",80,5,1,0,79
+1738,"Shop page - Development",80,5,3,0,80
+1739,"FAQs Page - Redesign",80,5,1,0,81
+1740,"FAQs Page - Development",80,5,2,0,82
+1741,"Cart Page and Drawer - Redesign",80,5,1,0,83
+1742,"Cart Page and Drawer - Development",80,5,3,0,84
+1743,"My Accont Page - Redesign",80,5,1,0,85
+1744,"My Account Page - Development - Applied Branding",80,5,3,0,86
+1745,"Blog page Development",80,5,2,0,87
+1746,"Our Story Development",80,4,2,0,88
+1747,"Contact Us",80,4,3,0,89
+1748,"Search Page",80,3,2,0,90
+1749,"Testing Whole website",80,4,4,0,91
+1750,"Back-end Development",80,3,2,0,92
+1751,"Website Updates 06/01/2026",80,5,3,1,93
+1752,"Woo-Commerce Pages and Site Unit Testing",80,1,2,0,94
+1753,"UI/UX Development",103,5,1,0,95
+1754,"About Us Page",103,5,1,0,96
+1755,"Contact Us Page",103,5,3,0,97
+1756,"Blog Page",103,5,3,0,98
+1757,"Blog Individual Page",103,5,3,0,99
+1758,"Shop Page",103,5,1,0,100
+1759,"Product Details Page",103,5,1,0,101
+1760,"Disclaimer Page",103,5,3,0,102
+1761,Dashboard,103,5,1,0,103
+1762,"Disable Shipping to States and Counties",103,5,4,0,104
+1763,"Header and Footer Develop",103,5,5,1,105
+1764,"Homepage Development",103,5,4,0,106
+1765,"About Page Development",103,5,2,0,107
+1766,"Shop Page Development",103,5,2,1,108
+1767,"Contact Us Page Development",103,5,2,0,109
+1768,"Blog Page Development",103,5,2,0,110
+1769,"Dashboard page Development",103,5,2,0,111
+1770,Disclaimer,103,5,2,0,112
+1771,"Blog Listing Page",103,5,1,0,113
+1772,"Cart Page",103,5,2,0,114
+1773,"Checkout Page",103,5,2,0,115
+1774,"Cart Popup",103,5,2,0,116
+1775,"Checkout Page",103,5,2,0,117
+1776,"Product Page",103,5,2,0,118
+1777,"Project Management",103,5,1,0,119
+1778,"QA the Whole Site",103,5,4,0,120
+1779,"Add the ability to add cost price for the product and variations",103,3,3,0,121
+1780,"Home Page",103,5,2,0,122
+1781,"About Us Page",103,5,2,0,123
+1782,"Age Verification Popup",103,5,2,0,124
+1783,"Shop Page",103,5,2,0,125
+1784,"Product Page",103,5,2,0,126
+1785,"Cart Page",103,5,2,0,127
+1786,"My Account page",103,5,2,0,128
+1787,"Project Setup",103,5,2,0,129
+1788,"Website Design Issues fixed after Dyanmic",103,5,4,0,130
+1789,"Flealeaf - Frontend Task",103,5,2,0,131
+1790,"Home page development",51,5,4,0,132
+1791,"Blog Details Template Page",51,5,4,0,133
+1792,"Contact Page",51,5,4,0,134
+1793,"Thank You page",51,5,4,0,135
+1794,Homepage,86,5,2,0,136
+1795,"About Us Page",86,5,2,0,137
+1796,"Readiness Score Form",86,5,1,0,138
+1797,"Animation Related Work",86,5,3,0,139
+1798,"Blog Updated",86,5,2,0,140
+1799,"AWS Landing Page - Re:Invent Page",86,5,2,0,141
+1800,Re-invent,86,5,1,0,142
+1801,"Redesign Home Page",86,5,2,0,143
+1802,"New Home Page",86,5,1,0,144
+1803,"Announcement Bar Design",86,5,1,0,145
+1804,"Tackle Page",86,5,2,0,146
+1805,"Landing pages",86,5,1,0,147
+1806,"New Home page",86,5,1,0,148
+1807,"Partners Page",86,5,1,0,149
+1808,"Announcement Bar and Arrow Animation needs to fix",86,5,2,0,150
+1809,"Create Logos",39,5,1,0,151
+1810,"Client Feedback - Website Updates",134,1,1,0,152
+1811,"Landing Page Design",31,2,1,0,153
+1812,"Logo Designs",31,5,2,0,154
+1813,"Landing Page Development - Webflow",31,13,2,2,155
+1814,"Website Changes",31,1,4,1,156
+1815,"Add Legal Pages",31,1,1,0,157
+1816,"Website Changes",13,5,2,0,158
+1817,"Get Started Page Develop",98,6,5,0,159
+1818,"Landing Page Developed.",98,6,2,0,160
+1819,"10 Steps - Development",98,6,3,0,161
+1820,"Non Billable - Website Changes",98,6,1,0,162
+1821,"Swap in this video to the FTT homepage",98,6,3,0,163
+1822,"Develop two landing pages: South Asia Gathering and newsletter",98,6,4,1,164
+1823,"Clickup Task Changes",98,6,2,0,165
+1824,"Spanish Devotional Page Content Changes",98,6,2,0,166
+1825,"Beliver's Page Develop",98,6,3,0,167
+1826,"Take Your Next Step",98,6,4,0,168
+1827,"Email Signature",98,6,3,0,169
+1828,"Create a Page",98,6,5,3,170
+1829,"Fix Page Publish Issue",98,6,1,0,171
+1830,"Add Links to all CTA's of Learn Page",98,6,1,1,172
+1831,"Blog Post - Automation",98,6,1,0,173
+1832,"Updated Changes",98,6,5,1,174
+1833,"Email Template Create",98,6,1,2,175
+1834,"Bible Page Develop",98,3,3,6,176
+1835,"Fix the Logo Issue",9,5,2,1,177
+1836,"Home Page - Branding Changes",9,1,2,0,178
+1837,"Frontend Development",9,5,1,0,179
+1838,"Make UI Changes",9,4,2,0,180
+1839,"Multi Store Catelog SYNC Architecture",9,1,1,0,181
+1840,"Logo Design",1,1,1,0,182
+1841,"Homepage Design",1,1,1,0,183
+1842,"Website Changes",40,5,2,0,184
+1843,"Howl Resource Den Page Creation",27,5,3,4,185
+1844,"Howl/ NSN Landing page",27,5,1,1,186
+1845,"Howl x NSN Partnership Announcement Blog",27,5,1,0,187
+1846,"Wordpress Notice",27,10,1,1,188
+1847,"Blog: Desiree Whitehead on Integrity, Data, and Building Marketing That Scales",27,5,2,1,189
+1848,"New Blog Added",27,13,2,0,190
+1849,"Closebot Case Study",27,4,2,3,191
+1850,"Case Study 1: The Integrity Architecture",27,4,1,1,192
+1851,"Case Study 2: The Revenue Precision Framework",27,4,1,1,193
+1852,"Case Study 3: The Expansion Engine",27,4,1,0,194
+1853,"Case Study 4: The Retention Safety Net",27,4,1,1,195
+1854,"Case Study 5: BRINC Case Study",27,4,1,1,196
+1855,"Client Logos",27,2,1,1,197
+1856,"Blog - May: Priceless One Strategy Session Blog",27,4,1,1,198
+1857,"Howl Tradeshow Page",27,13,1,1,199
+1858,"CloseBot Case Study Blog",27,4,2,2,200
+1859,"URGENT: Website Review Request & Audit Fixing",27,4,4,2,201
+1860,"Howl Website Plugins Update",27,4,1,0,202
+1861,"About Us Page",88,6,2,0,203
+1862,"Search Results",88,6,1,0,204
+1863,"Book Page Create",88,6,2,0,205
+1864,"QA the forms and whole site",88,6,3,0,206
+1865,"Dev Updates - April",88,6,5,0,207
+1866,"Website Changes - May 12th",88,3,6,5,208
+1867,"Jun Month Feedback",88,4,4,0,209
+1868,"Site Details",107,5,3,0,210
+1869,"Image Change",107,5,3,1,211
+1870,"Client Changes",107,5,3,1,212
+1871,"Policy Generator Page",107,5,4,1,213
+1872,Revisions,107,5,3,1,214
+1873,"Revisions 2",107,5,3,1,215
+1874,"Blog Post Images",107,5,2,1,216
+1875,"QA on Whole Site",107,5,4,0,217
+1876,"Home page",107,5,2,0,218
+1877,"Article Page and Detail page",107,5,2,0,219
+1878,"Privacy Policy Page",107,5,1,0,220
+1879,"Terms of Use Page",107,5,2,0,221
+1880,"Pop-Up - CTA",107,5,2,2,222
+1881,"Homepage & Nav Updates",107,5,2,2,223
+1882,"Policy Generator Updates",107,5,2,2,224
+1883,"Require work email on forms",107,5,2,1,225
+1884,"Homepage V2",107,5,2,0,226
+1885,"Add Share / OG Image to Policy Generator Page",107,5,2,2,227
+1886,"Lottie Animation Create for Homepage V2",107,5,3,0,228
+1887,"Homepage Client Feedback.",107,5,4,0,229
+1888,"Client Feedback verifying and Live site QA all the pages.",107,5,3,1,230
+1889,"Forms Hubspot Issue",107,5,3,1,231
+1890,"Device Security Page",107,5,3,0,232
+1891,"Policy Generator New Page Development",107,5,2,0,233
+1892,"Thank you Page",107,5,2,0,234
+1893,"Live site QA",107,5,2,0,235
+1894,"Device Security, Policy Generator and Thank you page Migrate into Live website.",107,5,1,0,236
+1895,"Article page",107,5,2,0,237
+1896,"Articles Page & Articles Details Page",107,5,3,0,238
+1897,"Terms of Use Page",107,5,2,0,239
+1898,"Privacy Policy Page",107,5,2,0,240
+1899,"GenAI Page Development",107,5,1,0,241
+1900,"Client Feedback",107,5,3,0,242
+1901,"404 Page",107,5,3,0,243
+1902,"Homepage Section Add",107,5,3,0,244
+1903,"Gen AI Page Create",107,5,2,0,245
+1904,"About Us Page",107,5,2,0,246
+1905,"Case Study Template",107,5,1,0,247
+1906,"New Case Study Add",107,5,3,0,248
+1907,"AI Newsfeed page",107,5,1,0,249
+1908,"AI Subcommittee Page",107,5,1,0,250
+1909,"Case Study Listing Page and Click up changes",107,5,1,0,251
+1910,"AI Startegy",107,5,1,0,252
+1911,"New Click up tasks",107,5,1,0,253
+1912,"New Landing page",107,5,2,0,254
+1913,"New Home Page V3",107,5,1,0,255
+1914,"Feedback 07 Jan 2026",107,5,1,0,256
+1915,"Landing page New Changes Given By client",107,5,1,0,257
+1916,"Website Update",107,5,1,0,258
+1917,"Domain Check across the site",107,5,1,0,259
+1918,"Navigation Change.",107,2,1,0,260
+1919,"Update the Navigation",107,13,1,0,261
+1920,"AI Risk Monitoring Figma",107,13,1,0,262
+1921,"Technical Support Needed for Site Audit Issues",107,4,1,2,263
+1922,"Form Updates",107,4,1,2,264
+1923,"New Home Page Development",107,4,1,0,265
+1924,"Redevelopment Inner Pages",107,1,1,0,266
+1925,Homepage,107,5,3,0,267
+1926,"Article Page",107,5,4,0,268
+1927,"Article Detail Page",107,5,4,0,269
+1928,"Website Changes - 07 Nov",107,5,4,1,270
+1929,"Agents Page Development",139,6,1,1,271
+1930,"Agents Page QA",139,6,3,0,272
+1931,"Agents Page Changes 08/08/24",139,6,3,0,273
+1932,"Code Upload",139,6,2,0,274
+1933,"Create & launch a homepage pop-up for email capture",59,5,2,1,275
+1934,"Fix bottom “Unlock your 10% off” signup block",59,5,1,0,276
+1935,"Milestone 1 — Planning & Setup (Week 1)",68,6,7,0,277
+1936,"Milestone 2.1 - Project Module Enhancements",68,6,6,1,278
+1937,"Milestone 2.2 : Task Module Enhancements",68,6,7,0,279
+1938,"Milestone 2.3 : Timelog Enhancements",68,6,8,0,280
+1939,"Milestone 2.4 : Team Management Updates",68,10,1,0,281
+1940,"Milestone 3 : Email Module Development",68,4,7,0,282
+1941,"Milestone 4 : Global Features",68,10,7,0,283
+1942,"Milestone 5 : AI Utilities",68,10,7,0,284
+1943,"Milestone 6 : Migration & Go-Live",68,4,7,0,285
+1944,"Global Task 1 — Staff Permission System (Global)",68,6,7,1,286
+1945,"Global Task 2 — Filters System (Global)",68,6,7,0,287
+1946,"Latest Feedback May 2026",68,4,4,0,288
+1947,"Multi-Company Management",68,4,4,0,289
+1948,"Update 2 Apps",71,6,1,0,290
+1949,"Delete Shopify Apps",71,6,1,0,291
+1950,"Review Shopify’s Personalized Upgrade Guide",71,6,2,1,292
+1951,"Serena Loves Hero Section Client Feedbacks",71,6,1,0,293
+1952,"Fix Header",71,6,1,0,294
+1953,"Audit Website - Shopify",71,6,2,0,295
+1954,"Thank You and Order Status Page",71,6,2,0,296
+1955,"Client Document changes",71,6,1,0,297
+1956,"[Development] Updates",71,6,2,2,298
+1957,"[Access and Blog List]",71,6,5,0,299
+1958,"Website Updates",71,6,2,0,300
+1959,"Sheet - Website Updates",71,6,2,0,301
+1960,"Client Feedback Doc - May 12th",71,2,4,2,302
+1961,"Client Changes - May 13th & May 20th",71,2,4,2,303
+1962,"Client Changes - June Month",71,4,6,0,304
+1963,"PPT Design",33,5,1,0,305
+1964,Homepage,93,6,3,0,306
+1965,"Collection Page",93,6,3,0,307
+1966,"Collection Page Color Swatches Add",93,6,3,0,308
+1967,"Product Page",93,6,3,0,309
+1968,"About Page",93,6,3,0,310
+1969,"Convention Schedule",93,6,3,0,311
+1970,"Contact Page",93,6,3,1,312
+1971,"FAQ page",93,6,4,0,313
+1972,"Sponsorships & Affiliates",93,6,3,0,314
+1973,"Blog Page",93,6,3,0,315
+1974,"Policy Page",93,6,3,0,316
+1975,"Restock Page",93,6,3,0,317
+1976,"Gift Card Page",93,6,3,0,318
+1977,"Tutorial Page",93,6,3,0,319
+1978,"Length Filter Issue",93,6,3,0,320
+1979,"Backorder and Add to Cart Issue.",93,6,3,0,321
+1980,"Filter Changes and Website Changes",93,6,3,6,322
+1981,"Website Changes",93,4,3,0,323
+1982,"Learn Next Js",124,6,1,0,324
+1983,"Grow Strategist Automation - Zapier",124,6,1,1,325
+1984,"Implement Custom Login Flow for GrowCurriculum.org",124,6,4,10,326
+1985,"Facebook Leads Collection",124,6,4,2,327
+1986,"Set Up Event Parameters for Renewal Purchase Tracking",124,6,4,1,328
+1987,"Clean Up Malware in growcurriculum.org",124,6,4,4,329
+1988,"Weekly Maintenance of Growcurriculum.com",124,6,4,0,330
+1989,"Project Management",124,1,4,0,331
+1990,"Move Cancellation popup to Main branch",124,6,3,0,332
+1991,"Creative Board Snap-to-grid",124,6,4,4,333
+1992,"Make cloaked links uncrawlable by Google",124,6,5,2,334
+1993,"Implement Creative Board Feedback",124,6,9,15,335
+1994,"Implement Grow Slides New UI",124,6,6,15,336
+1995,"Update User Login Flow for GrowCurriculum.org",124,6,5,0,337
+1996,"Slides User Interface Updates",124,6,4,0,338
+1997,"Fix Slides Bug",124,6,4,1,339
+1998,"Fix Accounts Erros",124,6,4,0,340
+1999,"Implement Creative Board Promotion Figma Design",124,6,5,9,341
+2000,"Correlate Free Trial Users with Paid Subscribers",124,6,4,1,342
+2001,"Text Box Issue",124,6,4,2,343
+2002,"Implement Error Page Design.",124,6,5,5,344
+2003,"Remove tracking scripts from Grow Curriculum",124,6,2,0,345
+2004,"New Business Model Discussion",124,6,1,12,346
+2005,"Implement Lesson Builder Free Trial",124,6,7,4,347
+2006,"Integration on GitHub & Server",124,6,1,0,348
+2007,"Debug of VBS App Crash issue",124,6,2,0,349
+2008,"Custom Login - Music, Hubs, Books & Slides",124,6,2,0,350
+2009,"Move New Home Page to growcurriculum.org divi",124,6,3,1,351
+2010,"Banner Image needs to convert in Divi Elements.",124,6,3,1,352
+2011,"Implement GCLID Tracking and Data Access in DB",124,6,6,0,353
+2012,"Lesson Builder Custom Login",124,6,3,0,354
+2013,"Clean up Stuffyoucanuse.org Site",124,6,3,0,355
+2014,"Update nine dots links on Accounts and Builder Staging",124,6,5,1,356
+2015,"Submit button validation - Lesson builder free trial",124,6,3,0,357
+2016,"New Sales Page Updates",124,6,4,3,358
+2017,"Update the design of the login page - lesson builder",124,6,3,1,359
+2018,"Dashboard Log in",124,6,5,1,360
+2019,"GROW CURRICULUM MARKETING SITE ERROR PAGE",124,6,5,0,361
+2020,"Speed Optimization - Grow Curriculum and Stuffyoucanuse",124,6,8,2,362
+2021,"Fix User Pilot Functionality",124,6,6,0,363
+2022,"Implement Tracking LB Free Trial Data",124,6,6,0,364
+2023,"LESSON BUILDER WORDPRESS WORKS",124,6,9,0,365
+2024,"Fix App Launcher Design",124,6,9,1,366
+2025,"Enable AI Chatbot",124,6,9,3,367
+2026,"Implement the new marketplace UI",124,6,8,1,368
+2027,"Header/Footer Design",124,6,9,1,369
+2028,"Marketplace Page Design(Home page of Marketplace)",124,6,9,0,370
+2029,"My Library Page Design",124,6,9,1,371
+2030,"Implement New Grow Home Page",124,6,9,2,372
+2031,"Home Page use V2 in Figma",124,6,9,2,373
+2032,"Filter Page use option with clouds",124,6,9,1,374
+2033,About,124,6,9,1,375
+2034,"Help - FAQ",124,6,9,1,376
+2035,"Help - Contact",124,6,9,1,377
+2036,"Pricing Bundles, Pricing - Subscription, Pricing - Pay as you go",124,6,9,2,378
+2037,"Update Admin Panel Market Place UI",124,6,9,2,379
+2038,"Set up blog.growcurriculum.org",124,6,10,15,380
+2039,"Check and fix verbiage of Slides Payment page",124,6,9,0,381
+2040,"Weekly Wordpress Maintenance",124,4,6,0,382
+2041,"Restrict Kids Music songs, it was accessible for lesson builder subscribers as well",124,6,9,0,383
+2042,"Slides User Pilot Tooltip - Fix flow and test in responsive devices",124,6,9,0,384
+2043,"Lesson Builder ""Share All"" Feature",124,6,10,1,385
+2044,"Transition Product detail and Cart Pages from Accounts to Grow Curriculum marketing site",124,6,10,2,386
+2045,"Lesson Builder Drag and Drop functionality fix in responsive",124,6,10,2,387
+2046,"Add Data layer events in Free Trial - login, Sign up",124,6,10,0,388
+2047,"Add Data layer events in Slides",124,6,10,0,389
+2048,"Update content of Help Page - Pricing, Refund, Terms & Conditions tab in Help page",124,6,11,4,390
+2049,"IMPLEMENT INTERCOM WIDGET TO ALL APPS",124,6,10,1,391
+2050,"Fix New Grow Curriculum Scroll and Pagination",124,6,10,0,392
+2051,"GROW SLIDES LANDING PAGE",124,6,10,0,393
+2052,"Update GTM tags in Dev sites",124,6,10,0,394
+2053,"Lesson builder merge responsive drag and drop issue manually on Main",124,6,10,0,395
+2054,"Purchased Products Update",124,6,10,2,396
+2055,"Marketing Site full QA",124,6,12,7,397
+2056,"Lesson Builder - Fix Existing share functionality",124,6,10,0,398
+2057,"Marketing Site - Tracking Datalayer events",124,6,10,0,399
+2058,"Hubs User Pilot Tooltip",124,6,10,0,400
+2059,"LM Tags (active campaign tags) not working",124,6,10,0,401
+2060,"Hubs Mobile Number Country Code Issue",124,6,10,0,402
+2061,"Marketing site - separate pages of Help",124,6,10,1,403
+2062,"Hubs Add DataLayer Events",124,6,10,0,404
+2063,"Marketplace - Improve Navigation, UI, and User Experience",124,6,10,0,405
+2064,"Admin Redirection Update",124,6,9,0,406
+2065,"Update VBS Page Grow Curriculum",124,6,11,0,407
+2066,"Setting up data layer - user pilot tooltip",124,6,8,0,408
+2067,"Hubs Free Trial landing page launch",124,6,9,0,409
+2068,"Optimize Page speed of Marketing site",124,6,9,0,410
+2069,"PASTEL FEEDBACK",124,6,11,11,411
+2070,"Hubs Disabled Issue",124,6,10,0,412
+2071,"Remove Free Trial Limitation for Slides",124,6,10,0,413
+2072,"Slides Auto Advance Dropdown set up",124,6,1,0,414
+2073,"Update Free Trial Access Flow for Invited Users in Hubs",124,6,9,1,415
+2074,"Grow Curriculum Feedback : 11-04-2025",124,6,10,2,416
+2075,"Lesson Builder - Stuff You Can Use",124,6,9,2,417
+2076,"Boards Feedback - Infinite scroll",124,6,10,0,418
+2077,"Slides Image and Video upload issue",124,6,10,1,419
+2078,"Marketplace - April 23 Feedback",124,6,9,8,420
+2079,"Marketing site 25th April - New Figma",124,6,10,2,421
+2080,"Wordpress Site Youth and Kids page updates",124,6,5,12,422
+2081,"Create Tutorials Page on Stuffyoucanuse.org",124,6,6,1,423
+2082,"May 1 Updates",124,6,9,4,424
+2083,"Create New pages on Marketing Site",124,6,6,0,425
+2084,"Fix Admin Video Issue while Adding/updating products",124,6,5,0,426
+2085,"Admin Links are not editing in content (TinyMCE) issue",124,6,5,0,427
+2086,"Marketplace May 5 Feedback",124,6,8,1,428
+2087,"Create Coming soon page in Marketing site",124,6,5,3,429
+2088,"Update Grow Marketing site (WP) header and footer to match with react site",124,6,5,0,430
+2089,"FILTERS ISSUE",124,6,5,0,431
+2090,"UPDATE HOMEPAGE VIDEO",124,6,6,0,432
+2091,"May 12, 13 Feedback changes Marketplace",124,6,7,0,433
+2092,"Analytics Requests 13 May",124,6,7,0,434
+2093,"MAY 14 UPDATES Marketplace Feedback",124,6,9,2,435
+2094,"NEW TUTORIALS PAGE WP",124,6,7,1,436
+2095,"Volume 9 Products not accessible even though it's purchased",124,6,7,0,437
+2096,"Admin Import Resources Issue - Import not working after deleting",124,6,6,0,438
+2097,"RE-IMPORT ISSUE",124,6,8,0,439
+2098,"Marketplace Launch - Go Live - 16 May",124,6,10,1,440
+2099,"Blogs not working on Curriculum.org",124,6,7,0,441
+2100,"Page Indexing",124,6,8,0,442
+2101,"Add Scholarship In Pricing",124,6,8,2,443
+2102,"MOBILE RESPONSIVE",124,6,8,1,444
+2103,SITEMAP,124,6,4,0,445
+2104,"FIX BANNER AND TAG ISSUES",124,6,8,2,446
+2105,"MARKETPLACE MOBILE VERSION",124,6,8,8,447
+2106,"MY LIBRARY SORTING FEATURE",124,6,8,0,448
+2107,"Incorrect Redirection",124,6,7,0,449
+2108,"MISSING BLOG RECENT POSTS",124,6,7,0,450
+2109,"If a product is configured for all Preschool, Elementary, students, then it should show ‘All ages’",124,6,8,0,451
+2110,"PRIVATE LINKS",124,6,8,0,452
+2111,"SEO RESTORATION PLAN",124,6,5,0,453
+2112,"TAB REDIRECTION",124,6,8,0,454
+2113,"ADMIN ERROR",124,6,8,0,455
+2114,"Description Formatting Issue",124,6,8,0,456
+2115,"RELATED RESOURCES",124,6,6,0,457
+2116,"Missing Images and Videos from product pages",124,6,7,0,458
+2117,"New product page description designs",124,6,7,2,459
+2118,"Filter Issue 28th May",124,6,6,0,460
+2119,"Increase the description box size",124,6,8,0,461
+2120,"Mobile responsive design QA",124,6,5,0,462
+2121,"HOME PAGE UPDATES",124,6,8,2,463
+2122,"HYPERLINK COLOR",124,6,8,0,464
+2123,"CHECKOUT UPDATES",124,6,8,0,465
+2124,"FREE TRIAL STUFF ISSUE",124,6,7,0,466
+2125,"NEW MARKETPLACE LAYOUT",124,6,8,2,467
+2126,"SAME SUB ERROR",124,6,8,0,468
+2127,"MARKETPLACE>LOGIN ISSUE",124,6,8,0,469
+2128,"RESET PASSWORD ERROR",124,6,8,0,470
+2129,"GROW MARKETPLACE SHARE ISSUE",124,6,8,0,471
+2130,"LB>MY LESSONS>DUPLICATE",124,6,8,0,472
+2131,"LB>MY LESSONS>DUPLICATE",124,6,8,0,473
+2132,"Marketplace Folders",124,6,8,3,474
+2133,"Banners and Thumbnails My Library",124,6,8,0,475
+2134,"Generate csv for game data",124,6,8,0,476
+2135,"PRODUCTS BACKEND ERROR",124,6,8,0,477
+2136,"ACCOUNT ISSUE",124,6,8,0,478
+2137,"FILTER LOGIC",124,6,8,0,479
+2138,SEMRUSH,124,6,8,0,480
+2139,"ACCT>LEGACY>CARD CHANGE/UPDATE",124,6,8,0,481
+2140,"INACTIVE GAMES",124,6,8,0,482
+2141,"SEARCH ENTRIES/FILTER",124,6,8,0,483
+2142,"LB Issues",124,6,8,0,484
+2143,"the free stuff button isn’t working correctly",124,6,8,0,485
+2144,"SCHOLARSHIP FORM ISSUE",124,6,8,0,486
+2145,"ADMIN PANEL HUB REPORT",124,6,7,0,487
+2146,"REVERT BUNDLE TRANSACTION",124,6,7,0,488
+2147,GTIN,124,6,7,0,489
+2148,"Issue with Text Formatting in Slides",124,6,7,0,490
+2149,"ADMIN>MARKETPLACE PRODUCTS>ERROR",124,6,7,0,491
+2150,"FREE STUFF BUTTON",124,6,7,0,492
+2151,"Unable to Edit Shared Slideshow",124,6,7,0,493
+2152,"Duplicate Title Tag + Pagination SEO Fixes",124,6,7,0,494
+2153,"update GTM configuration",124,6,8,0,495
+2154,"Share feeds between teammates on Slides",124,6,9,9,496
+2155,"SERIES BACKEND",124,6,8,0,497
+2156,"FOLDERS TO MY LIBRARY",124,6,8,0,498
+2157,"MY LIBRARY>SEARCH",124,6,8,0,499
+2158,"Books link",124,6,8,0,500
+2159,"ADD ACTIVE CAMPAIGN FOOTER TRACKING CODE O THE SITES",124,6,8,0,501
+2160,"SLIDES>WHITE BORDER",124,6,8,0,502
+2161,"SHARED BUILDER MISSING DELETE OPTION",124,6,8,0,503
+2162,"BOOKS AMAZON BUTTON",124,6,8,0,504
+2163,"MOBILE LAYOUT",124,6,8,0,505
+2164,"TOTAL IS INCORRECT",124,6,8,0,506
+2165,"COUPON CODE",124,6,8,0,507
+2166,"Re: Issues persist: Edit rights for 2nd user?",124,6,8,0,508
+2167,"Set up SurveyMonkey → Database Sync for Grow Research",124,6,8,0,509
+2168,"SUPPORT EMAIL>Restoration of an accidentally deleted File folder with lessons included",124,6,8,0,510
+2169,"SCHOLARSHIP SECTION CHECKBOX",124,6,8,0,511
+2170,"ZOOM BUTTON UPDATE",124,6,8,0,512
+2171,"Error Code 400 when Accessing Lesson Builder Programmes",124,6,8,0,513
+2172,"Are we able to assort the order of the bundle products includes to match the order of the list in the description?",124,6,8,0,514
+2173,"Currently i am in the process of cleaning UNWANTED incoming traffic",124,6,8,0,515
+2174,"YEAR TO DATE DATA",124,6,8,0,516
+2175,"I think you missed updating the ’Learn More’link in hubs sign up.",124,6,8,0,517
+2176,"Weekday patterns May - JUNE",124,6,8,0,518
+2177,"Mobile Filter Update",124,6,8,0,519
+2178,"SEARCH ISSUE",124,6,8,1,520
+2179,CAPTCHA,124,6,8,0,521
+2180,"REMOVE TEST PROMOCODE",124,6,8,0,522
+2181,"Promo Code per Product",124,6,8,0,523
+2182,"Update Banner Icon",124,6,8,2,524
+2183,"GAMES LINKS",124,6,7,1,525
+2184,"FREE STUFF BUTTON UPDATE",124,6,8,2,526
+2185,"GROW MARKETPLACE NEW UPDATES",124,6,9,2,527
+2186,"THE GROW INSIDERS CLUB PAGE",124,6,8,2,528
+2187,"Bundle description error",124,6,8,0,529
+2188,BLOGS,124,6,8,0,530
+2189,"Improve Page Speed of WP Site",124,6,5,0,531
+2190,"could we get rid of this grow music on the homepage",124,6,8,0,532
+2191,"Insiders Page Homepage",124,6,8,1,533
+2192,"Filter Redesign",124,6,7,1,534
+2193,"Marketplace Loading Issue",124,6,8,0,535
+2194,ERRORS,124,6,8,0,536
+2195,"Quick copy update and an issue",124,6,8,0,537
+2196,"MARKETPLACE SEARCH>NEEDS HELP",124,6,8,0,538
+2197,"https://freetrial.stuffyoucanuse.org/kids can we have this one redirect to the free stuff filter link",124,6,8,0,539
+2198,"Updates to Insiders Club Page",124,6,11,4,540
+2199,"Revamp and Refine Metrics in Reporting Hub Dashboard",124,6,5,1,541
+2200,ACCT>DELETED,124,6,4,0,542
+2201,"LB Updates",124,6,10,0,543
+2202,"LB>LINKS NOT OPENING",124,6,8,0,544
+2203,SLIDES>RECOVERY,124,6,8,0,545
+2204,"MARKETPLACE NEW UPDATES",124,6,8,0,546
+2205,"9 Dots other Tools",124,6,8,0,547
+2206,"STRATEGY CALLS AMOUNT PAID",124,6,8,0,548
+2207,"METRICS NEEDED",124,6,8,0,549
+2208,"URGENT DATA FOR LEGACY AND MARKETPLACE",124,6,8,0,550
+2209,"Enhancing Reporting Hub Metrics and Clarity",124,6,8,1,551
+2210,"OPEN IN NEW TAB",124,6,8,0,552
+2211,"CHECKOUT ERROR",124,6,8,0,553
+2212,"REMOVE CREDITS",124,6,8,0,554
+2213,"Favourite  Functionality",124,6,8,0,555
+2214,"Broken Link On Marketplace page",124,6,4,0,556
+2215,ACCT>PYMT,124,6,4,0,557
+2216,ZAPIER,124,6,6,0,558
+2217,"LB > DUPLICATE NOT WORKING IN SHARED WITH ME",124,6,4,0,559
+2218,"Marketplace Tools Section",124,6,8,0,560
+2219,"UTM Revenue Tracking",124,6,5,0,561
+2220,"Track Referrals",124,6,8,0,562
+2221,"Landing Page",124,6,8,1,563
+2222,"MICROSOFT ADS",124,6,4,0,564
+2223,"Strategy Board",124,6,8,15,565
+2224,"Stuffyoucanuse Survey Page Updates",124,6,4,0,566
+2225,"Blog Link Issues on Google",124,6,6,0,567
+2226,"SURVEY MONKEY",124,6,3,0,568
+2227,REDIRECTION,124,6,3,0,569
+2228,"CALENDLY LINK",124,6,6,0,570
+2229,"SLIDES ISSUE",124,6,3,0,571
+2230,"Stripe Tagging",124,6,3,0,572
+2231,"NOT FOUND ERROR",124,6,8,0,573
+2232,"Tooltips / Walkthrough Toggle",124,6,8,1,574
+2233,"Favorites Functionality",124,6,3,0,575
+2234,"STRIPE DATA CLEANUP",124,6,5,0,576
+2235,"NEW KIDS PAGE",124,6,6,0,577
+2236,"NEW STUDENTS PAGE",124,6,6,0,578
+2237,"DUE TODAY",124,6,6,0,579
+2238,"EMAIL CAMPAIGN TRACK LIST ISSUE",124,6,3,0,580
+2239,"ACCT>ACCESS ERROR",124,6,4,0,581
+2240,"WP PAGES FOR DELETION",124,6,6,0,582
+2241,"New product bundle hidden on Marketplace",124,6,7,0,583
+2242,"BACKEND IMAGE UPLOAD ISSUE",124,6,7,0,584
+2243,"EMERGING LEADERS SECTION MAIN PAGE",124,6,7,1,585
+2244,"CREDITS SHOULD BE ZERO",124,6,7,0,586
+2245,"NEW HEADER BAR",124,6,6,0,587
+2246,"Bad Links",124,6,6,0,588
+2247,"FREE STUFF",124,6,7,0,589
+2248,"SLIDES>FEED SHARE>EMAIL ERROR",124,6,7,0,590
+2249,"NEW LOOKER REPORT",124,6,7,0,591
+2250,"ACCT>ACCESS ERROR",124,6,7,0,592
+2251,"Grow Go - WP Site Issues",124,4,10,0,593
+2252,"KIDS AND STUDENTS PAGE Changes - 03-10-2025",124,6,8,14,594
+2253,"HOME PAGE UPDATES",124,6,7,0,595
+2254,"The link here is directing to staging.",124,6,7,0,596
+2255,"KIDS AND STUDENTS PAGE (New Figma)",124,6,9,0,597
+2256,"Redirects page filter won’t scroll",124,6,7,0,598
+2257,"Add tags script",124,6,7,0,599
+2258,"NO PRICE IN MARKETPLACE PRODUCTS",124,6,7,0,600
+2259,"LB>MISSING FILES",124,6,4,0,601
+2260,"Lesson Builder Navigation",124,6,4,0,602
+2261,"LOGGED OUT BROWSE MORE",124,6,4,0,603
+2262,"SLIDES>EXPORT ERROR",124,6,7,0,604
+2263,"NEW SYCU PAGE",124,6,5,1,605
+2264,"TAKE DOWN VBS",124,6,4,0,606
+2265,"SCHOLARSHIP ERROR",124,6,4,0,607
+2266,"Insider Club Header Issue",124,6,4,0,608
+2267,"PODCAST PAGE",124,6,4,2,609
+2268,"EMERGING LEADERS",124,6,4,0,610
+2269,"PODCAST PAGE",124,6,9,0,611
+2270,"New SYCU React Application",124,6,6,8,612
+2271,"CATEGORIES AND PRODUCTS REPORT",124,6,5,0,613
+2272,"October & September Report",124,6,5,0,614
+2273,"STRATEGY CALL DATA SHEET ISSUES",124,6,4,0,615
+2274,"Emerging Banner Automation",124,6,7,1,616
+2275,"Marketplace migrated users total in October",124,6,5,0,617
+2276,"UPDATE GROW RESEARCH SURVEY PAGE HEADER",124,6,4,2,618
+2277,"Emerging Banner Automation",124,6,5,0,619
+2278,"Conversion Set-Up - Talk To A Team Member",124,6,5,0,620
+2279,"NOVEMBER SEO RESTORATION FIXES",124,6,3,0,621
+2280,"SYCU slider show buggy",124,6,4,0,622
+2281,"GTM audit",124,6,3,0,623
+2282,"Adding new product - image won’t load",124,6,5,0,624
+2283,"CHANGE CREDITS BACK TO 0",124,6,2,1,625
+2284,"ADVENT CALENDAR ERROR",124,6,4,0,626
+2285,"Black Friday Landing Page",124,6,5,2,627
+2286,"Allow Banners to Be Applied to Multiple Products",124,6,4,0,628
+2287,"CHRISTMAS LANDER",124,6,9,5,629
+2288,"Implement Ability to Add Videos Backend to Bundled Products",124,6,7,0,630
+2289,"UI Fixes",124,6,9,0,631
+2290,"Content & SEO Cleanup",124,6,8,0,632
+2291,"Links Redirection",124,6,8,0,633
+2292,"Marketplace Test Cases",124,6,4,0,634
+2293,"Hubs and Slides website CTA button ""Learn more"" leads to a page that doesn't exist.",124,6,5,1,635
+2294,"New Grow Curriculum Landing Page",124,6,17,15,636
+2295,"Planning Board Enhancements",124,6,10,0,637
+2296,"PLANNING BOARD BACKEND",124,6,10,0,638
+2297,"Explore the Grow Blog Button Issue",124,6,10,0,639
+2298,"Implement Leadership Labs Page to DIVI",124,6,10,14,640
+2299,"Planning View Shared Products",124,6,12,0,641
+2300,"New Checkout flow 13/01/2026 UI",124,6,13,6,642
+2301,"GROW2026  COUPON AC TAG & SPREADSHEET AUTOMATION",124,6,9,0,643
+2302,"Planning View Logged Out Access",124,6,11,2,644
+2303,"Updated Checkout Flow",124,6,12,0,645
+2304,"PLANNING VIEW>RESTORE DELETED MONTH",124,6,4,0,646
+2305,"ADD GROW USER TAG IN STRATEGIST SHEET",124,6,4,0,647
+2306,"SCHOLARSHIP BANNER",124,6,5,2,648
+2307,"Support Ticket",124,6,5,0,649
+2308,"QUICK LOGO FIX",124,6,5,0,650
+2309,"NEW HOMEPAGE DASHBOARD",124,6,5,0,651
+2310,"Quick UI Fix",124,6,5,0,652
+2311,"New Bundles Page",124,6,8,1,653
+2312,"Class FB page blank space",124,6,4,1,654
+2313,"Backend Filter Issue",124,6,5,0,655
+2314,"USER DOESN'T HAVE ACCESS TO LB",124,6,5,1,656
+2315,"MISSING LIBRARY PRODCUTS",124,6,5,0,657
+2316,"PV - Shared team member doesn’t see purchased products when trying to build shared board",124,6,5,1,658
+2317,"TEAM ACCESS ISSUE",124,6,5,1,659
+2318,"WordPress Page Redirect",124,6,4,1,660
+2319,"PLAN VIEW BOARD WON'T LOAD",124,6,5,1,661
+2320,"Grow Dev Site Not Pulling Up",124,6,4,1,662
+2321,"3 dot hover dropdown",124,6,5,1,663
+2322,"HERO IMAGE + BUNDLES IN THE MENU BAR",124,6,7,2,664
+2323,"LANDING PAGE FLOW",124,6,6,1,665
+2324,"Leadershiplabs AC Tag",124,6,6,0,666
+2325,"Marketplace > Volunteer Bundle links > 6 of 8 reroute to growcurriculum.org",124,6,5,1,667
+2326,"Buy Now Link Not Working",124,6,4,1,668
+2327,"Filter Bundles are not working in ‘My Library’",124,6,5,0,669
+2328,"Active Campaign Clean Up",124,6,5,0,670
+2329,"ACC > KIDS > BANANA BUNDLES NOT SHOWING UP IN LB AND SLIDES",124,6,4,0,671
+2330,"ACCT>CARD NOT ATTACHED TO SUB",124,6,6,0,672
+2331,"BUNDLE FILTER NOT WORKING IN MY LIBRARY + FOR PLANNING VIEW",124,6,6,1,673
+2332,"SLIDES>EDIT ISSUES",124,6,4,0,674
+2333,"Export Planning View PDF Staging Issue",124,6,4,0,675
+2334,"FREE PRODUCTS",124,6,4,0,676
+2335,"REFUND POLICY QUICK CHAT",124,6,4,0,677
+2336,"ADD SIDE SCROLLBAR ON WEBSITE",124,6,3,0,678
+2337,"ACCT>NEW SUB ISSUES",124,6,4,0,679
+2338,"TRY FOR FREE PAGE UPDATES",124,4,7,0,680
+2339,"PRICING DISCOUNT UI UPDATE",124,6,5,0,681
+2340,"LB>FOLDER MISSING",124,6,4,0,682
+2341,"previously purchased series not showing in buddy account",124,6,4,0,683
+2342,"LB>LESSON DISAPPEARED",124,6,5,0,684
+2343,"ACCT>NO CARD ON SUB",124,4,4,0,685
+2344,"SCHEDULE ACTIVATION NOT WORKING",124,4,5,0,686
+2345,"Analytics ::  Strategist Call",124,4,5,0,687
+2346,"LB>RECOVER LESSON",124,4,5,0,688
+2347,"Planning View PDF Export",124,3,5,0,689
+2348,"Admin Staff Add Issue",124,4,4,0,690
+2349,"Download free product without $0 checkout",124,4,4,0,691
+2350,"Analytics :: Meta Pixel",124,4,5,0,692
+2351,"Thank you webinar page",124,4,6,0,693
+2352,"LANDING PAGE ISSUES",124,1,5,0,694
+2353,Homepage,83,6,4,0,695
+2354,"Collection Page",83,6,4,0,696
+2355,"Product Page",83,6,4,0,697
+2356,"Search Page",83,6,4,0,698
+2357,"About Us Page",83,6,4,0,699
+2358,"Contact Page",83,6,4,0,700
+2359,"404 Page",83,6,4,0,701
+2360,"Cart Page",83,6,4,0,702
+2361,"Checkout Page",83,6,4,1,703
+2362,"Category Page",83,6,3,0,704
+2363,"New Feedbacks from the Client",83,6,3,0,705
+2364,"GTM Cleanup and Reconfiguration",52,5,1,2,706
+2365,"SpaMedica (NS): Fix the 404 Link in Nav Menu",52,5,1,2,707
+2366,"SpaMedica: CLS Optimization for Blog Posts & Concern Pages",52,5,7,1,708
+2367,"SpaMedica NS: GA4 Still Reports TPS",52,5,1,0,709
+2368,"SpaMedica NS: Fix the broken link",52,5,1,1,710
+2369,"SpaMedica: Retrospectively Filter out the TPS's ""host"" traffic",52,5,1,0,711
+2370,"Site Info",26,14,11,0,712
+2371,"Inner Pages Design & Implementation (Static)",26,6,11,1,713
+2372,"ChinaOverprints archive rebuild – phase 1",26,6,8,1,714
+2373,"City & Cover CRUD Management",26,6,7,1,715
+2374,"Hosting & CI/CD Setup",26,6,4,2,716
+2375,"Public Website Cover Listing",26,6,7,1,717
+2376,"Analytics Tracking",26,6,5,2,718
+2377,"Project Management",26,1,4,0,719
+2378,"Home Page Design",11,1,2,0,720
+2379,"Homepage Development",11,12,6,2,721
+2380,"Home page QA",11,12,1,0,722
+2381,"Homepage Frontend Development - Divi",11,3,4,3,723
+2382,"WooCommerce Default Pages - Redesign",11,1,3,0,724
+2383,"Yoder: ATBBQ Banner - Track UTM Campaign",43,2,1,0,725
+2384,"Yoder: GTM Custom Conversion Events",43,5,1,0,726
+2385,"Desktop and Mobile UI Fixes",2,3,2,1,727
+2386,"US Market Setup",2,1,3,0,728
+2387,"Homepage Redesign",2,10,3,0,729
+2388,"Navigation & Collections",2,10,3,0,730
+2389,"Product Catalog Management",2,10,3,0,731
+2390,"Product Page Optimization",2,10,3,0,732
+2391,"Performance Optimization",2,3,3,1,733
+2392,"UI - Generate Images Using AI",2,1,2,0,734
+2393,"Research & Development",4,4,8,0,735
+2394,"Help & Support",4,4,8,0,736
+2395,"Saturday Activity",4,4,8,0,737
+2396,"Home Page Development",66,5,2,2,738
+2397,"UI Design for the listed pages.",66,5,1,4,739
+2398,"About Page Development",66,5,2,1,740
+2399,"Services Page Development",66,5,2,0,741
+2400,"Contact Developement",66,5,2,0,742
+2401,"Case Study page Development",66,4,1,0,743
+2402,"Blogs Page Development",66,4,2,0,744
+2403,"Who we Serve Page",66,5,2,1,745
+2404,"Look into Email Delivery Issues",66,5,1,0,746
+2405,"New home page development",66,4,3,2,747
+2406,"Update Chatbot screen design - add gradient and other adjustments",125,6,6,8,748
+2407,"Create figma designs for updated Chatbot Flow - Add License Screen, remove leads tab",125,1,6,6,749
+2408,"Make sure chatscreen is designed like this",125,6,5,1,750
+2409,"Welcome Screen - Frontend",125,1,2,0,751
+2410,"Chat Layout - Frontend",125,1,2,0,752
+2411,"Chatbot Builder and Inbox Layout Design",125,1,2,0,753
+2412,"React User Portal Development",125,1,3,0,754
+2413,"Lead Page Updates",125,1,2,0,755
+2414,"Develop page designs for ZM Onboarding Chat",125,6,6,15,756
+2415,"Step 2 Feedback Changes.",125,6,3,1,757
+2416,"Develop page designs for enhanced UI of User Portal",125,6,4,7,758
+2417,"Update the download settings to allow for documentation links",125,6,3,2,759
+2418,"Convert Figma to HTML",113,6,1,0,760
+2419,Newsletter,113,4,2,0,761
+2420,"Create Audit Report For Website",35,6,2,0,762
+2421,"Logo Design",133,6,1,1,763
+2422,"Website Design",133,6,1,1,764
+2423,"Homepage Developement",133,6,3,0,765
+2424,"Help to Junior",133,6,3,0,766
+2425,"Website 500 Issue Solved.",133,6,2,1,767
+2426,"Working on Client Feedback",133,12,2,0,768
+2427,"Create Home page as per Figma",81,5,2,0,769
+2428,"Feeback Revision 03/12/2025",81,5,2,4,770
+2429,"Video Editing",81,5,1,0,771
+2430,"Buy Button Add",81,3,2,0,772
+2431,"Add Phillip Hogan bio to homepage",81,13,2,0,773
+2432,"Add Phillip Hogan image prominently on homepage",81,13,2,1,774
+2433,"Update website footer with social profile links",81,13,1,1,775
+2434,"Home Page Developement",18,5,1,0,776
+2435,"About Us Development",18,5,2,0,777
+2436,"404 Page",18,5,1,0,778
+2437,"Coming Soon",18,5,1,0,779
+2438,"Newsletter Popup",18,5,1,0,780
+2439,"Event Page",18,5,1,0,781
+2440,"Shopify General Pages",18,5,1,0,782
+2441,"On Going Feedback",18,2,3,4,783
+2442,"Final updates - June",18,13,3,2,784
+2443,"Product Image Compression",18,1,2,0,785
+2444,"Website Design",14,2,1,0,786
+2445,"Figma to Astro JS Development",14,2,7,0,787
+2446,"Client Feedback - Home Page",14,4,3,6,788
+2447,"Summer Page - Client Feedback",14,1,2,4,789
+2448,"COURSES and COURSES DETAILS",14,1,2,1,790
+2449,"Blog Details Page",14,1,1,1,791
+2450,"QA Website and FIX UI issues.",14,13,1,0,792
+2451,"Implement Supabase Schema for Online Game Mode",67,6,6,0,793
+2452,"Set up Supabase Storage buckets for audio",67,6,6,0,794
+2453,"Implement join-lobby UI & backend logic",67,6,6,0,795
+2454,"Implement game lobby creation",67,6,6,0,796
+2455,"Implement API Route for Audio Retrieval",67,6,6,0,797
+2456,"Implement API Route for Audio Upload",67,6,6,0,798
+2457,"Implement real-time lobby synchronization",67,6,6,0,799
+2458,"Add randomized turn order generator",67,6,6,0,800
+2459,"Implement server-side game flow structure",67,6,6,0,801
+2460,"Connect audio recording UI to upload endpoint",67,6,6,0,802
+2461,"Build audio recording UI prototype",67,6,6,0,803
+2462,"Implement placeholder screens for key stages",67,6,6,0,804
+2463,"Build a demo-ready version of online game flow",67,6,6,0,805
+2464,"Final QA + Internal Testing",67,6,6,0,806
+2465,"Project Management",67,6,3,0,807
+2466,"Project Management",67,6,5,0,808
+2467,"Testing: Game Flow",67,6,4,2,809
+2468,"Redeem Page and Other Pages Create",67,6,3,2,810
+2469,"Client Feedback",67,9,5,1,811
+2470,"Vercel Build Issue",67,6,3,1,812
+2471,"Staff / Author issue",99,6,1,1,813
+2472,"ED App Locations Update - Birmingham",99,6,1,0,814
+2473,"Footer Adjustments on Mobile",99,6,1,0,815
+2474,"Make Phone Numbers Dynamic",99,6,1,0,816
+2475,"Email Signature Create Ape",99,6,2,1,817
+2476,"Wallet System Integration",65,5,3,0,818
+2477,"Design improvements for dashboard",65,5,1,0,819
+2478,"QA of Wallet System Integration",65,5,2,0,820
+2479,"Create Receipt PDF",65,5,1,0,821
+2480,"QA Feedbacks",65,5,2,0,822
+2481,"Migrate the website from IonBlade to Siteground",38,5,2,0,823
+2482,"Update the Service Section",38,3,2,0,824
+2483,"Plugin Development",21,1,1,0,825
+2484,"Home Page Design",63,5,2,1,826
+2485,"Home Page Development",63,5,1,0,827
+2486,"Service List Page design",63,5,1,0,828
+2487,"Service List Page Development",63,5,1,0,829
+2488,"Service Details Template",63,5,1,0,830
+2489,"Service Details Template Development",63,5,1,0,831
+2490,"Industries Page",63,5,1,0,832
+2491,"Industries Page Development",63,5,1,0,833
+2492,"Industries Detailed Template",63,5,1,0,834
+2493,"Industries Detailed Template Development",63,5,1,0,835
+2494,"About Us Page",63,5,1,0,836
+2495,"About Us Page Development",63,5,1,0,837
+2496,"Blogs Page",63,5,1,0,838
+2497,"Blogs Page Development",63,5,1,0,839
+2498,"Blog Details Template",63,5,1,0,840
+2499,"Blog Details Template Development",63,5,1,0,841
+2500,"Contact Us Page",63,5,1,0,842
+2501,"Contact Us Page Development",63,5,1,0,843
+2502,"Life at ConcatString",63,5,1,0,844
+2503,"Life at ConcatString Development",63,5,1,0,845
+2504,"Case Studies Page",63,3,2,0,846
+2505,"Case Studies Page Development",63,4,1,0,847
+2506,"Case Studies Template",63,13,1,0,848
+2507,"Case Studies Template Development",63,4,1,0,849
+2508,"Get an Estimate Popup",63,1,1,0,850
+2509,"Get an Estimate Popup Development",63,1,1,0,851
+2510,"Cloud Hosting Page Design",63,5,1,0,852
+2511,"Cloud Hosting Page Development",63,5,1,0,853
+2512,"Careers page",63,5,2,0,854
+2513,"Job Listing page",63,5,2,0,855
+2514,"Job Detail page",63,5,2,0,856
+2515,"Weekly Blog Uploads",63,4,3,0,857
+2516,"Pitch Deck",63,5,1,0,858
+2517,"Opt-in Form Updates",63,13,1,0,859
+2518,"Homepage - Redesign",63,4,2,0,860
+2519,"Social Media Post",63,4,2,0,861
+2520,"Case Study Details Template Redesign and Development",63,4,3,0,862
+2521,"WAYLO AI - Welcome Video",63,3,1,0,863
+2522,"Email Template",90,6,1,0,864
+2523,"New Year Mail Templates",90,6,1,0,865
+2524,"2 Email Templates Edits",90,6,1,0,866
+2525,"More Changes",90,6,1,0,867
+2526,"Email Tempalte and Singnature Create",90,6,2,0,868
+2527,"Feedback Points",90,6,1,0,869
+2528,"Client Feedback Points 2",90,6,1,0,870
+2529,"Reminder and Webinar Email Template Developed",90,6,4,1,871
+2530,"Tony Robbins Platinum - Members",90,6,2,0,872
+2531,"Email Templates",90,6,4,3,873
+2532,"CORPORATE EDM",90,6,2,0,874
+2533,"SUMMER EDMS",90,6,2,1,875
+2534,"Birthday EDM",90,3,4,1,876
+2535,"EDM - Members & Leads",90,3,3,1,877
+2536,"EMAIL DRIP CAMPAGIN",90,3,2,0,878
+2537,"MAY NEWSLETTER EDM",90,3,2,1,879
+2538,"PETER LEADS EDM",90,3,2,1,880
+2539,"Summer Referral eDM: APEX and CORE membership",90,3,2,0,881
+2540,"WEBINAR WOMANS HEALTH EDMS",90,3,2,1,882
+2541,"[FL] Nutrition + Healthy Brain Aging EDM",90,3,2,0,883
+2542,"SEO Improvements",64,6,1,0,884
+2543,"Site Improvements",64,6,1,0,885
+2544,"Design Suggestions",64,6,2,0,886
+2545,UI/UX,76,5,2,0,887
+2546,"Home Page UI",76,5,1,0,888
+2547,"About Us Page Design",76,5,1,1,889
+2548,"Lottie Animations",76,5,1,0,890
+2549,"Email Blast - 16 March 2026",60,1,1,0,891
+2550,"Login/Signup page",74,5,3,0,892
+2551,"Profile Page",74,5,3,0,893
+2552,"Client Feedback Changes as per WP",74,5,2,0,894
+2553,"Memebership Page",74,5,3,0,895
+2554,"30/11 - UPDATES TO DO WEBSITE",74,5,3,0,896
+2555,"SEO Broken Links and related task",74,3,2,1,897
+2556,"Shipping and Vendor Profile",74,4,4,0,898
+2557,"SEO for all products",74,3,1,1,899
+2558,"SEO sheet resolving given by client",74,3,1,0,900
+2559,"product URLs for the sitemap and robots.txt(noindex)",74,3,1,0,901
+2560,"Site Details",116,6,4,0,902
+2561,"Reusable Email Template Design",116,6,5,0,903
+2562,"Email Template Design and Blog Post Page Design",116,6,3,1,904
+2563,"WOODYS La Dolce Vita [Email Dev]",116,6,3,1,905
+2564,"9. UDM and LOFT email development",116,6,3,1,906
+2565,"Homepage Newsletter Section Design",116,6,3,0,907
+2566,"About us, All brands and Individual brand",116,6,3,0,908
+2567,"Villa Eyewear Design Issue",116,6,1,0,909
+2568,"Header  and Design as per Loom Video",116,6,5,2,910
+2569,"Homepage and Header Nav changes.",116,6,3,1,911
+2570,"Email Template",116,6,1,0,912
+2571,"Event Templates 1/20",116,6,2,1,913
+2572,"Woodys - Unique Bakery Email Template",116,6,2,0,914
+2573,"Email Template Create",116,6,2,2,915
+2574,"LGR Spring Colors - Email Template",116,6,2,1,916
+2575,"Dev: A DIALOGUE IN ITALIAN ELEGANCE | L.G.R for Ermanno Scervino",116,2,2,1,917
+2576,"Alert on shopify: check",116,10,2,0,918
+2577,"A MODERN ICON | Kaley Cuoco",116,12,3,0,919
+2578,"Megamenu implementation",132,6,1,0,920
+2579,"Changes on Course Page.",126,5,2,0,921
+2580,"Move Course Changes to English Website",126,5,2,0,922
+2581,"English website Course Changes.",126,5,2,1,923
+2582,"Image Change instead of Video.",126,5,2,2,924
+2583,"Title Need to Update - AIBIZ to (AIBIZ™)",126,5,2,0,925
+2584,"Change Attached Screenshot text to Course Overview",126,5,2,0,926
+2585,"Inc. and Excl Text Change",126,5,2,0,927
+2586,"Change “Price” Write ""Price per Seat""",126,5,2,0,928
+2587,"Change ""registration deadline"" text to ""Apply to be offered a selection of dates.""",126,5,2,0,929
+2588,"Need to Update Design.",126,5,2,0,930
+2589,"Remove Section",126,5,2,0,931
+2590,"New Course Design.",126,5,3,0,932
+2591,"Old Course Migrate to New Structure.",126,5,2,1,933
+2592,"Migrated Courses Changes.",126,5,1,0,934
+2593,"Course Changes - 26 Nov",126,5,1,0,935
+2594,"Add Course content on Clickup.",126,5,3,0,936
+2595,"Homepage Dead Links Fixed.",126,5,2,1,937
+2596,"Homepage Certification Design Issue.",126,5,2,1,938
+2597,"Course Listing Page Re-Structure.",126,5,2,0,939
+2598,"Create 3 All Course Page and remove other ones.",126,5,3,0,940
+2599,"Work with us menu Dropdown",126,5,2,0,941
+2600,"Testimonial Design for Website.",126,5,3,2,942
+2601,"Courses Design Changes",126,5,4,0,943
+2602,"Chages On Courses",126,5,2,0,944
+2603,"Homepage Design",126,5,1,0,945
+2604,"Make Changes as Per Slack.",126,5,2,0,946
+2605,"Testimonial Section Create",126,5,2,0,947
+2606,"Foxy Cart V2 API Implemented",126,5,2,0,948
+2607,"Normal Changes on Homepage",126,5,2,0,949
+2608,"Homepage About Us Section Design",126,5,2,0,950
+2609,"Pricing issue on all Courses",126,5,2,0,951
+2610,"SMTP Now working on website",126,5,2,0,952
+2611,"Homepage Page About Section Design",126,5,2,0,953
+2612,"Webinar Page",126,5,1,0,954
+2613,"Arbetsmarknadsutbildningar Page Create",126,5,1,0,955
+2614,"Microsoft New Course Create",126,5,1,0,956
+2615,"Registration Form Changes",126,5,1,0,957
+2616,"All Courses Images Replaced",126,5,2,0,958
+2617,"All Course page Design",126,5,1,0,959
+2618,"4 YH courses and All Courses Create",126,5,1,0,960
+2619,"Affiliate Form Add.",126,5,1,0,961
+2620,"Text and Link Changes on Course",126,5,1,0,962
+2621,"Audio and Video Course Changes",126,5,1,0,963
+2622,"Audio And Video Course Changes.",126,5,2,0,964
+2623,"03/12/2025 - Task",126,5,1,0,965
+2624,"Find Fixes and Improvements - Sumit",126,5,1,0,966
+2625,"Create a pages for Jonas",126,5,2,0,967
+2626,"Webinar Promotion Brief",126,5,2,0,968
+2627,"Create a page: Avanced Interactive 3D Soundscapes",126,5,2,0,969
+2628,"Course List and Detail Page",126,5,2,1,970
+2629,"Ai Webinar Pages Create",126,5,1,0,971
+2630,"Registration Form Update & Dynamic Apply CTA Tracking Setup",126,5,2,1,972
+2631,"Website Updates",126,5,4,0,973
+2632,"May - Website Update",126,2,6,0,974
+2633,"Email Template Figma Mockup",126,2,3,0,975
+2634,"Email Pages Development",126,2,4,1,976
+2635,"Videoredigering & Ljudproduktion Information Re-Design",126,5,3,0,977
+2636,"Videoredigering & Ljudproduktion Information Development",126,13,4,1,978
+2637,"Home Page",16,3,5,0,979
+2638,"About Us",16,3,5,0,980
+2639,"Product Page",16,3,5,0,981
+2640,Manufacturing,16,3,5,0,982
+2641,Services,16,3,5,0,983
+2642,Faqs,16,3,5,0,984
+2643,"Contact Us",16,3,5,0,985
+2644,"Products add on Site",16,6,1,0,986
+2645,"Final Feedback - Jun 2nd",16,3,2,0,987
+2646,"Home page",53,5,2,0,988
+2647,"About Us Page",53,5,2,0,989
+2648,"Adoption Process Page",53,5,2,0,990
+2649,"Adoption Resources",53,5,2,0,991
+2650,"Contact Us",53,5,2,0,992
+2651,"Donate Page",53,5,2,0,993
+2652,"Site Details",36,6,6,0,994
+2653,"Understanding Document",36,6,3,0,995
+2654,"Home Page Design",36,6,3,4,996
+2655,"Lab to Market Training",36,6,3,0,997
+2656,"ISG Partners Page",36,6,3,4,998
+2657,"Commercial Strategy Integration for CFO’s",36,6,4,1,999
+2658,"Homepage Development",36,6,5,14,1000
+2659,"Client Feedback",36,6,4,0,1001
+2660,"Redesign the Website - Webflow",36,4,3,0,1002
+2661,"Dev - Figma to Webflow - Website Redesign",36,4,3,0,1003
+2662,"Design Partner Page",36,4,2,0,1004
+2663,"Who we are Page Create",79,5,9,0,1005
+2664,"Project Page",79,5,3,0,1006
+2665,"Create Coming Soon Page",25,5,2,0,1007
+2666,"Blog Templates Development",45,5,5,0,1008
+2667,"Website Develoment - Webflow",17,5,2,0,1009
+2668,"SKAL Planning Page",131,5,4,0,1010
+2669,"Login Page",131,5,5,0,1011
+2670,"Member Page",131,5,6,0,1012
+2671,"Project Management",131,5,2,0,1013
+2672,"Figma Comments and Popup Create",131,5,1,0,1014
+2673,"Event Contact Form Popup Create",131,5,4,1,1015
+2674,"Email Link changes",131,5,1,0,1016
+2675,"Membership Formatting Form format issue",131,5,1,1,1017
+2676,"Migration: Staging to Live",140,6,2,0,1018
+2677,"Monthly Maintenance",114,1,6,2,1019
+2678,"Remove ""InfoWorld"" logo from all locations",49,5,1,1,1020
+2679,"Rent-Easily WordPress UI Cleanup & Structure Setup",19,2,5,2,1021
+2680,"Website Development - WP",19,5,1,0,1022
+2681,"Final Feedback for Phase 1",19,4,2,3,1023
+2682,"Develop Home Page as per Figma",78,5,3,0,1024
+2683,"Market street Page changes Svg update",78,5,1,0,1025
+2684,"Quick Picks page",78,5,2,0,1026
+2685,"Content Upload",78,5,1,0,1027
+2686,"Performance Improvement",78,5,1,0,1028
+2687,"SEO Opportunities for Ninety Five Beauty",130,1,3,3,1029
+2688,"CLS Fix for the /shop/ Pages",46,5,2,0,1030
+2689,"order placement",91,6,3,0,1031
+2690,"order history download for kajal",91,6,2,0,1032
+2691,"Keyword research for IAK",91,6,1,0,1033
+2692,"Twillio Zapier Integration",91,6,4,0,1034
+2693,Homepage,136,6,4,0,1035
+2694,"Home page Development",136,6,1,0,1036
+2695,"About Page Development",136,6,1,0,1037
+2696,"Community Pages",136,6,5,0,1038
+2697,"Backend Development Work",136,6,2,0,1039
+2698,"Coven Home page, Newsfeed, Checkout",136,6,1,0,1040
+2699,"Round 3 changes",136,6,1,0,1041
+2700,"Unshamed Page",136,6,3,0,1042
+2701,"Changes Given By client",136,6,2,0,1043
+2702,"Marcperidis Landing Page",136,6,1,0,1044
+2703,"Unshamed Website Migrate",136,6,3,0,1045
+2704,"The Coven Website Migrate",136,6,3,0,1046
+2705,"Unshamed Pages Changes",136,6,4,0,1047
+2706,"The Coven - Redesign",136,6,4,0,1048
+2707,"Timarco - Website Changes",136,6,1,0,1049
+2708,"Coven - Popup Up Development",136,1,3,2,1050
+2709,"Sample Task - Advertorial page",62,5,2,1,1051
+2710,"Gift Tip Special",62,5,1,0,1052
+2711,"The Lucky Start - Advertorial",62,5,1,0,1053
+2712,"Add “Notify me when available button” on PDP",62,5,2,0,1054
+2713,Homepage,42,6,3,0,1055
+2714,"Second Phase qa home page",42,6,1,0,1056
+2715,Technology,42,6,3,0,1057
+2716,"Company - About Page",42,6,3,0,1058
+2717,"Company - Our Partners",42,6,3,0,1059
+2718,"Solutions - CMS",42,6,3,0,1060
+2719,"Services - CMS",42,6,3,0,1061
+2720,"Resources Listing and Details",42,6,3,0,1062
+2721,"Contact Page",42,6,3,0,1063
+2722,"Informative Pages",42,6,3,0,1064
+2723,"Miscellaneous Task",42,6,2,0,1065
+2724,"Solutions Page",42,6,3,0,1066
+2725,Telecom-expense-management,42,6,1,0,1067
+2726,Mobile-expense-management,42,6,1,0,1068
+2727,"SAAS- expense-management",42,6,1,0,1069
+2728,cloud-expense-management,42,6,1,0,1070
+2729,Business-expense-management,42,6,1,0,1071
+2730,"Homepage Update",42,6,3,0,1072
+2731,"Unit Testing",42,6,1,0,1073
+2732,"Speed optimization",42,6,1,0,1074
+2733,"OG image configuration",42,6,1,0,1075
+2734,"Website Update",42,6,2,0,1076
+2735,"Small Feedback - May",42,12,5,3,1077
+2736,"Insert a Button - Famella - Taylor Harris",120,6,3,5,1078
+2737,"Cogistics Revision - Adam Robinson",120,6,1,0,1079
+2738,"The Living Room - Figma implementation to WP - 4B Marketing",120,6,1,0,1080
+2739,"sts and cbp new revision edits 7/08/24",120,6,2,0,1081
+2740,"Mangement Project",120,6,2,0,1082
+2741,"Marie Figma Work",120,6,1,0,1083
+2742,"TFM Website Backup",120,6,1,0,1084
+2743,"Kaia Fit - Website Issue",120,6,4,0,1085
+2744,"Adam Robinson - PAXAFE Homepage Copy Change",120,6,2,0,1086
+2745,"Adam Robinson - PAXAFE - Why PAXAFE Copy Change",120,6,2,0,1087
+2746,"Adam Robinson - PAXAFE - The Platform Copy Change",120,6,2,0,1088
+2747,"Alec Presti - Dissentient - Website Changes",120,6,2,3,1089
+2748,"Elaine Rodriguez - Dental Laser Integrations - Webinars",120,6,1,0,1090
+2749,"Elaine Rodriguez - Dental Laser Integrations - Blog",120,6,1,0,1091
+2750,"Research & Planning for Shopify Theme",120,6,5,1,1092
+2751,"Wade Padgett",120,6,5,1,1093
+2752,"Evaluate and Install a Flexible Shopify Theme for TWP Winery",120,6,4,0,1094
+2753,"Doundrins Website Updates",120,6,2,0,1095
+2754,"Rajah Caruth heading animation",120,6,2,0,1096
+2755,"BrandPoint Design Changes Fixed - Famella",120,6,1,0,1097
+2756,"4b Marketing - Website Changes",120,6,1,0,1098
+2757,"Implement reCAPTCHA in Contact Form to Prevent Spam",44,1,3,0,1099
+2758,"Home Page Design",12,2,2,0,1100
+2759,"Homepage Redesign",12,4,2,0,1101
+2760,"Shopify Development",12,1,3,0,1102
+2761,"Label Design",29,5,2,0,1103
+2762,"Audit Report",36,5,1,0,1104
+2763,"Wireframe Creation and Research",36,5,1,0,1105
+2764,"Home Page Design",36,2,1,0,1106
+2765,"Abous Page Design",36,1,1,0,1107
+2766,"Services Pages",36,1,1,0,1108
+2767,"Website Migration & DNS issue",10,5,1,0,1109
+2768,"Set Redirection to CollinsEngineering.com",10,5,1,1,1110
+2769,"CollinsEngineering.com gets down",10,5,1,1,1111
+2770,"WooCommerce setup and Payment configuration",10,4,2,0,1112
+2771,"Dining Shoping Page Ui Fixes",137,2,2,0,1113
+2772,"Shopping titles time formatting change",137,2,1,0,1114
+2773,"Header Issue fixed on Staging website and production website",137,2,2,1,1115
+2774,"Elementor update issue",137,2,1,0,1116
+2775,"RSS Feed Custom Block Issue",137,2,2,0,1117
+2776,"Dinning Shop API Update",137,6,3,0,1118
+2777,"Create OpenCart Demo Replica for Waylo (IAK Production Copy)",23,6,10,0,1119
+2778,"Standardize Vendor Invoice Intake & Automation Workflow (Pilot: IAK + Core-Mark)",23,4,5,0,1120
+2779,"Revamp Waylo Website (Positioning + Conversion Focus)",23,6,6,0,1121
+2780,"Demo Lead Capture Form Integration with OTP Verification - demos.wayloai.com",23,6,6,0,1122
+2781,"Shopify Middleware Integration for Waylo Chatboard",23,4,10,0,1123
+2782,"Waylo WooCommerce Website Changes",23,6,4,0,1124
+2783,"Waylo AI WooCommerce Plugin Development",23,4,7,0,1125
+2784,"Salesforce Integration R&D for Waylo AI Extension Development",23,4,6,0,1126
+2785,"Explore Odoo Integration for Waylo AI (Extension / Add-on Development)",23,4,7,0,1127
+2786,"Knowledge Transfer & Process Documentation – Kunj’s Inventory Management Workflow",23,4,6,0,1128
+2787,"Customer Support Platform Setup & R&D – Intercom + Linear Integration",23,4,6,0,1129
+2788,"Set Up 3 Shopify Test Instances for Waylo Integration & Validation",23,3,7,1,1130
+2789,"BigCommerce Integration Development for Waylo AI",23,4,10,0,1131
+2790,"Build EDI Parser for Order Ingestion",23,4,7,0,1132
+2791,"Build Message Export Functionality in Message Central",23,3,6,1,1133
+2792,"Create Graphics for OpenCart Marketplace",23,4,5,0,1134
+2793,"Sync the Master Sheet with the Message Central Hub to manage product comparisons without repeatedly uploading the master sheet.",23,4,5,0,1135
+2794,"Build Merchant Application Web Form",23,4,5,0,1136
+2795,"Plugin Development",30,3,2,0,1137
+2796,"Plugin UI Design",30,5,2,0,1138
+2797,"Plugin Assets Design",30,2,2,0,1139
+2798,"Shopify App Developed",30,10,1,0,1140
+2799,"Logo and Banner Design",30,2,3,0,1141
+2800,"Design - CS Post Comment Reaction",30,4,4,0,1142
+2801,"Website Changes per DOC",96,6,5,0,1143
+2802,"Whole site QA.",96,6,4,0,1144
+2803,"New Feedback Changes",96,6,1,0,1145
+2804,"Adult Compliance Website",96,6,5,0,1146
+2805,"Website Changes",96,6,1,0,1147
+2806,"Doc Changes",96,6,2,0,1148
+2807,"QA whole site",96,6,2,0,1149
+2808,"Doc Changes",96,6,1,0,1150
+2809,"List of Changes",96,6,1,0,1151
+2810,"Local Setup of Client's Repo",70,6,7,0,1152
+2811,"Add Postmasters names and dates of service",70,6,6,0,1153
+2812,"IanThom Domain & Website Migration",70,6,8,0,1154
+2813,"CoverSenses.org Jay's Feedback",70,6,10,0,1155
+2814,"WorldCovers Jay's Feedback and Backend Modules",70,6,9,0,1156
+2815,"IanThom Site Updates",70,6,4,0,1157
+2816,"Bug Fixes and Improvements",70,6,6,1,1158
+2817,"WordCover :: Forgot and change password",70,6,6,0,1159
+2818,"WordCover :: Manage catalog request (approve/reject/revision)",70,6,5,0,1160
+2819,"Assign State to User",70,6,5,0,1161
+2820,"WordCover :: User Management Dashboard",70,6,5,0,1162
+2821,"New feedback for Backend",70,6,5,0,1163
+2822,"Contributors can resubmit previously denied submissions.",70,6,3,0,1164
+2823,"Contributors can catalog their own postal markings in the system.",70,6,6,0,1165
+2824,"Currently, if a submission is denied, an entirely new submission must be entered by the contributor in hopes of being approved. Smoother workflow would be allowing for direct edit of denied submission, and sending over again to the Editor for review.",70,6,6,0,1166
+2825,"WorldCovers UI/UX Update",70,6,6,0,1167
+2826,"Mark Down processor in help system",70,6,6,0,1168
+2827,"Create new model & new csv data import",70,6,1,0,1169
+2828,"UI Suggestion",70,6,5,0,1170
+2829,"Auxmarks and Ratemarks",70,6,3,0,1171
+2830,"Reference Work Management",70,6,3,0,1172
+2831,"Commentary Workflow (Trello Task)",70,6,3,0,1173
+2832,"Audit Trail (Trello Task)",70,6,3,0,1174
+2833,"CoverCensus Internal Testing & Bug Fixing",70,6,4,1,1175
+2834,"Save In-Progress submission as draft (Trello Task)",70,6,4,1,1176
+2835,"Read documentation articles (glossary, FAQ) (Trello Task)",70,6,4,0,1177
+2836,"Filter and sort submission queue (Trello Task)",70,6,4,0,1178
+2837,"ianthom 404 error",70,6,4,0,1179
+2838,"Unit Test Using Jest/PyUnit",70,10,6,0,1180
+2839,"Research & Development",5,4,2,0,1181
+2840,"Site Details",121,1,4,0,1182
+2841,"RND - Payments Migration (WooCommerce → Circle Paywalls)",121,2,1,0,1183
+2842,"Upgrade PHP Version to 8.3",121,5,1,0,1184
+2843,"Fixed the QA Issue",121,5,1,0,1185
+2844,"Video Play Fixing for Ian",121,5,2,2,1186
+2845,"How to add team members in agency profile.",121,5,1,1,1187
+2846,"Captello Interactive Landing Page",121,5,2,0,1188
+2847,"Demand and Expand Page",121,5,1,1,1189
+2848,"Sign Up Issue - Customer SHELBY",121,5,1,0,1190
+2849,"Transfer Membership for Ian Shields",121,5,3,3,1191
+2850,"Error on Chapters Page",121,5,2,1,1192
+2851,"RND Task - Sign Up Flow",121,4,2,2,1193
+2852,"Export Members data with the field membership_status",121,1,2,0,1194
+2853,"Bug Fix - Non-Functional CTA Buttons on Mobile Homepage",100,6,2,0,1195
+2854,"Modal Link for Flash Sale for 10 Credit Package - loom video with further explanation",100,6,2,1,1196
+2855,"Site Details",100,6,6,0,1197
+2856,"East Boston Location Website Expansion Project",100,6,1,0,1198
+2857,"Recovery Page Create and Making changes as per Clickup",100,6,2,0,1199
+2858,"Header, Footer and Modal Design changes.",100,6,4,1,1200
+2859,"Homepage Redesign",100,6,3,0,1201
+2860,"Formate Page",100,6,3,0,1202
+2861,"Global Hero Section Styling Fix (White Line Issue)",100,6,1,0,1203
+2862,"Add New Rows to membership comparison table",100,6,1,0,1204
+2863,"a couple of bugs found on mobile",100,6,1,0,1205
+2864,"Pricing Page Edits",100,6,1,0,1206
+2865,"LIVE SITE BUG on Mobile Nav",100,6,2,0,1207
+2866,"Pricing page bugs",100,6,2,0,1208
+2867,"Update plugins in wordpress",100,6,4,0,1209
+2868,"Alert Bar Create",100,6,1,0,1210
+2869,"Client Feedback",100,6,1,0,1211
+2870,"Website Performance Optimization",100,4,2,0,1212
+2871,"Web Audit: Images, Speed, Access",100,10,4,5,1213
+2872,"PHPCS Eslint setup on system.",138,6,3,0,1214
+2873,"The Martech Weekly Homepage Redesign",138,6,1,0,1215
+2874,"Animation Learning",138,6,2,0,1216
+2875,"Invitation Card",138,6,2,0,1217
+2876,"HRMS System",138,6,7,0,1218
+2877,"The Video Card Scanning",138,6,5,0,1219
+2878,"OpenCart R&D",138,6,1,0,1220
+2879,"Danielle Haden Design",138,6,1,0,1221
+2880,"Martechguru - Email Template Create",138,6,3,0,1222
+2881,"Learning Saturday Summary",138,15,8,0,1223
+2882,"Portfolio Links added on Portal",138,6,1,0,1224
+2883,"Homepage Development",47,1,4,0,1225
+2884,"Shop Page",47,1,4,0,1226
+2885,"Product Page",47,1,4,0,1227
+2886,"Front-end Project Management",8,1,2,0,1228
+2887,"WordPress Project Management",8,1,2,0,1229
+2888,"UI/UX Project Management",8,1,2,0,1230
+2889,"Full-Stack Project Management",8,1,1,0,1231
+2890,"Waylo Project Management",8,1,1,0,1232
+2891,"Current Website pagespeed Track.",106,6,3,0,1233
+2892,"Header Promo Banner",106,6,2,0,1234
+2893,"Site Details",106,6,9,1,1235
+2894,"Home Page Development",106,6,2,0,1236
+2895,"Testimonial Page Development",106,6,2,0,1237
+2896,"About Page Development",106,6,2,0,1238
+2897,"FAQ Page Development",106,6,2,0,1239
+2898,"Client Feedback fx2 funding also Clickup tasks",106,6,3,0,1240
+2899,"FX2 Future Home Page Development",106,6,1,0,1241
+2900,"How it works",106,6,2,0,1242
+2901,"Fx2 Future About Page",106,6,1,0,1243
+2902,"Fx2 Future FAQs Page",106,6,2,0,1244
+2903,"Fx2 Futures Contact Page",106,6,3,0,1245
+2904,"FX2 Future QA Feedback",106,6,1,0,1246
+2905,"Fx2 Funding Contact Us page Development",106,6,2,0,1247
+2906,"Bogo offer Supper Banner Development",106,6,2,0,1248
+2907,"UTC Landing Page",106,6,5,0,1249
+2908,"New Super Banner",106,6,2,0,1250
+2909,"Boosted Bets About Page Development",106,6,2,0,1251
+2910,"Funding Program HTML",106,6,1,0,1252
+2911,"Boosted Bets Elementor About Development",106,6,2,0,1253
+2912,"Boosted Bets Elementor Contact Development",106,6,2,0,1254
+2913,"Boosted Bets FAQ Page Development",106,6,2,0,1255
+2914,"Boosted Bets Home Page Development",106,6,2,0,1256
+2915,"FX2 Futures Content Update",106,6,4,0,1257
+2916,"New super banner for april",106,6,2,0,1258
+2917,"fx2 futures coming soon",106,6,2,0,1259
+2918,"New Super Banner Changes",106,6,2,0,1260
+2919,"Boosted Bets Woocommerce Pages",106,6,3,0,1261
+2920,"Fx2 Future woocommerce Pages",106,6,4,0,1262
+2921,"Utc Funding Program section and Ohter Changes",106,6,3,0,1263
+2922,"FX2 Futures(Product page, cart page, Checkout Page, Order Received Page, Empty Cart Page)",106,6,3,0,1264
+2923,"Boosted Bets
+1.Cart Page: https://boostedbetsdev.wpenginepowered.com/cart/
+2.Checkout Page: https://boostedbetsdev.wpenginepowered.com/checkout/
+3.Order Received Page
+4.Empty Cart Page",106,6,3,0,1265
+2924,"Client Feedback doc for Boosted Bets.",106,6,3,0,1266
+2925,"May Promo Banner Design",106,6,1,0,1267
+2926,"Evaluation Program QA FX2 Futures.",106,6,3,0,1268
+2927,"Boosted Bets Live site fixes",106,6,2,0,1269
+2928,"New Promo banner Design",106,6,2,0,1270
+2929,"FX2 Funding Checkout page design",106,6,1,0,1271
+2930,"New Promo Banner(June)",106,6,2,0,1272
+2931,"Replace woocommerce in the evaluation module",106,6,2,0,1273
+2932,"Website server migration from cloudways to siteground",106,6,1,0,1274
+2933,"Evaluation module plugin development",106,6,2,0,1275
+2934,"New Doc Changes For Staging Site",106,6,1,0,1276
+2935,"Boosted Bets PDF",106,6,1,0,1277
+2936,"New Changes As per Doc file(FAQs and Affiliate)",106,6,2,0,1278
+2937,"QA Live Site",106,6,3,0,1279
+2938,"FX2 site migration",106,6,2,0,1280
+2939,"Changes - 6 Jan 2026",106,6,2,0,1281
+2940,"Checkout Flow Changes",106,6,1,0,1282
+2941,"Home page Development",55,5,2,0,1283
+2942,"Contact us page",55,5,2,0,1284
+2943,"Coming soon page",55,5,2,0,1285
+2944,"Investors page",55,5,1,0,1286
+2945,"Press Release - Blog Details Template",55,5,1,0,1287
+2946,"Dealers Page",55,5,1,0,1288
+2947,"Instagram Shopify APP",7,10,4,1,1289
+2948,"Coming Soon/ Maintance Mode Shopify App",7,10,3,2,1290
+2949,"AI to Connect Webflow",7,4,2,0,1291
+2950,"Claude AI to Connect Webflow",7,4,2,0,1292
+2951,"Learn UI/UX Design Principles and Practices.",7,4,2,4,1293
+2952,"Tailwind Practice",7,5,1,1,1294
+2953,"AI to Connect Shopify",7,13,1,2,1295
+2954,"Create Custom CPT and Assign in Elementor",7,4,2,0,1296
+2955,"Learning React JS",7,4,2,1,1297
+2956,"Learning Shopify App Development",7,4,1,0,1298
+2957,"Webflow GSAP Animation",7,4,4,0,1299
+2958,"Rename WordPress Plugin",7,4,2,0,1300
+2959,"Rank Website - Navigation Update",28,5,3,3,1301
+2960,"Rank Website - Contact Page Revisions",28,5,3,0,1302
+2961,"Rank Website: - Contact Form Notification Email",28,5,2,1,1303
+2962,"Rank - Lead Gen Page Revisions",28,5,2,1,1304
+2963,"Popup and work on Design Changes",50,6,1,0,1305
+2964,"Desktop Updates",54,5,3,0,1306
+2965,"Mobile updates",54,5,3,0,1307
+2966,"Backend Help to Frontend",54,5,3,0,1308
+2967,"Client feedbacks documents",54,5,2,0,1309
+2968,"Feedbacks - 7 Jan 2026",54,5,1,0,1310
+2969,"SEARCH bar function doesn’t work",54,5,2,0,1311
+2970,"Feedback 15 Jan 2026",54,5,2,3,1312
+2971,"404 Page",54,5,1,0,1313
+2972,"Header Menu Color Issue",54,5,1,0,1314
+2973,"Audit Fixes",54,5,1,0,1315
+2974,"Password Protected Itegration",54,5,2,0,1316
+2975,"Client Feedback - April",54,5,2,0,1317
+2976,"Update Elementor for security reasons",54,5,1,0,1318
+2977,"Resolve login issue for user Zeina",54,5,1,0,1319
+2978,"Disable password protection from live site",54,5,1,0,1320
+2979,"Video Page Design",22,5,2,0,1321
+2980,"Test Kit Page Development",22,5,1,0,1322
+2981,"Logo Design",3,2,3,0,1323
+2982,"Metafield Bulk Editor",3,4,2,4,1324
+2983,"Original Scope",3,14,4,0,1325
+2984,"Google Sheet Upload",3,2,2,0,1326
+2985,"Set Up Local & Staging Environment",48,6,12,0,1327
+2986,"PROB-295 - An Evaluator with OrgAdmin role doesn't see the Organization options",48,6,6,0,1328
+2987,"PROB-714 - Assign Activity Created by an Org Lists All Groups in Unrelated Orgs",48,6,9,0,1329
+2988,"PROB-615 - Incorrect Behavior for Bulleted Lists and Font Size in Evidence Text Box",48,6,9,1,1330
+2989,"PROB-594 When moving a organization to another parent, it doesn't correctly update all permissions causing Seals and activities to no longer be visible.",48,6,7,0,1331
+2990,"PROB-755 Typo and grammar issue",48,6,5,0,1332
+2991,"PROB-612 Evaluations Form Displaying Red Before and After Completing Form Before Submitting",48,6,5,0,1333
+2992,"PROB-22 Activity shows created by undefined",48,6,5,0,1334
+2993,"Task Management",48,6,4,0,1335
+2994,"PROB-27 [M1-636] On the UI add functionality to hard and soft delete a seal for an Org Admin/System Admin",48,6,1,0,1336
+2995,"Local Environment Setup",48,6,1,0,1337
+2996,"PROB-585 Possible ACL Bug with Educator/Student",48,6,8,0,1338
+2997,"PROB-310 School District Pop up does not have correct message",48,6,4,0,1339
+2998,"PROB-307 Partner Pop Up Language for business to school is",48,6,4,0,1340
+2999,"PROB-620 Add/Improve Alt Text For Screen Reading",48,6,5,0,1341
+3000,"PROB-434 Show location next to school to avoid issue with identical school names",48,6,5,0,1342
+3001,"PROB-86 Student wants to add/edit graduation year to help activities find me.",48,6,5,0,1343
+3002,"PROB-774 Share assignment leads to invalid join code",48,6,5,0,1344
+3003,"PROB -761 Add Password Reset option for OrgAdmins",48,6,5,0,1345
+3004,"PROB-35 As an admin, I want to have an export button visible on datagrids, so I can export the data I see to a csv.",48,6,5,0,1346
+3005,"Created by Mistake",48,1,1,0,1347
+3006,"Website Updates",15,6,4,0,1348
+3007,"Wordpress- Ajay",127,6,2,2,1349
+3008,"WordPress Plugin [Social Auto Poster ]",127,6,3,2,1350
+3009,"Midani Website Enhancement",127,6,3,1,1351
+3010,"Webshop for our Coffee Bar",127,6,3,2,1352
+3011,"Looking for a WordPress developer",127,6,2,1,1353
+3012,"Deep- Shopify Project",127,6,4,1,1354
+3013,"Elementor/WordPress Website Template",127,6,4,1,1355
+3014,"Nodejs/React Js - UI/UX Improvement - Estimate",127,6,3,1,1356
+3015,"Shopify Integration Specialist",127,6,4,2,1357
+3016,"Deep- Wordpress Test task",127,6,4,0,1358
+3017,"Ajay- Custom plugin",127,6,4,1,1359
+3018,"Ajay- Custom dev",127,6,4,2,1360
+3019,"Deep- Shopify",127,6,4,2,1361
+3020,"Ajay- Wordpress- Beaver Builder",127,6,6,6,1362
+3021,"Ajay- Wordpress",127,11,4,4,1363
+3022,"Ajay- Wordpress wocommerce call",127,6,4,7,1364
+3023,"WordPress Developer",127,6,3,2,1365
+3024,"Ajay- Landing page wordpress",127,6,1,2,1366
+3025,"Ajay- Unbounce- Dan.M",127,6,4,3,1367
+3026,"Ajay- Skymark- John- Wordpress",127,6,3,2,1368
+3027,"Prayag- Shopify Clone",127,6,3,2,1369
+3028,"Project DTP Assignment || Prayag",127,6,3,3,1370
+3029,"Fashion Website || Prayag",127,6,4,2,1371
+3030,"Development of social media Platform || Prayag",127,6,3,4,1372
+3031,"Ajay- Wordpress/Divi to elementor",127,6,4,2,1373
+3032,"Ajay- Wordpress",127,6,4,2,1374
+3033,"WordPress Site",127,6,1,3,1375
+3034,"Lunar App",127,6,2,2,1376
+3035,"WordPress Site || Prayag",127,6,3,0,1377
+3036,"Website Improvement- Ajay",127,6,3,2,1378
+3037,"Summary of the project for developing a pregnancy app for BabyBuik || Prayag",127,6,3,1,1379
+3038,"Joomla Migration",127,6,4,0,1380
+3039,"Deep - Squarspace",127,6,1,3,1381
+3040,"Ajay- Wordpress",127,6,1,2,1382
+3041,"Ajay- Wordpress",127,6,1,3,1383
+3042,"Design corrections and suggestions",127,6,2,0,1384
+3043,"Discovery Calls/Other Estimates",127,6,5,0,1385
+3044,"WooCommerce Project",127,6,2,1,1386
+3045,"Wix Website",127,6,2,2,1387
+3046,"discussion with client- Ajay",127,6,3,0,1388
+3047,WordPress,127,6,4,2,1389
+3048,"Client Summary Belgium Beer Week",127,6,2,3,1390
+3049,"Site Redesign || Street Haven",127,6,2,2,1391
+3050,"kinta.nl || WordPress",127,6,3,1,1392
+3051,"Moodle API Integration",127,6,2,3,1393
+3052,Squarspace-Ajay,127,6,1,3,1394
+3053,"Upgrade and optimization of a Pimcore environment (for a gym application)",127,6,2,0,1395
+3054,"Volbuild.com - Website Redesign",127,6,5,1,1396
+3055,"SEO Questionnaire",127,6,3,1,1397
+3056,"Tailor-made plugin",127,6,3,0,1398
+3057,"Wordpress Website Developer possible App",127,6,4,1,1399
+3058,"Ajay- WP-Elementor",127,6,2,3,1400
+3059,"Project Summary – WordPress Plugin for Football Data (VGN Network)",127,6,2,4,1401
+3060,"MemberPress Expert Needed",127,6,2,2,1402
+3061,"Hostinger Page Update",127,6,1,0,1403
+3062,"Revodyssey - one page website design",127,6,2,0,1404
+3063,"Shopify Custom Product Configurator Brief - Width & Height Custom Pricing",127,6,2,1,1405
+3064,"Project Summary – Promusong (AI & Music Demo)",127,6,1,1,1406
+3065,"Ajay- Wordpres",127,6,3,2,1407
+3066,"Fractional Software Development",127,6,2,0,1408
+3067,Design,127,6,1,0,1409
+3068,"WordPress and Substack - Brook Requirement",127,6,1,0,1410
+3069,"Wordpress- Divyanshu",127,6,3,2,1411
+3070,"Prayag- wordpress",127,6,1,0,1412
+3071,"Webflow - Ajay",127,6,3,1,1413
+3072,"SHOPIFY PLUGINS & INTEGRATION INTERNATIONAL DESIGN",127,6,2,0,1414
+3073,"munera - Design Work",127,6,1,0,1415
+3074,"Catalyst Collective - Ajay",127,6,3,1,1416
+3075,"Web Designer - Madhav",127,6,2,0,1417
+3076,"Project Brief – Vamos Padel Club Landing Page",127,6,1,0,1418
+3077,"Trending Entertainment",127,6,5,1,1419
+3078,"Project Requirement – Website Redesign (Qaori.ai) _ Divyanshu",127,6,2,1,1420
+3079,"Shopify Migration and Optimization for Woocommerce Site _ Divyanshu",127,6,3,2,1421
+3080,"Migrate content from PROD web to the new HivePress + Vacation Rental Theme based. ___Madhav",127,6,2,0,1422
+3081,Wordpress-Ajay,127,6,3,5,1423
+3082,"Build N8N Workflow",127,6,1,0,1424
+3083,Ajay-Wordpress,127,6,2,2,1425
+3084,Logo,127,6,1,0,1426
+3085,"S.V. Unity (first MBO student association in the Netherlands)",127,6,1,0,1427
+3086,Python,127,6,1,0,1428
+3087,"The site is already about 90% complete, and he would like a specialist to finish the remaining 10%.
+
+The work mainly involves fixing layout issues on the homepage and subpages, as well as optimizing the mobile version. He also wants us to perform a short review of the website to identify anything else that needs to be aligned or adjusted.
+
+Gert would like to start with 15 hours as an initial estimate, and from there we can scale up if needed.
+
+I have created a clear summary of his project description and our conversation, and I’ve also included the access credentials in that summary.
+
+Could you prepare a proposal and/or share any additional questions for this project??",127,6,1,0,1429
+3088,"AI-Optimized Website Development for Schörling Seminare (Divyanshu)",127,6,4,1,1430
+3089,"looking for an 8th Wall Studio specialist",127,6,1,0,1431
+3090,"WordPress Landing Page Designer (CRO-Focused) to Optimize Services Page _ Divyanshu",127,6,2,0,1432
+3091,"Divyanshu- Shopify",127,6,3,2,1433
+3092,"coladigital.ca redesign",127,6,2,0,1434
+3093,"Webflow - Prayag",127,6,1,0,1435
+3094,"Need Estimate in Webflow",127,6,1,0,1436
+3095,"Steinfels Redesign",127,6,1,0,1437
+3096,"Pokerlab- Ajay",127,6,3,2,1438
+3097,"Website Redesign for Law Firm Site (WordPress) - SEO & AI Overview Optimization Focus",127,6,3,0,1439
+3098,"WooCommerce payment gateway plugin upgrade",127,6,1,1,1440
+3099,"Webflow Designer/Developer - Brand & UX Website Redesign for WILD Success _ Madhav",127,6,3,0,1441
+3100,"Phindu Brokerage",127,6,3,0,1442
+3101,"Generate press - WordPress",127,6,1,0,1443
+3102,"Wordpress- Madhav",127,6,3,3,1444
+3103,"Wix- Divyanshu",127,6,1,4,1445
+3104,"ILS - Website (22 November is strict deadline)",127,6,1,1,1446
+3105,"Nirav- Web development",127,6,1,2,1447
+3106,"Theme Developer and Merchandiser",127,6,1,2,1448
+3107,"Film Score Monthly",127,6,1,2,1449
+3108,"Webflow- Divyanshu",127,6,1,3,1450
+3109,"Summary of the Assignment – Happy Soul Travel B.V.",127,6,1,1,1451
+3110,"Webflow - Estimate",127,6,4,2,1452
+3111,"Danseurs et annonceurs - Prayag",127,6,3,0,1453
+3112,"Project Summary – Website Optimization & Development for Witgoed Brigade - Prayag",127,6,1,0,1454
+3113,"Project Summary Streaming Platform for Children's Stories (Uitgeverij De Pareltuin) - Prayag",127,6,1,0,1455
+3114,"Project Summary — API Data Migration from HelpSpace to Fluent Plugins - Prayag",127,6,4,0,1456
+3115,"Website Audit - Adarsh",127,6,1,0,1457
+3116,"McKenzie Scott Redesign - Jay",127,6,1,2,1458
+3117,"Sumit- webflow",127,6,5,1,1459
+3118,"Sunmi Cloud Printing - Prayag",127,6,4,0,1460
+3119,"Word Template Reports - Prayag",127,6,3,0,1461
+3120,"Detailed Quotation for Website Setup, Migration & Maintenance- Divyanshu",127,6,1,0,1462
+3121,"Webflow- Divyanshu",127,6,4,1,1463
+3122,"Ajay- react and Devops",127,6,1,0,1464
+3123,Ajay-React/devops,127,6,4,6,1465
+3124,"Monday.com Specialist - Prayag",127,2,1,3,1466
+3125,"Job Matching Platform - Prayag",127,2,2,3,1467
+3126,"Full-Stack Developer for Innovative Education SaaS (React, NestJS, GraphQL) Potential long term",127,2,4,6,1468
+3127,"Landing Page Rebuild (Next.js 15+ / React 19 / Three.js Hero)",127,2,4,2,1469
+3128,"Add Rows to Membership Plans",127,2,1,1,1470
+3129,"Shopify Store Optimization Expert Needed - Divyanshu",127,6,1,1,1471
+3130,"Serenaloves Shopify Personalized Upgrade Thank you Page and Order Status Page",127,16,2,1,1472
+3131,"Add New Hero Section on Home Page",127,16,1,3,1473
+3132,"TriColor Site Estimate Phasewise (WordPress) - Ajay",127,2,3,3,1474
+3133,"ConnectHEOR Site Estimate (WordPress) - Ajay",127,2,6,15,1475
+3134,"SPRNG - Digital Scan Compass - Prayag",127,8,5,3,1476
+3135,"Roots and Wings Legal - Webflow",127,6,2,0,1477
+3136,"Medtfine - Shopify",127,8,2,1,1478
+3137,"Belle Morph Estimate (Wordpress) - Ajay",127,4,3,12,1479
+3138,"Forage Hill Farm site estimate (Wordpress) - Ajay",127,2,4,5,1480
+3139,"VBA Programmer - Dennis - Prayag",127,6,2,0,1481
+3140,"Serenaloves WordPress Task",127,4,1,2,1482
+3141,TheSuperDentist,127,6,4,4,1483
+3142,"New Project - Createape",127,8,4,7,1484
+3143,"TheSuperDentist 3 Tabs Tasks",127,6,1,0,1485
+3144,"Bob-WordPress installation (with a custom theme and framework) _ Prayag",127,4,3,4,1486
+3145,"BSpoke Studios Requirement",127,2,4,1,1487
+3146,"Website/CRM development -React- Ajay",127,2,4,2,1488
+3147,"mrclevelandsports  site estimate - Wordpress - Ajay",127,2,3,3,1489
+3148,"justvalued.com site audit report(Wordpres) - Divyanshu",127,2,3,4,1490
+3149,"Online games - MVP platform - Prayag",127,2,2,2,1491
+3150,"Domenico Mastromarino- SAAS Full-Stack Developer/s (Next.js 16+ / PostgreSQL & Vercel) _  Divyanshu",127,2,4,2,1492
+3151,"jsberrylaw.com site SEO optimization - Ajay",127,2,4,1,1493
+3152,"Server side tracking - Prayag - Dennis",127,6,1,0,1494
+3153,"Evan Malach - Build Professional Rental Listing Website from Provided Templates (Webflow/Wordpress)  - Divyanshu",127,6,5,9,1495
+3154,"Shantilife site audit - Adarsh",127,6,2,0,1496
+3155,"AviaCost Site review and for call UI/UX Designer- Divyanshu",127,6,3,2,1497
+3156,"EmeryFung.com Redesign and development - Adarsh",127,6,1,0,1498
+3157,"Technical partner for full-cycle development and long-term collaboration_ Divyanshu",127,6,5,4,1499
+3158,"Kay Warren Website New Task",127,2,3,4,1500
+3159,"Nextab _ Logo Design _ Prayag",127,6,4,3,1501
+3160,"LifeSpan 2 Tasks Estimate",127,2,2,1,1502
+3161,"Design / UI Implementation - SerenaLoves WP Site",127,2,4,1,1503
+3162,"Shane St Reynolds - WordPress Website Restoration & Rebranding - Divyanshu",127,6,3,1,1504
+3163,"SerenaLoves WordPress - Home Page Changes Only",127,2,4,0,1505
+3164,"UPWORK: Scott E - Senior Full-Stack Engineer ||  Next.js/React frontend and Golang/AWS serverless backend || Prayag",127,6,4,1,1506
+3165,"Upwork webflow call - Ajay",127,6,4,1,1507
+3166,"Tino Makiriyado -  Website redesign  - Divyanshu",127,6,4,2,1508
+3167,"Max Chan(Upwork) - React/Tailwind Expert: Map JSON Data to 3 Fixed Document Templates (Lovable.dev) - Divyanshu",127,2,3,1,1509
+3168,"Wix to WordPress - UURB - ColaDigital",127,6,2,0,1510
+3169,"Upwork - Matt Maroone - Node.js Developer for Spa Tech Platform",127,3,1,4,1511
+3170,"(Upwork) Ellen Holmsten  - Web Developer for Creative Agency - Divyanshu",127,6,3,1,1512
+3171,"(Upwork) Dan - Senior WordPress + SEO Specialist (Luxury Real Estate – Marbella) -  Divyanshu",127,6,6,3,1513
+3172,"Altenar - David",127,6,1,0,1514
+3173,"MOLEBOHENG MATLI - Wordpress - Divyanshu",127,6,4,1,1515
+3174,"Print Pelican - Tim Glennon",127,6,1,0,1516
+3175,"Jim Doree - Wordpress estimate",127,6,6,1,1517
+3176,"Upwork- Henri Boileau  -  Shopify Liquid Code Customization for Advertorials and Listicles - Divyanshu",127,6,3,0,1518
+3177,"(Upwork) Mike Kraft - Team Features Testing for Coder1 IDE - Divyanshu",127,6,2,2,1519
+3178,"(Upwork)NADJA VERENA MARCIN - Web Accessibility Specialist Needed (WCAG Compliance + Legal Remediation) - Divyanshu",127,7,3,2,1520
+3179,"(Upwork) John Pierce  -  Senior Full-Stack Engineer (AI-Assisted Development) – Enterprise Scheduling & Payments Platform - Divyanshu",127,3,3,1,1521
+3180,"(Upwork ) - Ethan Halpert - Webflow Developer Needed for Figma to Website Conversion - Divyanshu",127,6,3,0,1522
+3181,"Mike Drennan site estimate - wordpress",127,6,5,2,1523
+3182,"Upwork - Desiree Whitehead - Wordpress/Webflow Developer - Divyanshu",127,6,1,0,1524
+3183,"Gregory  SEO Review & Recommendations - Prayag",127,6,2,1,1525
+3184,"Upwork - Giovanni - Webflow Designer & Developer for Website Redesign - Divyanshu",127,6,2,0,1526
+3185,"Jochebed Zakrzewski - Shopify- Ajay",127,6,5,1,1527
+3186,"Time Registration App (Lovable + RSZ API)",127,2,3,3,1528
+3187,"MIgration from WooCoomerce to Shopify",127,6,3,0,1529
+3188,"Upwork -  James Kelly - Framer Website Development: Complete Secondary Pages - Divyanshu",127,2,3,1,1530
+3189,"Upwork  - Valerie Van Balen - Project Manager Needed for Website Development Coordination - Divyanshu",127,2,2,1,1531
+3190,"CCC Estimate",127,6,2,0,1532
+3191,"AtelierBarn.com Site Estimate (WordPress) - Ajay",127,6,3,0,1533
+3192,"Shopmedt + CarelifeUSA",127,1,2,0,1534
+3193,"suboo.com.au -Shopify site audit - Sue Di Chio - Ajay",127,2,5,1,1535
+3194,"CRM - Synergy",127,6,2,0,1536
+3195,"The News Dashboard",127,6,2,0,1537
+3196,"Dough Darling Web - Adarsh",127,7,2,0,1538
+3197,"Upwork( Stanimir) - WordPress Landing Page - Pixel-Perfect from Figma (3-5 days) - Divyanshu",127,6,4,2,1539
+3198,"WordPress / Elementor Developer + Zoho + Booking Systems (Lodgify & Amelia)",127,4,2,2,1540
+3199,"HummingbyrdInc - Adarsh",127,1,3,0,1541
+3200,"Paul A. Collins - Kakshak",127,8,4,0,1542
+3201,"Power BI Dashboard & API Integration - Adarsh",127,2,2,0,1543
+3202,"Unifarma Customer Portal (Upgrade & Maintenance) - Adarsh",127,1,2,0,1544
+3203,"Behyve - Wordpress - Sam",127,1,2,0,1545
+3204,"Upwork - Webflow site",127,1,1,2,1546
+3205,"Young Scholars Academy - Adarsh",127,8,1,0,1547
+3206,"Edu App - Adarsh",127,8,2,0,1548
+3207,"Audit Report – The Scared Vows",127,2,2,1,1549
+3208,"DLwellness - WordPress Upwork",127,8,4,2,1550
+3209,"WooCommerce CRO + Keap audit — review of qmagnets.com/products",127,8,3,6,1551
+3210,"Seeking Wix Website Designer Who Uses Claude AI for Luxury Vacation Rental Website - Adarsh",127,8,1,3,1552
+3211,"Estimate for Shopify Website: RugRoyal",127,8,2,1,1553
+3212,"Wordpress elemantor website redesign - anytimerooter.com",127,8,2,1,1554
+3213,"Project Eagle - Adarsh",127,1,2,0,1555
+3214,"Healthcare - Zerocode",127,1,1,1,1556
+3215,"Pegsalliance - Adarsh",127,1,1,0,1557
+3216,"Howl Client: Amedisys JavaScript Fix",127,8,3,3,1558
+3217,"Webflow Developer needed — Professional cycling team website with CMS, Memberstack & Stripe",127,1,3,2,1559
+3218,"Web Developer Needed for Malta Property Rental Marketplace Platform",127,8,1,1,1560
+3219,"Website redesign",127,8,3,3,1561
+3220,"Agriterra Training Materials",127,1,3,2,1562
+3221,"New Webflow website - design, development, and support",127,4,3,0,1563
+3222,"Healthcare-focused web platform - MVP Development - Concatstring.com Inbound",127,1,2,1,1564
+3223,Homepage,118,6,4,3,1565
+3224,"Breathe - Homepage",118,6,4,1,1566
+3225,"About Us Page",118,6,3,1,1567
+3226,"BREATHE | Retreats",118,6,3,1,1568
+3227,"BREATHE | Calls",118,6,3,2,1569
+3228,"Help Page",118,6,3,3,1570
+3229,"Breathe | Product Page",118,6,3,1,1571
+3230,"Resources | Support-Groups",118,6,3,1,1572
+3231,"Disorder Page",118,6,3,0,1573
+3232,"Recommended Books Page",118,6,3,1,1574
+3233,"Ministries | Grief Page",118,6,3,1,1575
+3234,"Ministries | Suicide Page",118,6,3,1,1576
+3235,"Recommended Book Detail Page",118,6,3,1,1577
+3236,"Ministries | Mental-health Page",118,6,3,1,1578
+3237,"Ministries | Hope-for-mental-health-community",118,6,3,2,1579
+3238,"Website Training and Organizations UI",118,6,2,0,1580
+3239,"Resources | Recursos-en-espanol",118,6,3,2,1581
+3240,"Resources  |  Videos",118,6,3,1,1582
+3241,"Resources  |  Free Downloads",118,6,3,1,1583
+3242,"Contact Us Page",118,6,3,1,1584
+3243,"Privacy Policy Page",118,6,3,1,1585
+3244,"Terms of Service Page",118,6,3,1,1586
+3245,"Resources | Downloads",118,6,2,1,1587
+3246,"Disorder Templates",118,6,3,0,1588
+3247,"Content Entry on Website",118,6,2,0,1589
+3248,"Disorder Page - Kay Warren Live Website Redirection",118,6,2,0,1590
+3249,"Final Verification whole site",118,6,2,0,1591
+3250,"Audio Page",118,6,3,1,1592
+3251,"Webflow New Changes",118,6,2,0,1593
+3252,"New Asana Task Changes",118,6,3,1,1594
+3253,"Header with responsive and side menu",41,5,1,0,1595
+3254,Homepage,41,5,1,0,1596
+3255,"About Us",41,5,1,0,1597
+3256,"Service Page",41,5,1,0,1598
+3257,"Blog Listing, Blog Detail , 404 , Privacy, Terms & Condition Pages",41,5,1,0,1599
+3258,"UI Design",41,5,1,0,1600
+3259,"Unit Testing",41,5,2,0,1601
+3260,"Project Setup",129,6,10,2,1602
+3261,"Landing Website",129,6,10,0,1603
+3262,"Authentication System",129,6,10,0,1604
+3263,"Business Setup & Configuration",129,6,10,0,1605
+3264,"Queue Management",129,6,10,0,1606
+3265,"QR Management",129,6,10,0,1607
+3266,"Admin Dashboard",129,6,10,0,1608
+3267,"Notification System",129,6,10,0,1609
+3268,"Testing & QA",129,1,12,0,1610
+3269,Deployment,129,1,10,0,1611
+3270,"Home Page Development",32,5,3,1,1612
+3271,"PDP Development",32,5,2,0,1613
+3272,"Website Development",32,5,1,0,1614
+3273,"Investigate & Optimize hooks-useHasOrdersFromMultipleShops Script Loading on Shopify Store",32,5,2,4,1615
+3274,"Audit duplicate GA/GTM scripts before removing gtag code",32,2,2,5,1616
+3275,"Optimize Shopify Server Response Time and JavaScript Execution Time",32,2,2,4,1617
+3276,"Categories Display on site",32,2,2,1,1618
+3277,"Landing Page",85,5,2,0,1619
+3278,"apimo API integration",85,5,3,0,1620
+3279,"QA the whole site",85,5,2,0,1621
+3280,"Urgent Feedbacks - Search and API, Cookies",85,5,5,0,1622
+3281,"Client feedbacks",85,5,2,0,1623
+3282,"Contact Us API Integration",85,5,4,0,1624
+3283,"Search Functionality Changes",85,5,4,0,1625
+3284,"UI Changes on Going",85,5,1,0,1626
+3285,"Phase 1 Updates",85,5,5,0,1627
+3286,"Unit Testing on New Website",128,1,1,0,1628
+3287,"Blogs and Website Updates",128,1,1,0,1629
+3288,"CS Own Hosting site Changes",128,1,2,0,1630
+3289,"Website Re-Design",122,5,5,0,1631
+3290,"IAK Changes",122,5,3,0,1632
+3291,"custom pricing by customer type",122,5,1,2,1633
+3292,"Update products import sheet",122,5,1,0,1634
+3293,"Update Product category Banner Images",122,5,1,0,1635
+3294,"Change quantity UI in the pre-order modal",122,5,1,0,1636
+3295,"Filter the variations for pre-order items",122,5,1,0,1637
+3296,"Pre-order items weekly report",122,5,2,0,1638
+3297,"Troubleshoot the variable product pricing on the archive pages",122,5,1,0,1639
+3298,"Critical Error on production",122,5,1,2,1640
+3299,"Web Maintenance",122,5,3,0,1641
+3300,"POS Sync Issues - LightSpeed",122,5,2,0,1642
+3301,"Custom fees implementation",122,5,1,0,1643
+3302,"Backend Development",122,4,3,0,1644
+3303,"Home page Development",122,3,1,0,1645
+3304,"Shop Page Development",122,3,1,0,1646
+3305,"Product Template Development",122,3,1,0,1647
+3306,"Unit Testing",122,3,5,0,1648
+3307,"Shop page",122,1,1,0,1649
+3308,"Shop Page and detail page",122,3,4,0,1650
+3309,"UI/UX Fixing on Whole Website",122,2,3,0,1651
+3310,"Frontend Development",122,2,4,0,1652
+3311,"Homepage Dark Mode and Shop Page Changes",122,2,1,0,1653
+3312,"Speed Optimization",122,4,3,0,1654
+3313,"I am Kratom - PDF files Changes",122,5,3,0,1655
+3314,"UI Improvements",122,2,2,0,1656
+3315,"IAK Staging - Redesign Website",122,4,2,0,1657
+3316,"SEO - June 2026",122,1,1,0,1658
+3317,"Landing Page Develop",95,5,2,1,1659
+3318,"Opening Page Develop",95,5,5,0,1660
+3319,"Landing Page",95,5,3,0,1661
+3320,"Theme migration to New accont",95,5,1,0,1662
+3321,"Phase 2 - Development",95,5,1,0,1663
+3322,"Git Repo Setup",20,1,1,0,1664
+3323,"Application Development",20,1,6,0,1665

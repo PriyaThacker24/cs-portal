@@ -1,0 +1,141 @@
+project_id,zoho_project_id,name,clientid,manager_id,status,csv_row
+1,CS-280,"PEGs Alliance - David",114,30,6,2
+2,CS-279,"Rug Royal - Hady",114,30,6,3
+3,CS-278,"CS MetaSync - Shopify Custom App",114,29,9,4
+4,CS-277,"Full Stack Research & Development",114,17,6,5
+5,CS-276,"WP Research & Development",114,25,6,6
+6,CS-275,"AI Skill-Based Agent - Parth",114,8,6,7
+7,CS-274,"Front End Team",114,30,9,8
+8,CS-273,"Project Management",114,8,2,9
+9,CS-272,"Flealeaf - VNS",114,30,2,10
+10,CS-271,"Collins Engineering - Paul Collins",114,30,6,11
+11,CS-270,"Simea - SWRT - Mortiz",114,30,9,12
+12,CS-269,"The Buddy System",114,30,2,13
+13,CS-268,"Irina Dunn -Irina",114,30,3,14
+14,CS-267,"Young Scholar Academy - Sam Young",114,30,8,15
+15,CS-266,"The Modern Ashram",114,30,4,16
+16,CS-265,"Carelife USA - Grace",114,30,9,17
+17,CS-264,"Lomguard - Anton - Upwork",114,30,4,18
+18,CS-263,"Darling Dough - Shopify - HuckleberryOps",114,30,9,19
+19,CS-262,"Rent Easily - Evan Malach",114,30,8,20
+20,CS-261,"WayloAI - Shopify Application - VNS",114,30,6,21
+21,CS-260,"Waylo - WooCommerce Plugin - VNS",114,30,6,22
+22,CS-259,"Retina Labs - Richard",114,30,4,23
+23,CS-258,"Waylo AI External",114,28,6,24
+24,CS-257,"Form Bridge AI - CS",114,30,2,25
+25,CS-256,"Atelier Barn - 8 Box Wood Lane",114,30,7,26
+26,CS-255,"China Over Prints",114,17,6,27
+27,CS-254,"Howl Marketing - Howl Marketing",114,30,9,28
+28,CS-253,"Rank Media Webflow - Rank Media",114,30,4,29
+29,CS-252,"I Am Kratom - VNS",114,30,4,30
+30,CS-251,"Bio Metric Login - Wordpress",114,30,2,31
+31,CS-250,"Startup Simple Marketing - Howl Marketing",114,30,4,32
+32,CS-249,"Metric Marine - Jochebed",114,30,2,33
+33,CS-248,"OBL - Tim",114,30,4,34
+34,CS-247,"Zero Code Studio",114,30,6,35
+35,CS-246,Aerosend,114,30,3,36
+36,CS-244,"Illumination Strategy Group - Tim",114,30,9,37
+37,CS-243,"Altenar - David",114,30,4,38
+38,CS-242,"MMI Consulting - NueWay",114,30,2,39
+39,CS-241,"Selma Lagerlöf Schule - Oliver",114,30,4,40
+40,CS-240,"Santilife Shop",114,30,4,41
+41,CS-239,"Ancia LLC",114,30,4,42
+42,CS-238,"Asignet - CreateApe",114,29,8,43
+43,CS-237,"Yoder Smokers - Rank Media",114,30,4,44
+44,CS-236,"AI-Zoho Estimate",114,1,6,45
+45,CS-235,"AutoSaver - Rank Media Agency",114,30,4,46
+46,CS-234,"Northern Light Technologies - Rank Media",114,30,4,47
+47,CS-233,"Onword - Shopify",114,30,4,48
+48,CS-232,"Start Sole",114,17,4,49
+49,CS-231,"OutsetOps - HuckleberryOps",114,30,4,50
+50,CS-230,"KaiaFit - Brogrammers",114,25,4,51
+51,CS-229,"Coronal - Emily",114,30,4,52
+52,CS-228,"Spa Medica - Rank Media",114,30,4,53
+53,CS-227,"Animal Lifeline Corp",114,30,4,54
+54,CS-226,"Culture Cannabis Canada - Vee",114,30,4,55
+55,CS-225,"The Drone Company - Agency Atlas",114,30,4,56
+56,CS-224,"Trucks Supply - Jisvy (Prayag)",114,30,4,57
+57,CS-223,"De Jong Smile - Chris (Prayag)",114,30,4,58
+58,CS-222,"Middelbrink makelaardij - Dennis (Prayag)",114,30,4,59
+59,CS-221,"Impower - Nueway Studios",114,30,4,60
+60,CS-220,"Coach O",114,25,4,61
+61,CS-219,"Select Cannabis - Vee",114,30,4,62
+62,CS-218,"Button Amsterdam - Jens",114,30,4,63
+63,CS-217,"CS Website Updates and Refresh",114,30,2,64
+64,CS-216,"Scott Allen Books",114,30,4,65
+65,CS-215,"24 x 7 Cash Picks",114,30,4,66
+66,CS-214,"Nueway Website - Nueway",114,30,2,67
+67,CS-213,"Phraseotomy - Dufton Enterprises",114,17,6,68
+68,CS-212,"ConcatString Portal – Perfex CRM Enhancement & Migration",114,17,6,69
+69,CS-211,"Life Span - CreateApe",114,29,8,70
+70,CS-210,WorldCovers,114,17,6,71
+71,CS-209,"SerenaLoves - Createape",114,29,8,72
+72,CS-208,"Toke Cannabis - Vee",114,30,4,73
+73,CS-207,"Nueway - Monthly Reports",114,30,4,74
+74,CS-206,"International Design - Samuel",114,30,3,75
+75,CS-205,"Ile Usion - Prayag",114,30,4,76
+76,CS-204,"Helmut Steinfels GmbH - Oliver",114,30,4,77
+77,CS-203,"Signing Services Of America",114,30,1,78
+78,CS-201,"Jolene Prins",114,30,4,79
+79,CS-200,"Heyday Build - Hardy",114,30,4,80
+80,CS-199,"Fluid Tactical - Richard",114,30,4,81
+81,CS-198,"Phillip Hogan",114,30,2,82
+82,CS-197,"The Barcliff Group",114,30,4,83
+83,CS-196,"Mega Movie Store",114,30,4,84
+84,CS-195,"Coladigital - Vee - Ajay",114,30,4,85
+85,CS-189,"Luxury Properties - Prayag",114,30,4,86
+86,CS-188,"Skematic - Webflow",114,30,2,87
+87,CS-181,"Hyssop - CreateApe",114,29,4,88
+88,CS-180,"Kay Warren - CreateApe",114,29,8,89
+89,CS-179,"Bettawebs - Prayag",114,2,6,90
+90,CS-175,"Fountain Life - CreateApe",114,29,9,91
+91,CS-172,"Emily VA",114,28,4,92
+92,CS-167,"Map - Huckleberryops",114,30,4,93
+93,CS-164,"Arda Wigs - Shopify - CreateApe",114,29,9,94
+94,CS-155,"Atlas Agency Website - AtlasAgency",114,2,4,95
+95,CS-150,"Calgary Hotel Association - AgencyAtlas",114,30,4,96
+96,CS-148,"The Super Dentist - CreateApe",114,29,4,97
+97,CS-146,"GNYS - Atals Agency",114,2,4,98
+98,CS-143,"Finishing The Task - CreateApe",114,29,9,99
+99,CS-141,"Alsana - Create Ape",114,29,4,100
+100,CS-138,"B/Spoke - Createape",114,29,9,101
+101,CS-136,"Total Group of Companies - Atlas Agency - Ajay",114,2,4,102
+102,CS-134,"Hagerman - Atals Agency",114,2,4,103
+103,CS-133,"Eco7Ohm - Emily",114,30,3,104
+104,CS-129,"Retina Recovery Rentals - Atlas Agency",114,2,4,105
+105,CS-125,"Rotary Calgary Downtown - Atals Agency",114,2,4,106
+106,CS-122,"FX2 Funding - David",114,30,4,107
+107,CS-109,"Magic Mirror - Adarsh",114,30,4,108
+108,CS-98,"City Tree: BrandBrand Agency",114,2,4,109
+109,CS-95,"Future Scale X - Atlas",114,2,4,110
+110,CS-88,"DermaQuest Clinical - Create Ape",114,29,4,111
+111,CS-85,"ProgressLand - Atlas",114,2,4,112
+112,CS-84,"EcoPave - Atlas",114,2,4,113
+113,CS-83,"Rise Healthcare- Create Ape",114,29,4,114
+114,CS-76,"Smart Shield Security",114,25,4,115
+115,CS-75,"DealCloser - Createape",114,29,4,116
+116,CS-73,"VillaEyewear - HubSpot",114,1,8,117
+117,CS-64,"Peloton - Hubspot - Atlas Developer",114,3,4,118
+118,CS-62,"Hope for Brighter Tomorrows - Webflow",114,29,4,119
+119,CS-59,"Sunset Cigar Lounge",114,2,4,120
+120,CS-47,"BA - Jay Logan Normal Project Task",114,25,2,121
+121,CS-45,"MarketingOps - HuckleberryOps",114,2,2,122
+122,CS-43,"IAK Wholesale - Emily",114,30,9,123
+123,CS-34,SupaVapes,114,2,4,124
+124,CS-25,"SYCU - Grow",114,17,5,125
+125,CS-8,"Zilla Metrics - Jay Logan",114,25,4,126
+126,CS-5,"Be Licenced - Stavros",114,30,9,127
+127,CS-7,Estimates,114,1,2,128
+128,CS-4,"CS Own Website",114,1,2,129
+129,CS-245,QueueEzy,114,1,2,130
+130,CS-156,"Luxury Salon - Malik",114,1,8,131
+131,CS-170,"SKAL Calgary - Agency Atlas",114,1,2,132
+132,CS-46,BostonIndustrialSolutions,114,2,6,133
+133,CS-89,"WP Vip Pro - Internal",114,1,2,134
+134,CS-187,"Keen Logic Inc. - Chardey",114,2,6,135
+135,CS-137,"Rise Complete",114,1,2,136
+136,CS-166,"Timacros - Marc - Adarsh",114,2,6,137
+137,CS-139,"San Antonio International Airport - Skyler",114,2,6,138
+138,CS-61,"Concatstring Misc. Activities",114,2,6,139
+139,CS-65,"Spines - Brogrammers Agency",114,2,5,140
+140,CS-60,"T&T HVAC and Electrical",114,1,2,141
