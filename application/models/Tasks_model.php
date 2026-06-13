@@ -17,6 +17,28 @@ class Tasks_model extends App_Model
 
     const STATUS_COMPLETE = 5;
 
+    const STATUS_CLOSED = 6;
+
+    const STATUS_CONFIRMED = 7;
+
+    const STATUS_IN_VERIFICATION = 8;
+
+    const STATUS_NEED_WORK = 9;
+
+    const STATUS_ON_HOLD = 10;
+
+    const STATUS_LOST = 11;
+
+    const STATUS_QA_VERIFIED = 12;
+
+    const STATUS_READY_FOR_REVIEW = 13;
+
+    const STATUS_TASK_DETAIL = 14;
+
+    const STATUS_TASK_LIST = 15;
+
+    const STATUS_WIN = 16;
+
     public function __construct()
     {
         parent::__construct();
@@ -52,9 +74,9 @@ class Tasks_model extends App_Model
                 'filter_default' => true,
             ],
             [
-                'id'             => static::STATUS_TESTING,
-                'color'          => '#0284c7',
-                'name'           => _l('task_status_3'),
+                'id'             => static::STATUS_NEED_WORK,
+                'color'          => '#dc2626',
+                'name'           => _l('task_status_9'),
                 'order'          => 3,
                 'filter_default' => true,
             ],
@@ -66,10 +88,87 @@ class Tasks_model extends App_Model
                 'filter_default' => true,
             ],
             [
+                'id'             => static::STATUS_CONFIRMED,
+                'color'          => '#16a34a',
+                'name'           => _l('task_status_7'),
+                'order'          => 5,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_TESTING,
+                'color'          => '#0284c7',
+                'name'           => _l('task_status_3'),
+                'order'          => 6,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_IN_VERIFICATION,
+                'color'          => '#7c3aed',
+                'name'           => _l('task_status_8'),
+                'order'          => 7,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_QA_VERIFIED,
+                'color'          => '#0891b2',
+                'name'           => _l('task_status_12'),
+                'order'          => 8,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_READY_FOR_REVIEW,
+                'color'          => '#4f46e5',
+                'name'           => _l('task_status_13'),
+                'order'          => 9,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_ON_HOLD,
+                'color'          => '#f97316',
+                'name'           => _l('task_status_10'),
+                'order'          => 10,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_TASK_DETAIL,
+                'color'          => '#94a3b8',
+                'name'           => _l('task_status_14'),
+                'order'          => 11,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => static::STATUS_TASK_LIST,
+                'color'          => '#94a3b8',
+                'name'           => _l('task_status_15'),
+                'order'          => 12,
+                'filter_default' => true,
+            ],
+            [
                 'id'             => static::STATUS_COMPLETE,
                 'color'          => '#22c55e',
                 'name'           => _l('task_status_5'),
                 'order'          => 100,
+                'filter_default' => false,
+            ],
+            [
+                'id'             => static::STATUS_CLOSED,
+                'color'          => '#475569',
+                'name'           => _l('task_status_6'),
+                'order'          => 101,
+                'filter_default' => false,
+            ],
+            [
+                'id'             => static::STATUS_WIN,
+                'color'          => '#d97706',
+                'name'           => _l('task_status_16'),
+                'order'          => 102,
+                'filter_default' => false,
+            ],
+            [
+                'id'             => static::STATUS_LOST,
+                'color'          => '#991b1b',
+                'name'           => _l('task_status_11'),
+                'order'          => 103,
                 'filter_default' => false,
             ],
         ]);
