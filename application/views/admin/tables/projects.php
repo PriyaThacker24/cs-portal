@@ -16,8 +16,8 @@ return App_table::find('projects')
         $p = db_prefix();
         $taskProgressSubquery = '(SELECT CASE '
             . 'WHEN COUNT(*) = 0 THEN 100 '
-            . 'WHEN SUM(IF(' . $p . 'tasks.status = 5, 1, 0)) >= COUNT(*) THEN 100 '
-            . 'ELSE ROUND(SUM(IF(' . $p . 'tasks.status = 5, 1, 0)) * 100.0 / COUNT(*), 2) '
+            . 'WHEN SUM(IF(' . $p . 'tasks.status IN (5, 6), 1, 0)) >= COUNT(*) THEN 100 '
+            . 'ELSE ROUND(SUM(IF(' . $p . 'tasks.status IN (5, 6), 1, 0)) * 100.0 / COUNT(*), 2) '
             . 'END FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id)';
         $progressSelect = 'CASE '
             . 'WHEN ' . $p . 'projects.status = 4 THEN 100 '
@@ -91,8 +91,8 @@ return App_table::find('projects')
             '(SELECT CONCAT(TRIM(COALESCE(' . db_prefix() . 'contacts.firstname, \'\')), \' \', TRIM(COALESCE(' . db_prefix() . 'contacts.lastname, \'\'))) FROM ' . db_prefix() . 'contacts WHERE ' . db_prefix() . 'contacts.userid = ' . db_prefix() . 'projects.clientid AND ' . db_prefix() . 'contacts.is_primary = 1 LIMIT 1) as primary_contact_fullname',
             '(SELECT GROUP_CONCAT(staff_id SEPARATOR ",") FROM ' . db_prefix() . 'project_members WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members_ids',
             db_prefix() . 'projects.addedfrom as addedfrom',
-            '(SELECT COUNT(*) FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id AND ' . $p . 'tasks.status = 5) as progress_tasks_completed',
-            '(SELECT COUNT(*) FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id AND ' . $p . 'tasks.status <> 5) as progress_tasks_remaining',
+            '(SELECT COUNT(*) FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id AND ' . $p . 'tasks.status IN (5, 6)) as progress_tasks_completed',
+            '(SELECT COUNT(*) FROM ' . $p . 'tasks WHERE ' . $p . "tasks.rel_type = 'project' AND " . $p . 'tasks.rel_id = ' . $p . 'projects.id AND ' . $p . 'tasks.status NOT IN (5, 6)) as progress_tasks_remaining',
         ];
         
         // Try to add owner_id and manager_id if columns exist

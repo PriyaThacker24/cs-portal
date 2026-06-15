@@ -24,7 +24,7 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
         <table class="table table-timelogs">
             <thead>
                 <tr>
-                    <th width="30"><input type="checkbox" class="select-all-timelogs"></th>
+                    <th width="30" style="display:none;"><input type="checkbox" class="select-all-timelogs"></th>
                     <th><?= _l('log_title'); ?></th>
                     <th><?= _l('project'); ?></th>
                     <th><?= _l('daily_log_hours'); ?></th>
@@ -90,7 +90,7 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                     <!-- Group Data Rows -->
                     <?php foreach ($group['logs'] as $log) { ?>
                         <tr class="timelog-row timelog-group-body-row">
-                            <td><input type="checkbox" class="timelog-checkbox" value="<?= $log['id']; ?>"></td>
+                            <td style="display:none;"><input type="checkbox" class="timelog-checkbox" value="<?= $log['id']; ?>"></td>
                             <td class="log-title">
                                 <?php if (!empty($log['task_id'])) { ?>
                                     <a href="<?= admin_url('tasks/view/' . $log['task_id']); ?>" onclick="init_task_modal(<?= $log['task_id']; ?>); return false;">
@@ -192,14 +192,13 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                             </td>
                             <td class="actions">
                                 <?php
-                                // Check if user can edit this timelog
-                                $can_edit_timelog = false;
-                                if ($log['staff_id'] == get_staff_user_id()) {
-                                    $can_edit_timelog = true;
-                                } elseif (staff_can('edit', 'timesheets') || is_admin()) {
-                                    $can_edit_timelog = true;
-                                }
-                                
+                                // Edit allowed only when status is pending.
+                                // Global users (admin / view global) can edit anyone's timelog;
+                                // Own-permission users can only edit their own.
+                                $isGlobalUser     = is_admin() || staff_can('view', 'timesheets');
+                                $can_edit_timelog = $log['approval_status'] == 'pending'
+                                    && ($isGlobalUser || $log['staff_id'] == get_staff_user_id());
+
                                 if ($can_edit_timelog) {
                                     ?>
                                     <button type="button" 

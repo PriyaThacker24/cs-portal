@@ -206,11 +206,10 @@ class Projects_model extends App_Model
             'rel_type' => 'project',
             'rel_id'   => $id,
         ]);
-        $total_finished_tasks = total_rows(db_prefix() . 'tasks', [
-            'rel_type' => 'project',
-            'rel_id'   => $id,
-            'status'   => 5,
-        ]);
+        $this->db->where('rel_type', 'project');
+        $this->db->where('rel_id', $id);
+        $this->db->where_in('status', [5, 6]);
+        $total_finished_tasks = $this->db->count_all_results(db_prefix() . 'tasks');
 
         $percent = 0;
         if ($total_finished_tasks >= floatval($total_project_tasks)) {

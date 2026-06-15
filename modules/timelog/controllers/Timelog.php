@@ -84,16 +84,23 @@ class Timelog extends AdminController
 
         // Get advanced filters JSON
         $advancedFiltersJson = $this->input->post('advanced_filters');
-        
+
+        $currentStaffId = get_staff_user_id();
+        $isGlobal       = is_admin() || staff_can('view', 'timesheets');
+
         $filters = [
-            'project_id' => $this->input->post('project_id'),
-            'staff_id' => $this->input->post('staff_id'),
-            'billing_type' => $this->input->post('billing_type'),
-            'group_by' => $this->input->post('group_by') ?: 'date',
-            'date_start' => $dateStart,
-            'date_end' => $dateEnd,
-            'date_range_type' => $dateRangeType,
-            'advanced_filters' => $advancedFiltersJson, // Pass advanced filters JSON
+            'project_id'               => $this->input->post('project_id'),
+            'staff_id'                 => $this->input->post('staff_id'),
+            'billing_type'             => $this->input->post('billing_type'),
+            'group_by'                 => $this->input->post('group_by') ?: 'date',
+            'date_start'               => $dateStart,
+            'date_end'                 => $dateEnd,
+            'date_range_type'          => $dateRangeType,
+            'advanced_filters'         => $advancedFiltersJson,
+            // Permission filters — non-admin/non-global users only see their own
+            // timelogs from their assigned projects.
+            'own_staff_id'             => $isGlobal ? null : $currentStaffId,
+            'assigned_projects_staff_id' => is_admin() ? null : $currentStaffId,
         ];
 
         try {
@@ -235,6 +242,7 @@ class Timelog extends AdminController
         $this->db->from(db_prefix() . 'tasks');
         $this->db->where(db_prefix() . 'tasks.rel_id', $projectId);
         $this->db->where(db_prefix() . 'tasks.rel_type', 'project');
+        $this->db->where_not_in(db_prefix() . 'tasks.status', [5, 6]);
         $this->db->where(db_prefix() . 'tasks.id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid=' . $this->db->escape_str($staffId) . ')', null, false);
         $this->db->order_by(db_prefix() . 'tasks.name', 'ASC');
         
@@ -660,6 +668,7 @@ class Timelog extends AdminController
             {$tt}.staff_id,
             {$tt}.note,
             {$tt}.bill_type,
+            {$tt}.status,
             {$project_id_sel} as project_id,
             {$task_name_sel}   as task_name
         ");
@@ -675,13 +684,18 @@ class Timelog extends AdminController
             return;
         }
 
-        // Check permissions - user can edit their own timelogs or if they have edit permission
-        $can_edit = false;
-        if ($timelog->staff_id == get_staff_user_id()) {
-            $can_edit = true;
-        } elseif (staff_can('edit', 'timesheets') || is_admin()) {
-            $can_edit = true;
+        // Only pending timelogs can be edited
+        if ($timelog->status !== 'pending') {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['success' => false, 'message' => _l('timelog_not_editable_status')]));
+            return;
         }
+
+        // Global users (admin / view global) can edit anyone's timelog;
+        // Own-permission users can only edit their own.
+        $isGlobal = is_admin() || staff_can('view', 'timesheets');
+        $can_edit = $isGlobal || ($timelog->staff_id == get_staff_user_id());
 
         if (!$can_edit) {
             $this->output
@@ -760,15 +774,20 @@ class Timelog extends AdminController
                     ->set_output(json_encode(['success' => false, 'message' => _l('timelog_not_found')]));
                 return;
             }
-            
-            // Check permissions
-            $can_edit = false;
-            if ($existing_timelog->staff_id == get_staff_user_id()) {
-                $can_edit = true;
-            } elseif (staff_can('edit', 'timesheets') || is_admin()) {
-                $can_edit = true;
+
+            // Only pending timelogs can be updated
+            if ($existing_timelog->status !== 'pending') {
+                $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['success' => false, 'message' => _l('timelog_not_editable_status')]));
+                return;
             }
-            
+
+            // Global users (admin / view global) can update anyone's timelog;
+            // Own-permission users can only update their own.
+            $isGlobal = is_admin() || staff_can('view', 'timesheets');
+            $can_edit = $isGlobal || ($existing_timelog->staff_id == get_staff_user_id());
+
             if (!$can_edit) {
                 $this->output
                     ->set_content_type('application/json')

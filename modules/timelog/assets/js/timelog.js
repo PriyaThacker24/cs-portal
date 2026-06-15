@@ -655,13 +655,13 @@ var TimelogModule = (function() {
     /**
      * Load tasks for selected project
      */
-    function loadProjectTasks(projectId) {
+    function loadProjectTasks(projectId, selectedTaskId) {
         if (!projectId) {
             var searchText = (typeof _l !== 'undefined' ? _l('search') : 'Search') + '...';
             $('#timelog_task').empty().append('<option value="">' + searchText + '</option>').selectpicker('refresh');
             return;
         }
-        
+
         $.ajax({
             url: admin_url + 'timelog/get_project_tasks',
             type: 'POST',
@@ -672,11 +672,14 @@ var TimelogModule = (function() {
                     var $select = $('#timelog_task');
                     var searchText = (typeof _l !== 'undefined' ? _l('search') : 'Search') + '...';
                     $select.empty().append('<option value="">' + searchText + '</option>');
-                    
+
                     $.each(response.tasks, function(index, task) {
                         $select.append('<option value="' + task.id + '">' + task.name + '</option>');
                     });
-                    
+
+                    if (selectedTaskId) {
+                        $select.val(selectedTaskId);
+                    }
                     $select.selectpicker('refresh');
                 }
             },
@@ -689,13 +692,13 @@ var TimelogModule = (function() {
     /**
      * Load users for selected project
      */
-    function loadProjectUsers(projectId) {
+    function loadProjectUsers(projectId, selectedUserId) {
         if (!projectId) {
             var selectUserText = typeof _l !== 'undefined' ? _l('select_user') : 'Select User';
             $('#timelog_user').empty().append('<option value="">' + selectUserText + '</option>').selectpicker('refresh');
             return;
         }
-        
+
         $.ajax({
             url: admin_url + 'timelog/get_project_users',
             type: 'POST',
@@ -706,12 +709,16 @@ var TimelogModule = (function() {
                     var $select = $('#timelog_user');
                     var selectUserText = typeof _l !== 'undefined' ? _l('select_user') : 'Select User';
                     $select.empty().append('<option value="">' + selectUserText + '</option>');
-                    
-                    $.each(response.users, function(index, user) {
-                        var selected = (user.staffid == response.current_user_id) ? 'selected' : '';
-                        $select.append('<option value="' + user.staffid + '" ' + selected + '>' + user.full_name + '</option>');
+
+                    $.each(response.users, function(i, user) {
+                        $select.append('<option value="' + user.staffid + '">' + user.full_name + '</option>');
                     });
-                    
+
+                    if (selectedUserId) {
+                        $select.val(selectedUserId);
+                    } else {
+                        $select.val(response.current_user_id);
+                    }
                     $select.selectpicker('refresh');
                 }
             },
@@ -1364,57 +1371,68 @@ var TimelogModule = (function() {
                 
                 if (response.success && response.data) {
                     var data = response.data;
-                    
-                    // Open drawer in edit mode
-                    openTimelogDrawer(true);
-                    
-                    // Set edit mode
+
+                    // Open drawer manually (do NOT call openTimelogDrawer because that
+                    // fires loadUserProjects internally — a race we cannot win by setting
+                    // .val() immediately after on an still-empty <select>).
+                    resetTimelogForm();
                     $('#timelog_drawer').data('edit-mode', true);
                     $('#timelog_drawer').data('timelog-id', timelogId);
-                    
+                    $('#timelog_drawer_overlay').fadeIn(300);
+                    $('#timelog_drawer').addClass('open');
+                    $(document).trigger('drawerOpened');
+
                     // Update drawer title
-                    var $title = $('#timelog_drawer').find('h3').first();
-                    if ($title.length === 0) {
-                        $title = $('#timelog_drawer').find('.timelog-drawer-header h3').first();
-                    }
+                    var $title = $('#timelog_drawer').find('.timelog-drawer-header h3').first();
                     if ($title.length > 0) {
                         $title.text(typeof _l !== 'undefined' ? _l('edit_timelog') : 'Edit Time Log');
                     }
-                    
-                    // Populate form fields
-                    $('#timelog_project').val(data.project_id).trigger('change');
-                    
-                    // Wait for project change to complete, then set task
-                    setTimeout(function() {
-                        if (data.is_general_log === '1') {
-                            // Show general log fields
-                            $('#timelog_task_group').hide();
-                            $('#timelog_task_heading_group').show();
-                            $('#timelog_task_heading').val(data.task_heading);
-                        } else {
-                            // Show task field
-                            $('#timelog_task_heading_group').hide();
-                            $('#timelog_task_group').show();
-                            $('#timelog_task').val(data.task_id).trigger('change');
-                        }
-                        
-                        // Convert date from Y-m-d to d/m/Y format for datepicker
-                        if (data.date) {
-                            var dateParts = data.date.split('-');
-                            if (dateParts.length === 3) {
-                                $('#timelog_date').val(dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]);
-                            } else {
-                                $('#timelog_date').val(data.date);
+
+                    // Load projects first; populate every other field INSIDE the AJAX
+                    // success so the <select> already has its <option>s when we call .val().
+                    $.ajax({
+                        url: admin_url + 'timelog/get_user_projects',
+                        type: 'POST',
+                        dataType: 'json',
+                        success: function(res) {
+                            if (res.success && res.projects) {
+                                var $proj = $('#timelog_project');
+                                $proj.empty().append('<option value="">' + (typeof _l !== 'undefined' ? _l('select_project') : 'Select Project') + '</option>');
+                                $.each(res.projects, function(_i, p) {
+                                    $proj.append('<option value="' + p.id + '">' + p.name + '</option>');
+                                });
+                                $proj.val(data.project_id).selectpicker('refresh');
+                                $proj.closest('.form-group').show();
+                                $('#timelog_other_fields').show();
+
+                                // Task / general-log fields
+                                if (data.is_general_log === '1') {
+                                    loadProjectTasks(data.project_id);
+                                    $('#timelog_task_group').hide();
+                                    $('#timelog_task_heading_group').show();
+                                    $('#timelog_task_heading').val(data.task_heading);
+                                } else {
+                                    $('#timelog_task_heading_group').hide();
+                                    $('#timelog_task_group').show();
+                                    loadProjectTasks(data.project_id, data.task_id);
+                                }
+
+                                // User dropdown
+                                loadProjectUsers(data.project_id, data.staff_id);
+
+                                // Date: Y-m-d → d/m/Y
+                                if (data.date) {
+                                    var dp = data.date.split('-');
+                                    $('#timelog_date').val(dp.length === 3 ? dp[2] + '/' + dp[1] + '/' + dp[0] : data.date);
+                                }
+
+                                $('#timelog_daily_log').val(data.daily_log);
+                                $('#timelog_billing_type').val(data.billing_type).selectpicker('refresh');
+                                $('#timelog_notes').val(data.notes);
+                                $('#btn_add_timelog_submit').text(typeof _l !== 'undefined' ? _l('update') : 'Update');
                             }
                         }
-                        $('#timelog_user').val(data.staff_id).trigger('change');
-                        $('#timelog_daily_log').val(data.daily_log);
-                        $('#timelog_billing_type').val(data.billing_type).trigger('change');
-                        $('#timelog_notes').val(data.notes);
-                        
-                        // Update submit button
-                        $('#btn_add_timelog_submit').text(typeof _l !== 'undefined' ? _l('update') : 'Update');
-                    }, 500);
+                    });
                 } else {
                     alert(response.message || 'Error loading timelog data');
                 }

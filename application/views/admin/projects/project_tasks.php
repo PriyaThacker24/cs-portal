@@ -12,3 +12,11 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    setTimeout(function () {
+        var btn = document.querySelector('#vueApp button[data-status-id="4"]');
+        if (btn) { btn.click(); }
+    }, 300);
+})();
+</script>

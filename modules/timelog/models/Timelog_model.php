@@ -105,6 +105,23 @@ class Timelog_model extends App_Model
         $this->db->where(db_prefix() . 'taskstimers.start_time >=', $dateStartTimestamp);
         $this->db->where(db_prefix() . 'taskstimers.start_time <=', $dateEndTimestamp);
         $this->db->where(db_prefix() . 'taskstimers.end_time IS NOT NULL', null, false);
+
+        // Permission-based visibility
+        $tt = db_prefix() . 'taskstimers';
+        $pm = db_prefix() . 'project_members';
+        $pj = db_prefix() . 'projects';
+        if (!empty($filters['own_staff_id'])) {
+            // Own permission: only own timelogs
+            $this->db->where("{$tt}.staff_id", $filters['own_staff_id']);
+        }
+        if (!empty($filters['assigned_projects_staff_id'])) {
+            // Restrict to projects where this staff is a member or creator
+            $sid = (int) $filters['assigned_projects_staff_id'];
+            $this->db->where(
+                "({$pj}.id IN (SELECT project_id FROM {$pm} WHERE staff_id={$sid}) OR {$pj}.id IN (SELECT id FROM {$pj} WHERE addedfrom={$sid}) OR ({$tt}.task_id=0 AND {$tt}.project_id IN (SELECT project_id FROM {$pm} WHERE staff_id={$sid})))",
+                null, false
+            );
+        }
         
         // Apply advanced filters using ProjectTimelogAdvancedFilters class
         if (!empty($filters['advanced_filters'])) {
