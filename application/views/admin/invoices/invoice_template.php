@@ -310,7 +310,7 @@
                         <?php if (count($payment_modes) > 0) { ?>
                         <select class="selectpicker"
                             data-toggle="<?php echo $this->input->get('allowed_payment_modes'); ?>"
-                            name="allowed_payment_modes[]" data-actions-box="true" multiple="true" data-width="100%"
+                            name="allowed_payment_modes[]" data-width="100%"
                             data-title="<?php echo _l('dropdown_non_selected_tex'); ?>">
                             <?php foreach ($payment_modes as $mode) {
                    $selected = '';
@@ -326,7 +326,8 @@
                            }
                        }
                    } else {
-                       if ($mode['selected_by_default'] == 1) {
+                       // On create, pre-select the "Bank" payment mode (single select)
+                       if (strtolower(trim($mode['name'])) == 'bank') {
                            $selected = ' selected';
                        }
                    } ?>

@@ -558,17 +558,17 @@ var TimelogFilter = (function() {
 
     /**
      * Load saved filters
+     *
+     * Note: We intentionally do NOT restore previously saved filters on page
+     * render. The timelog list should always load unfiltered on a fresh page
+     * load (showing all records). Any persisted filters from a previous session
+     * are cleared so they are not silently re-applied. Project context (when
+     * viewing a specific project's timesheets) is handled separately in
+     * TimelogModule.loadTimelogs() via the #current_project_id input.
      */
     function loadSavedFilters() {
-        var savedFilters = localStorage.getItem('timelog_filters');
-        if (savedFilters) {
-            try {
-                currentFilters = JSON.parse(savedFilters);
-                // Apply saved filters to form (optional - can be implemented if needed)
-            } catch (e) {
-                console.error('Error loading saved filters:', e);
-            }
-        }
+        currentFilters = {};
+        localStorage.removeItem('timelog_filters');
     }
 
     /**

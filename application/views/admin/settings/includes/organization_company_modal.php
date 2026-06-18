@@ -90,6 +90,17 @@ if (! organization_companies_table_exists() || ! staff_can('edit', 'settings')) 
                     </div>
                 </div>
 
+                <!-- Row 6: Bank Details -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <?= render_textarea('bank_details', 'organization_company_bank_details', '', [
+                            'rows'        => 6,
+                            'placeholder' => "Account Number: ...\nBank Name: ...\nIFSC Code: ...",
+                        ]); ?>
+                        <p class="tw-text-neutral-500 mtop5"><?= _l('organization_company_bank_details_help'); ?></p>
+                    </div>
+                </div>
+
                 <div class="checkbox checkbox-primary">
                     <input type="checkbox" name="is_primary" id="organization_company_is_primary" value="1">
                     <label for="organization_company_is_primary"><?= _l('organization_company_set_primary'); ?></label>

@@ -456,6 +456,7 @@ function fill_organization_company_form(c) {
     $form.find('input[name="email"]').val(c.email || '');
     $form.find('input[name="vat"]').val(c.vat || '');
     $form.find('input[name="gst"]').val(c.gst || '');
+    $form.find('[name="bank_details"]').val(c.bank_details || '');
     if (c.logo_url) {
         $('#organization-company-logo-preview').attr('src', c.logo_url);
         $('#organization-company-logo-preview-wrap').removeClass('hide');

@@ -332,6 +332,49 @@ class Staff_model extends App_Model
     }
 
     /**
+     * Soft delete a staff member.
+     *
+     * Instead of removing the staff row and its related data (the hard delete
+     * performed by delete()), this simply deactivates the staff member by
+     * setting active = 0. All linked data (tasks, projects, timelogs, estimates,
+     * etc.) is preserved and no data transfer to another user is required.
+     *
+     * @param  int $id staff id
+     * @return bool
+     */
+    public function soft_delete($id)
+    {
+        if (!is_numeric($id)) {
+            return false;
+        }
+
+        // Bail out if the staff member does not exist
+        if (total_rows(db_prefix() . 'staff', ['staffid' => $id]) == 0) {
+            return false;
+        }
+
+        $name = get_staff_full_name($id);
+
+        // Soft delete: flag the row as deleted (hidden from the staff list) and
+        // deactivate it (so it is also excluded from active-staff dropdowns and
+        // can no longer log in). All linked data is preserved.
+        //
+        // We intentionally do NOT fire the before_delete_staff_member /
+        // staff_member_deleted hooks here: those are used by the hard-delete
+        // flow to transfer or null out related data (e.g. the goals module
+        // reassigns goals.staff_id), which would defeat the soft delete.
+        $this->db->where('staffid', $id);
+        $this->db->update(db_prefix() . 'staff', [
+            'deleted' => 1,
+            'active'  => 0,
+        ]);
+
+        log_activity('Staff Member Soft Deleted [Name: ' . $name . ', ID: ' . $id . ']');
+
+        return true;
+    }
+
+    /**
      * Get staff member/s
      * @param  mixed $id Optional - staff id
      * @param  mixed $where where in query

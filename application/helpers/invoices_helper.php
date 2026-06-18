@@ -798,29 +798,36 @@ function invoice_has_bank_payment_mode($invoice, $payment_modes = null)
 /**
  * Bank details HTML for invoice PDF and preview.
  *
+ * The bank details are taken from the organization company linked to the
+ * invoice (resolved from the invoice's selected company, the client's company,
+ * or the primary company as a fallback). Returns an empty string when the
+ * resolved company has no bank details configured.
+ *
+ * @param object|int|null $invoice
  * @return string
  */
-function get_invoice_bank_details_html()
+function get_invoice_bank_details_html($invoice = null)
 {
-    $rows = [
-        'Account Number'         => '084405002618',
-        'Account Holder\'s name' => 'CONCATSTRING SOLUTIONS PRIVATE LIMITED',
-        'Contact'                => '7600044533',
-        'IFSC Code'              => 'ICIC0000844',
-        'Address'                => 'B/4 Vrajbhumi Society, Naroda, Ahmedabad-382330',
-        'Email Id'               => 'INFO@CONCATSTRING.COM',
-        'Swift code'             => 'ICICINBBNRI',
-        'Branch Name'            => 'Ahmedabad - Naroda',
-        'Bank Name'              => 'ICICI Bank Limited',
-    ];
+    $CI = &get_instance();
+    $CI->load->helper('organization_companies');
 
-    $lines = [];
-    foreach ($rows as $label => $value) {
-        $valueHtml = '<span>' . e($value) . '</span>';
-        $lines[]   = '<strong>' . e($label) . ':</strong> ' . $valueHtml;
+    $bankDetails = '';
+    if (function_exists('organization_company_resolve_for_invoice')) {
+        $company = organization_company_resolve_for_invoice($invoice);
+        if ($company && organization_company_has_column('bank_details')) {
+            $bankDetails = (string) organization_company_row_value($company, 'bank_details', '');
+        }
     }
 
-    $details = '<div style="color:#424242;font-size:11px;line-height:1.6;">' . implode('<br />', $lines) . '</div>';
+    $bankDetails = trim($bankDetails);
+    if ($bankDetails === '') {
+        return hooks()->apply_filters('invoice_bank_details_html', '', $invoice);
+    }
 
-    return hooks()->apply_filters('invoice_bank_details_html', $details);
+    // Stored as free text (one detail per line); render line breaks safely.
+    $details = '<div style="color:#424242;font-size:11px;line-height:1.6;">'
+        . nl2br(e($bankDetails))
+        . '</div>';
+
+    return hooks()->apply_filters('invoice_bank_details_html', $details, $invoice);
 }

@@ -457,10 +457,12 @@
                             <?php }
                          }
                      } ?>
-                            <?php if (invoice_has_bank_payment_mode($invoice, $payment_modes)) { ?>
+                            <?php
+                            $invoiceBankDetailsHtml = invoice_has_bank_payment_mode($invoice, $payment_modes) ? get_invoice_bank_details_html($invoice) : '';
+                            if (trim($invoiceBankDetailsHtml) !== '') { ?>
                             <p class="bold tw-mt-3">Bank Details</p>
                             <div class="mbot15">
-                                <?php echo get_invoice_bank_details_html(); ?>
+                                <?php echo $invoiceBankDetailsHtml; ?>
                             </div>
                             <?php } ?>
                         </div>

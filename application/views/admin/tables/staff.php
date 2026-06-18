@@ -34,6 +34,8 @@ if (count($custom_fields) > 4) {
 }
 
 $where = hooks()->apply_filters('staff_table_sql_where', []);
+// Hide soft-deleted staff members from the list
+$where[] = 'AND ' . db_prefix() . 'staff.deleted = 0';
 
 $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, [
     'profile_image',
@@ -83,7 +85,7 @@ foreach ($rResult as $aRow) {
 
             if (($has_permission_delete && ($has_permission_delete && ! is_admin($aRow['staffid']))) || is_admin()) {
                 if ($has_permission_delete && $output['iTotalRecords'] > 1 && $aRow['staffid'] != get_staff_user_id()) {
-                    $_data .= ' | <a href="#" onclick="delete_staff_member(' . $aRow['staffid'] . '); return false;" class="text-danger">' . _l('delete') . '</a>';
+                    $_data .= ' | <a href="' . admin_url('staff/delete/' . $aRow['staffid']) . '" class="text-danger _delete">' . _l('delete') . '</a>';
                 }
             }
 

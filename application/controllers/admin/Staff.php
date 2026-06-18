@@ -192,14 +192,18 @@ class Staff extends AdminController
         $this->load->view('admin/staff/timesheets', $data);
     }
 
-    public function delete()
+    public function delete($id = null)
     {
-        if (!is_admin() && is_admin($this->input->post('id'))) {
+        // Support both the URL segment (staff/delete/{id}) and a posted id
+        $id = $id !== null ? $id : $this->input->post('id');
+
+        if (!is_admin() && is_admin($id)) {
             die('Busted, you can\'t delete administrators');
         }
 
         if (staff_can('delete',  'staff')) {
-            $success = $this->staff_model->delete($this->input->post('id'), $this->input->post('transfer_data_to'));
+            // Soft delete only — deactivate the staff member, keep all data.
+            $success = $this->staff_model->soft_delete($id);
             if ($success) {
                 set_alert('success', _l('deleted', _l('staff_member')));
             }

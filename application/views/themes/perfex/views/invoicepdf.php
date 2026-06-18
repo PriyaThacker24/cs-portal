@@ -298,12 +298,14 @@ if (!empty($invoice->terms)) {
     $pdf->writeHTMLCell('', '', '', '', $invoice->terms, 0, 1, false, true, 'L', true);
 }
 
-if (invoice_has_bank_payment_mode($invoice, $payment_modes)) {
+// Bank details come from the invoice's organization company
+$invoiceBankDetailsHtml = invoice_has_bank_payment_mode($invoice, $payment_modes) ? get_invoice_bank_details_html($invoice) : '';
+if (trim($invoiceBankDetailsHtml) !== '') {
     $pdf->Ln(4);
     $pdf->SetFont($font_name, 'B', $font_size);
     $pdf->Cell(0, 0, 'Bank Details', 0, 1, 'L', 0, '', 0);
     $pdf->SetFont($font_name, '', $font_size);
     $pdf->Ln(2);
     $bankDetailsWidth = ($dimensions['wk'] / 2) - $dimensions['lm'];
-    $pdf->writeHTMLCell($bankDetailsWidth, '', '', '', get_invoice_bank_details_html(), 0, 1, false, true, 'L', true);
+    $pdf->writeHTMLCell($bankDetailsWidth, '', '', '', $invoiceBankDetailsHtml, 0, 1, false, true, 'L', true);
 }

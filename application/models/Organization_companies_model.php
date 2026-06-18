@@ -220,6 +220,7 @@ class Organization_companies_model extends App_Model
             'logo'                => organization_company_row_value($company, 'logo'),
             'logo_url'            => organization_company_logo_url($company),
             'company_info_format' => organization_company_row_value($company, 'company_info_format'),
+            'bank_details'        => organization_company_row_value($company, 'bank_details'),
             'is_primary'          => (int) organization_company_row_value($company, 'is_primary', 0),
             'custom_fields'       => $custom_fields_values,
         ];
@@ -256,6 +257,10 @@ class Organization_companies_model extends App_Model
 
         if ($this->db->field_exists('company_info_format', $table)) {
             $payload['company_info_format'] = $data['company_info_format'] ?? '';
+        }
+
+        if ($this->db->field_exists('bank_details', $table)) {
+            $payload['bank_details'] = $data['bank_details'] ?? '';
         }
 
         if ($this->db->field_exists('logo', $table) && array_key_exists('logo', $data)) {

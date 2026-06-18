@@ -110,19 +110,29 @@
 
 <?php init_tail(); ?>
 
+<?php
+// Cache-busting version based on each asset's last-modified time. Without this,
+// browsers (especially on the live server) keep serving a stale cached copy of
+// these JS/CSS files after a deploy, which is why fixes such as the week
+// prev/next navigation appear to "work on local but not on live".
+$timelog_asset_version = function ($relative_path) {
+    $absolute_path = module_dir_path('timelog', $relative_path);
+    return is_file($absolute_path) ? filemtime($absolute_path) : '';
+};
+?>
 <!-- Timelog CSS -->
-<link rel="stylesheet" href="<?= module_dir_url('timelog', 'assets/css/timelog.css'); ?>">
+<link rel="stylesheet" href="<?= module_dir_url('timelog', 'assets/css/timelog.css'); ?>?v=<?= $timelog_asset_version('assets/css/timelog.css'); ?>">
 <!-- Project Timelog Filter CSS (for advanced filter panel) -->
 <link rel="stylesheet" href="<?= base_url('assets/css/project-timelog-filter.css'); ?>">
 
 <!-- Timelog Filter JavaScript -->
-<script src="<?= module_dir_url('timelog', 'assets/js/timelog-filter.js'); ?>"></script>
+<script src="<?= module_dir_url('timelog', 'assets/js/timelog-filter.js'); ?>?v=<?= $timelog_asset_version('assets/js/timelog-filter.js'); ?>"></script>
 
 <!-- Timelog Date Picker JavaScript -->
-<script src="<?= module_dir_url('timelog', 'assets/js/timelog-date-picker.js'); ?>"></script>
+<script src="<?= module_dir_url('timelog', 'assets/js/timelog-date-picker.js'); ?>?v=<?= $timelog_asset_version('assets/js/timelog-date-picker.js'); ?>"></script>
 
 <!-- Timelog JavaScript -->
-<script src="<?= module_dir_url('timelog', 'assets/js/timelog.js'); ?>"></script>
+<script src="<?= module_dir_url('timelog', 'assets/js/timelog.js'); ?>?v=<?= $timelog_asset_version('assets/js/timelog.js'); ?>"></script>
 
 <script>
     $(document).ready(function() {

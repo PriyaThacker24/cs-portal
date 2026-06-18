@@ -108,8 +108,19 @@ var TimelogDatePicker = (function() {
             navigateMonthYear('next');
         });
 
+        // Day / Week calendar day selection.
+        // NOTE: these are delegated from `.timelog-date-picker` (not document)
+        // on purpose. The grids are re-rendered on every navigation, so we need
+        // delegation; but `.timelog-date-picker` has a click handler that calls
+        // e.stopPropagation(), so a document-level delegated handler would never
+        // fire (the event is stopped before it reaches document). Delegating
+        // from the picker element itself runs the handler before that stop.
+        $('.timelog-date-picker').on('click', '#calendar_grid .calendar-day', function() {
+            handleDayClick($(this));
+        });
+
         // Month selection
-        $(document).on('click', '.month-item', function() {
+        $('.timelog-date-picker').on('click', '.month-item', function() {
             handleMonthClick($(this));
         });
 
@@ -156,7 +167,9 @@ var TimelogDatePicker = (function() {
         });
 
         // Range calendar day click
-        $(document).on('click', '.range-calendar-day', function() {
+        // Delegated from the picker element (see note on the calendar-day
+        // handler above) so the inner-picker stopPropagation does not swallow it.
+        $('.timelog-date-picker').on('click', '.range-calendar-day', function() {
             handleRangeDayClick($(this));
         });
 
@@ -172,30 +185,21 @@ var TimelogDatePicker = (function() {
     function openDatePicker() {
         // Get the active tab
         var activeTab = $('.date-picker-tab.active').data('type');
-        
-        // If Week tab is active, always show current week (reset any previous selection)
-        if (activeTab === 'week') {
-            var today = new Date();
-            var currentWeekStart = getMonday(today);
-            var currentWeekEnd = getSunday(today);
-            
-            selectedDates.start = new Date(currentWeekStart);
-            selectedDates.end = new Date(currentWeekEnd);
-            currentDateRange.start = new Date(currentWeekStart);
-            currentDateRange.end = new Date(currentWeekEnd);
-            currentDateRange.type = 'week';
-            currentCalendarMonth = new Date(today);
-            
-            // Update hidden inputs to reflect current week
-            $('#current_week_start').val(formatDate(currentWeekStart));
-            $('#current_week_end').val(formatDate(currentWeekEnd));
-            $('#current_date_range_type').val('week');
+
+        // Reflect the currently-applied range in the picker so reopening it
+        // shows what is actually loaded (Zoho-style). We intentionally do NOT
+        // reset to the current week or mutate the hidden inputs here — that is
+        // only done when the user actually selects a new range.
+        if (currentDateRange.start && currentDateRange.end) {
+            selectedDates.start = new Date(currentDateRange.start);
+            selectedDates.end = new Date(currentDateRange.end);
+            currentCalendarMonth = new Date(currentDateRange.start);
         } else {
-            // Initialize selected dates from current range for other tabs
-            if (!selectedDates.start) {
-                selectedDates.start = new Date(currentDateRange.start);
-                selectedDates.end = new Date(currentDateRange.end);
-            }
+            // No applied range yet — default to the current week
+            var today = new Date();
+            selectedDates.start = getMonday(today);
+            selectedDates.end = getSunday(today);
+            currentCalendarMonth = new Date(today);
         }
         
         $('#timelog_date_picker_wrapper').fadeIn(200);
@@ -319,25 +323,18 @@ var TimelogDatePicker = (function() {
                 // Keep the start date, make it single day
                 selectedDates.end = new Date(selectedDates.start);
             } else if (type === 'week') {
-                // ALWAYS reset to current week when switching to Week tab
-                // This ensures the Week tab always shows the actual current week,
-                // regardless of any manual selection made earlier
-                var today = new Date();
-                var currentWeekStart = getMonday(today);
-                var currentWeekEnd = getSunday(today);
-                
-                selectedDates.start = new Date(currentWeekStart);
-                selectedDates.end = new Date(currentWeekEnd);
-                currentDateRange.start = new Date(currentWeekStart);
-                currentDateRange.end = new Date(currentWeekEnd);
-                
-                // Update calendar month to show the current week's month
-                currentCalendarMonth = new Date(today);
-                
-                // Update hidden inputs to reflect current week
-                $('#current_week_start').val(formatDate(currentWeekStart));
-                $('#current_week_end').val(formatDate(currentWeekEnd));
-                $('#current_date_range_type').val('week');
+                // Highlight the week containing the currently-selected date (or the
+                // current week if nothing is selected yet). We only update the
+                // highlight here — the actual filter is applied when the user
+                // clicks a day (handleDayClick -> commitDateRange). We must NOT
+                // mutate the hidden inputs here, otherwise switching tabs without
+                // selecting would desync the loaded list from the inputs.
+                var baseDate = selectedDates.start ? new Date(selectedDates.start) : new Date();
+                selectedDates.start = getMonday(baseDate);
+                selectedDates.end = getSunday(baseDate);
+
+                // Update calendar month to show the selected week's month
+                currentCalendarMonth = new Date(selectedDates.start);
             }
             
             renderCalendar();
@@ -588,6 +585,8 @@ var TimelogDatePicker = (function() {
 
         renderCalendar();
         updateSelectedRangeDisplay();
+        // Selection only highlights here — the filter is applied when the user
+        // clicks the OK button (applyDateRange -> commitDateRange).
     }
 
     /**
@@ -737,23 +736,23 @@ var TimelogDatePicker = (function() {
         var start, end;
         
         if ($('#tab_range').hasClass('active')) {
-            // Get from range inputs
-            var fromStr = $('#range_from_date').val();
-            var toStr = $('#range_to_date').val();
-            
-            if (!fromStr || !toStr) {
-                alert_float('warning', 'Please select both from and to dates');
+            // Range is chosen via the dual-calendar grid, which stores the
+            // selection in selectedDates (there are no from/to text inputs).
+            if (!selectedDates.start || !selectedDates.end) {
+                alert_float('warning', 'Please select a date range');
                 return;
             }
-            
-            start = parseDateInput(fromStr);
-            end = parseDateInput(toStr);
-            
+
+            start = new Date(selectedDates.start);
+            end = new Date(selectedDates.end);
+
+            // Normalize order in case end was picked before start
             if (start > end) {
-                alert_float('warning', 'From date must be before to date');
-                return;
+                var tmpDate = start;
+                start = end;
+                end = tmpDate;
             }
-            
+
             currentDateRange.type = 'range';
         } else if ($('#tab_quick').hasClass('active')) {
             // Already set in applyQuickFilter
@@ -769,20 +768,46 @@ var TimelogDatePicker = (function() {
             return;
         }
 
+        commitDateRange(start, end, currentDateRange.type);
+    }
+
+    /**
+     * Commit a selected date range: persist it to the hidden inputs, update the
+     * display, close the picker and reload the timelog list. This is the single
+     * place that "applies the filter", shared by the OK button and by the
+     * auto-apply-on-selection behavior (Zoho-style — selecting a day/week/month
+     * or completing a range filters immediately, no separate OK click needed).
+     */
+    function commitDateRange(start, end, type) {
+        if (!start || !end) {
+            return;
+        }
+
+        // Normalize order in case end was picked before start
+        if (start > end) {
+            var tmpDate = start;
+            start = end;
+            end = tmpDate;
+        }
+
         currentDateRange.start = start;
         currentDateRange.end = end;
-        
-        // Update hidden inputs
+        if (type) {
+            currentDateRange.type = type;
+        }
+
+        // Update hidden inputs (read back by TimelogModule.loadTimelogs and the
+        // header prev/next navigation)
         $('#current_week_start').val(formatDate(start));
         $('#current_week_end').val(formatDate(end));
         $('#current_date_range_type').val(currentDateRange.type);
-        
+
         // Update display
         updateDateDisplay();
-        
+
         // Close picker
         closeDatePicker();
-        
+
         // Reload timelogs
         if (typeof TimelogModule !== 'undefined' && TimelogModule.loadTimelogs) {
             TimelogModule.loadTimelogs();
@@ -1011,8 +1036,8 @@ var TimelogDatePicker = (function() {
         selectedDates.start = new Date(year, month, 1);
         selectedDates.end = new Date(year, month + 1, 0);
         currentDateRange.type = 'month';
-        
-        // Update display
+
+        // Update display (selection only — applied on OK button click)
         renderMonthGrid();
         updateSelectedRangeDisplay();
     }
@@ -1172,12 +1197,12 @@ var TimelogDatePicker = (function() {
         if (!clickedDate) return;
         
         clickedDate.setHours(0, 0, 0, 0);
-        
+
         // If clicking the same date that's already selected as start, treat as new selection
         if (rangeSelectionState.selecting && rangeSelectionState.startDate) {
             var startTime = rangeSelectionState.startDate.getTime();
             var clickedTime = clickedDate.getTime();
-            
+
             if (startTime === clickedTime) {
                 // Same date clicked - reset selection
                 rangeSelectionState.selecting = false;
@@ -1188,7 +1213,7 @@ var TimelogDatePicker = (function() {
                 // Complete selection
                 var start = rangeSelectionState.startDate;
                 var end = clickedDate;
-                
+
                 if (end < start) {
                     // Swap if end is before start
                     selectedDates.start = new Date(end);
@@ -1197,7 +1222,7 @@ var TimelogDatePicker = (function() {
                     selectedDates.start = new Date(start);
                     selectedDates.end = new Date(end);
                 }
-                
+
                 rangeSelectionState.selecting = false;
                 rangeSelectionState.startDate = null;
             }
@@ -1208,13 +1233,14 @@ var TimelogDatePicker = (function() {
             selectedDates.start = new Date(clickedDate);
             selectedDates.end = new Date(clickedDate);
         }
-        
+
         currentDateRange.type = 'range';
         currentDateRange.start = new Date(selectedDates.start);
         currentDateRange.end = new Date(selectedDates.end);
-        
+
         renderRangeCalendars();
         updateSelectedRangeDisplay();
+        // Selection only — the range is applied when the user clicks OK.
     }
 
     /**
