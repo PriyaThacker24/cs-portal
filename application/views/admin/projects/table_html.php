@@ -4,16 +4,23 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 $table_data = [
    _l('the_number_sign'),
-   _l('project_name'),
+    [
+         'name'     => _l('project_name'),
+         'th_attrs' => ['width' => '200', 'class' => 'project-name-col'],
+    ],
     [
          'name'     => _l('project_customer'),
-         'th_attrs' => ['class' => isset($client) ? 'not_visible' : ''],
+         'th_attrs' => ['width' => '160', 'class' => isset($client) ? 'not_visible' : ''],
     ],
-   _l('project_start_date'),
+    [
+      'name'     => _l('project_start_date'),
+      'th_attrs' => ['width' => '80'],
+ ],
+  //  _l('project_start_date'),
    _l('project_progress'),
     [
          'name'     => _l('project_resources'),
-         'th_attrs' => ['width' => '150', 'class' => 'project-resources-col'],
+         'th_attrs' => ['width' => '100', 'class' => 'project-resources-col'],
     ],
    _l('project_status'),
 ];

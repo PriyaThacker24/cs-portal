@@ -294,7 +294,7 @@ class App_mail_template
 
 
             if ($fromemail == '') {
-                $fromemail = get_option('smtp_email');
+                $fromemail = get_option('email_from_address') != '' ? get_option('email_from_address') : get_option('smtp_email');
             }
 
             if ($fromname == '') {
@@ -308,7 +308,7 @@ class App_mail_template
         }
 
         return hooks()->apply_filters('email_template_from_headers', [
-                'fromemail' => get_option('smtp_email'),
+                'fromemail' => get_option('email_from_address') != '' ? get_option('email_from_address') : get_option('smtp_email'),
                 'fromname'  => $this->template->fromname != '' ? $this->template->fromname : get_option('companyname'),
             ], $this->template);
     }

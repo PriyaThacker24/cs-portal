@@ -567,7 +567,8 @@ class Projects extends AdminController
         $success = false;
         $message = '';
         if ($this->input->is_ajax_request()) {
-            if (staff_can('create', 'projects') || staff_can('edit', 'projects')) {
+            $project_id = $this->input->post('project_id');
+            if (staff_can('create', 'projects') || staff_can('edit', 'projects') || can_user_project_action('edit', $project_id)) {
                 $status = get_project_status_by_id($this->input->post('status_id'));
 
                 $message = _l('project_marked_as_failed', $status['name']);

@@ -378,6 +378,8 @@ $lang['automatically_resend_invoice_overdue_reminder_after']       = 'Auto re-se
 $lang['settings_email_host']                                       = 'SMTP Host';
 $lang['settings_email_port']                                       = 'SMTP Port';
 $lang['settings_email']                                            = 'Email';
+$lang['settings_email_from_address']                               = 'From Email';
+$lang['settings_email_from_address_help']                          = 'The email address recipients will see in the "From" field. If left empty, the SMTP Email above is used.';
 $lang['settings_email_password']                                   = 'SMTP Password';
 $lang['settings_email_charset']                                    = 'Email Charset';
 $lang['settings_email_signature']                                  = 'Email Signature';
@@ -3040,6 +3042,8 @@ $lang['project_status_6']                                = 'Active';
 $lang['project_status_7']                                = 'Approved';
 $lang['project_status_8']                                = 'In Testing';
 $lang['project_status_9']                                = 'On Track';
+$lang['project_status_10']                               = 'Blocked';
+$lang['project_status_11']                               = 'Awaiting for Client';
 
 # Version 1.7.0
 $lang['not_activity_new_reminder_created']        = 'set a new reminder for %s with date %s';

@@ -13,6 +13,9 @@ return App_table::find('projects')
         $hasPermissionDeleteGlobal = staff_can('delete',  'projects');
         $hasPermissionCreate = staff_can('create',  'projects');
 
+        // All project statuses, loaded once for the inline status dropdown
+        $projectStatuses = $this->ci->projects_model->get_project_statuses();
+
         $p = db_prefix();
         $taskProgressSubquery = '(SELECT CASE '
             . 'WHEN COUNT(*) = 0 THEN 100 '
@@ -250,8 +253,27 @@ return App_table::find('projects')
             $membersOutput .= '</div>';
             $row[] = $membersOutput;
 
-            $status = get_project_status_by_id($aRow['status']);
-            $row[]  = '<span class="label project-status-' . $aRow['status'] . '" style="color:' . $status['color'] . ';border:1px solid ' . adjust_hex_brightness($status['color'], 0.4) . ';background: ' . adjust_hex_brightness($status['color'], 0.04) . ';">' . e($status['name']) . '</span>';
+            $status      = get_project_status_by_id($aRow['status']);
+            $statusStyle = 'color:' . $status['color'] . ';border:1px solid ' . adjust_hex_brightness($status['color'], 0.4) . ';background: ' . adjust_hex_brightness($status['color'], 0.04) . ';';
+
+            if ($hasPermissionEdit) {
+                $outputStatus  = '<div class="dropdown inline-block project-status-dropdown">';
+                $outputStatus .= '<a href="#" class="dropdown-toggle label project-status-' . $aRow['id'] . ' tw-inline-flex tw-items-center tw-gap-1 tw-flex-nowrap hover:tw-opacity-80 tw-align-middle" style="' . $statusStyle . '" id="tableProjectStatus-' . $aRow['id'] . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                $outputStatus .= e($status['name']);
+                $outputStatus .= '<i class="fa fa-caret-down tw-shrink-0"></i>';
+                $outputStatus .= '</a>';
+                $outputStatus .= '<ul class="dropdown-menu" aria-labelledby="tableProjectStatus-' . $aRow['id'] . '">';
+                foreach ($projectStatuses as $projectChangeStatus) {
+                    if ($aRow['status'] != $projectChangeStatus['id']) {
+                        $outputStatus .= '<li><a href="#" onclick="project_mark_as(' . $projectChangeStatus['id'] . ',' . $aRow['id'] . '); return false;" style="color:' . $projectChangeStatus['color'] . ';">' . e($projectChangeStatus['name']) . '</a></li>';
+                    }
+                }
+                $outputStatus .= '</ul>';
+                $outputStatus .= '</div>';
+                $row[] = $outputStatus;
+            } else {
+                $row[] = '<span class="label project-status-' . $aRow['status'] . '" style="' . $statusStyle . '">' . e($status['name']) . '</span>';
+            }
 
             // Custom fields add values
             foreach ($customFieldsColumns as $customFieldColumn) {
@@ -267,7 +289,7 @@ return App_table::find('projects')
             $notesCell  = '<div class="project-listing-notes" data-project-id="' . $aRow['id'] . '">';
             $notesCell .= '<div class="project-note-display" style="white-space:pre-wrap;cursor:text;min-height:18px;' . ($hasNote ? '' : 'display:none !important;') . '">' . e($noteValue) . '</div>';
             $notesCell .= '<textarea class="form-control project-note-input" rows="2" placeholder="' . _l('notes') . '" style="' . ($hasNote ? 'display:none !important;' : '') . '">' . e($noteValue) . '</textarea>';
-            $notesCell .= '<small class="text-muted project-note-updated tw-block tw-mt-1">' . e($updatedText) . '</small>';
+            $notesCell .= '<small class="text-muted project-note-updated tw-block tw-mt-1" style="font-size:10px;font-style:italic;">' . e($updatedText) . '</small>';
             $notesCell .= '</div>';
             $row[] = $notesCell;
 

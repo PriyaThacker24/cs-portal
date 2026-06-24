@@ -92,6 +92,20 @@ class Projects_model extends App_Model
                 'filter_default' => true,
             ],
             [
+                'id'             => 10,
+                'color'          => '#dc2626',
+                'name'           => _l('project_status_10'),
+                'order'          => 8,
+                'filter_default' => true,
+            ],
+            [
+                'id'             => 11,
+                'color'          => '#d97706',
+                'name'           => _l('project_status_11'),
+                'order'          => 9,
+                'filter_default' => true,
+            ],
+            [
                 'id'             => 4,
                 'color'          => '#22c55e',
                 'name'           => _l('project_status_4'),

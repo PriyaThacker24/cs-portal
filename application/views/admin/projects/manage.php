@@ -35,7 +35,7 @@
                                 <i class="fa-solid fa-grip-vertical"></i>
                                 <?php } ?>
                             </a>
-                            <div class="tw-hidden md:tw-block md:tw-ml-6 rtl:md:tw-mr-6">
+                            <div class="tw-hidden md:tw-block md:tw-ml-6 rtl:md:tw-mr-6 tw-min-w-0 tw-flex-1">
                                 <?php $this->load->view('admin/projects/stats'); ?>
                             </div>
                             <div class="ltr:tw-ml-auto rtl:tw-mr-auto tw-flex tw-items-center tw-gap-2">
@@ -84,6 +84,38 @@
 <?php if (!$switch_kanban) { ?>
 <script src="<?= base_url('assets/js/projects-filter.js'); ?>"></script>
 <script>
+    // Inline project status change from the list view (called from the status dropdown).
+    // Global so the inline onclick on each menu item can reach it.
+    function project_mark_as(status_id, project_id) {
+        var postData = {
+            project_id: project_id,
+            status_id: status_id,
+            notify_project_members_status_change: 0,
+            mark_all_tasks_as_completed: 0
+        };
+
+        $('body').append('<div class="dt-loader"></div>');
+        $.ajax({
+            url: admin_url + 'projects/mark_as',
+            type: 'POST',
+            dataType: 'json',
+            data: postData,
+            success: function(res) {
+                $('body').find('.dt-loader').remove();
+                if (res && res.success) {
+                    $('.table-projects').DataTable().ajax.reload(null, false);
+                    // alert_float('success', res.message);
+                } else {
+                    alert_float('danger', (res && res.message) ? res.message : 'Error changing status');
+                }
+            },
+            error: function() {
+                $('body').find('.dt-loader').remove();
+                alert_float('danger', 'Error changing status');
+            }
+        });
+    }
+
     $(function() {
         var table = initDataTable('.table-projects', admin_url + 'projects/table', undefined, undefined, {},
             <?= hooks()->apply_filters('projects_table_default_order', json_encode([3, 'asc'])); ?>
@@ -210,12 +242,18 @@
                 return;
             }
 
+            var noteData = { project_id: $cell.data('project-id'), notes: val };
+            // CSRF token is required on POST requests (csrf_protection is enabled)
+            if (typeof csrfData !== 'undefined') {
+                noteData[csrfData.token_name] = csrfData.hash;
+            }
+
             $stamp.text('<?= _l('saving') . '...'; ?>');
             $.ajax({
                 url: admin_url + 'projects/save_listing_notes',
                 type: 'POST',
                 dataType: 'json',
-                data: { project_id: $cell.data('project-id'), notes: val },
+                data: noteData,
                 success: function(res) {
                     if (res && res.success) {
                         $stamp.text(res.updated_text || '');

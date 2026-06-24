@@ -255,7 +255,7 @@ class Emails extends AdminController
             $this->email->set_newline(config_item('newline'));
             $this->email->set_crlf(config_item('crlf'));
 
-            $this->email->from(get_option('smtp_email'), $template->fromname);
+            $this->email->from(get_option('email_from_address') != '' ? get_option('email_from_address') : get_option('smtp_email'), $template->fromname);
             $this->email->to($this->input->post('test_email'));
 
             $systemBCC = get_option('bcc_emails');

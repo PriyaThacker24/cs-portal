@@ -209,6 +209,9 @@
             [],
             empty(get_option('smtp_email')) && in_array(get_option('email_protocol'), ['microsoft', 'google']) ? 'has-error' : ''
         ); ?>
+        <i class="fa-regular fa-circle-question pull-left tw-mt-0.5 tw-mr-1" data-toggle="tooltip"
+            data-title="<?= _l('settings_email_from_address_help'); ?>"></i>
+        <?= render_input('settings[email_from_address]', 'settings_email_from_address', get_option('email_from_address')); ?>
         <div class="xoauth-hide smtp-fields<?php if (in_array(get_option('email_protocol'), ['mail', 'microsoft', 'google'])) {
             echo ' hide';
         } ?>">
