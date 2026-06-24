@@ -12,7 +12,7 @@
         
         <div class="timelog-drawer-body">
             <!-- Time Log Restrictions -->
-            <div class="timelog-restrictions-info">
+            <!-- <div class="timelog-restrictions-info">
                 <h4>
                     <i class="fa fa-info-circle"></i>
                     <?= _l('time_log_restrictions'); ?>
@@ -23,7 +23,7 @@
                     <li><?= _l('time_log_restriction_task_hours'); ?></li>
                     <li><?= _l('time_log_restriction_holiday'); ?></li>
                 </ul>
-            </div>
+            </div> -->
             
             <form id="timelog_form" method="post">
                 <!-- Project Selection (Always Visible) -->

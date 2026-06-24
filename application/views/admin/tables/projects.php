@@ -105,6 +105,12 @@ return App_table::find('projects')
             if (in_array('manager_id', $fields)) {
                 $additionalSelect[] = db_prefix() . 'projects.manager_id as manager_id';
             }
+            if (in_array('listing_notes', $fields)) {
+                $additionalSelect[] = db_prefix() . 'projects.listing_notes as listing_notes';
+            }
+            if (in_array('listing_notes_updated_at', $fields)) {
+                $additionalSelect[] = db_prefix() . 'projects.listing_notes_updated_at as listing_notes_updated_at';
+            }
         } catch (Exception $e) {
             // If there's an error checking fields, just continue without owner_id/manager_id
         }
@@ -205,23 +211,39 @@ return App_table::find('projects')
                 . '</div>'
                 . '<span class="hide">' . e($percentLabel) . ' (' . e((string) $tasksDone) . '/' . e((string) ($tasksDone + $tasksRemaining)) . ')</span>';
 
-            $membersOutput = '<div class="tw-flex -tw-space-x-1">';
+            $membersOutput = '<div class="tw-flex -tw-space-x-1 project-resources-stack">';
             $members       = explode(',', $aRow['members']);
+            $members_ids   = explode(',', $aRow['members_ids']);
             $exportMembers = '';
+
+            // Only the non-empty members, so the "+N" count is accurate
+            $validMembers = array_values(array_filter($members, function ($m) {
+                return $m !== '';
+            }, ARRAY_FILTER_USE_BOTH));
+            $maxVisible    = 4; // keep the avatar stack a predictable width
+            $totalMembers  = count($validMembers);
+            $shown         = 0;
+
             foreach ($members as $key => $member) {
                 if ($member != '') {
-                    $members_ids = explode(',', $aRow['members_ids']);
-                    $member_id   = $members_ids[$key];
-                    $membersOutput .= '<a href="' . admin_url('profile/' . $member_id) . '">' .
-                        staff_profile_image($member_id, [
-                            'tw-inline-block tw-h-7 tw-w-7 tw-rounded-full tw-ring-2 tw-ring-white',
-                        ], 'small', [
-                            'data-toggle' => 'tooltip',
-                            'data-title'  => $member,
-                        ]) . '</a>';
-                    // For exporting
+                    $member_id = $members_ids[$key];
+                    if ($shown < $maxVisible) {
+                        $membersOutput .= '<a href="' . admin_url('profile/' . $member_id) . '">' .
+                            staff_profile_image($member_id, [
+                                'tw-inline-block tw-h-7 tw-w-7 tw-rounded-full tw-ring-2 tw-ring-white',
+                            ], 'small', [
+                                'data-toggle' => 'tooltip',
+                                'data-title'  => $member,
+                            ]) . '</a>';
+                        $shown++;
+                    }
+                    // For exporting (and the +N tooltip)
                     $exportMembers .= $member . ', ';
                 }
+            }
+
+            if ($totalMembers > $maxVisible) {
+                $membersOutput .= '<span class="tw-inline-flex tw-items-center tw-justify-center tw-h-7 tw-w-7 tw-rounded-full tw-ring-2 tw-ring-white tw-bg-neutral-200 tw-text-xs tw-font-medium" data-toggle="tooltip" data-title="' . e(trim($exportMembers, ', ')) . '">+' . ($totalMembers - $maxVisible) . '</span>';
             }
 
             $membersOutput .= '<span class="hide">' . trim($exportMembers, ', ') . '</span>';
@@ -235,6 +257,19 @@ return App_table::find('projects')
             foreach ($customFieldsColumns as $customFieldColumn) {
                 $row[] = (strpos($customFieldColumn, 'date_picker_') !== false ? _d($aRow[$customFieldColumn]) : $aRow[$customFieldColumn]);
             }
+
+            // Per-row Notes: empty starts as a textarea; once it has content it shows as
+            // text and switches back to a textarea on click. Autosaves on blur.
+            $noteValue   = isset($aRow['listing_notes']) ? $aRow['listing_notes'] : '';
+            $noteUpdated = isset($aRow['listing_notes_updated_at']) ? $aRow['listing_notes_updated_at'] : '';
+            $updatedText = $noteUpdated ? _l('last_updated') . ' ' . date('F j, Y \a\t H:i', strtotime($noteUpdated)) : '';
+            $hasNote     = trim($noteValue) !== '';
+            $notesCell  = '<div class="project-listing-notes" data-project-id="' . $aRow['id'] . '">';
+            $notesCell .= '<div class="project-note-display" style="white-space:pre-wrap;cursor:text;min-height:18px;' . ($hasNote ? '' : 'display:none !important;') . '">' . e($noteValue) . '</div>';
+            $notesCell .= '<textarea class="form-control project-note-input" rows="2" placeholder="' . _l('notes') . '" style="' . ($hasNote ? 'display:none !important;' : '') . '">' . e($noteValue) . '</textarea>';
+            $notesCell .= '<small class="text-muted project-note-updated tw-block tw-mt-1">' . e($updatedText) . '</small>';
+            $notesCell .= '</div>';
+            $row[] = $notesCell;
 
             $row['DT_RowClass'] = 'has-row-options';
 

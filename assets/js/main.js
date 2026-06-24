@@ -951,36 +951,31 @@ $(function () {
   $("body").on("click", ".task-single-add-timesheet", function (e) {
     e.preventDefault();
 
-    var start_time_input = $("body").find(
-      '#task-modal input[name="timesheet_start_time"]'
-    );
-    var end_time_input = $("body").find(
-      '#task-modal input[name="timesheet_end_time"]'
+    var date_input = $("body").find(
+      '#task-modal .add-timesheet input[name="timesheet_date"]'
     );
     var duration_input = $("body").find(
-      '#task-modal input[name="timesheet_duration"]'
+      '#task-modal .add-timesheet input[name="timesheet_duration"]'
     );
 
-    var start_time = start_time_input.val();
-    var end_time = end_time_input.val();
+    var date = date_input.val();
     var duration = duration_input.val();
 
-    start_time === "" &&
-      start_time_input.parents(".form-group").addClass("has-error");
-    end_time === "" &&
-      end_time_input.parents(".form-group").addClass("has-error");
+    date === "" && date_input.parents(".form-group").addClass("has-error");
     duration === "" &&
       duration_input.parents(".form-group").addClass("has-error");
 
-    if ((start_time !== "" && end_time !== "") || duration !== "") {
+    if (date !== "" && duration !== "") {
       var data = {};
+      data.timesheet_date = date;
       data.timesheet_duration = duration;
-      data.start_time = start_time;
-      data.end_time = end_time;
       data.timesheet_task_id = $(this).data("task-id");
       data.note = $("body").find("#task_single_timesheet_note").val();
       data.timesheet_staff_id = $("body")
         .find('#task-modal select[name="single_timesheet_staff_id"]')
+        .val();
+      data.bill_type = $("body")
+        .find('#task-modal .add-timesheet select[name="timesheet_bill_type"]')
         .val();
       $.post(admin_url + "tasks/log_time", data).done(function (response) {
         response = JSON.parse(response);
@@ -1124,16 +1119,16 @@ $(function () {
     }
 
     if (taskModal.find(".add-timesheet").is(":visible")) {
-      var timesheetStartTime = taskModal.find("#timesheet_start_time").val();
-      var timesheetEndTime = taskModal.find("#timesheet_end_time").val();
-      var timesheetDuration = taskModal.find("#timesheet_duration").val();
+      // Only block closing when the user has actually started entering a log.
+      // Date is pre-filled by default, so it is not treated as unsaved input.
+      var timesheetDuration = taskModal
+        .find('.add-timesheet input[name="timesheet_duration"]')
+        .val();
       var timesheetNote = taskModal.find("#task_single_timesheet_note").val();
 
       if (
-        timesheetStartTime !== "" ||
-        timesheetEndTime !== "" ||
-        timesheetDuration !== "" ||
-        timesheetNote !== ""
+        (timesheetDuration && timesheetDuration !== "") ||
+        (timesheetNote && timesheetNote !== "")
       ) {
         e.preventDefault();
       }

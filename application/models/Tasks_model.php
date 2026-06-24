@@ -2045,10 +2045,19 @@ class Tasks_model extends App_Model
     {
         if (isset($data['timesheet_duration']) && $data['timesheet_duration'] != '') {
             $duration_array = explode(':', $data['timesheet_duration']);
-            $hour           = $duration_array[0];
-            $minutes        = $duration_array[1];
-            $end_time       = time();
-            $start_time     = strtotime('-' . $hour . ' hour -' . $minutes . ' minutes');
+            $hour           = (int) $duration_array[0];
+            $minutes        = isset($duration_array[1]) ? (int) $duration_array[1] : 0;
+
+            if (isset($data['timesheet_date']) && $data['timesheet_date'] != '') {
+                // Date + duration (same as the "Add Time Log" feature): start at 9:00 AM
+                // on the selected date, end after the entered duration.
+                $log_date   = strtotime(to_sql_date($data['timesheet_date']));
+                $start_time = mktime(9, 0, 0, (int) date('n', $log_date), (int) date('j', $log_date), (int) date('Y', $log_date));
+                $end_time   = $start_time + ($hour * 3600) + ($minutes * 60);
+            } else {
+                $end_time   = time();
+                $start_time = strtotime('-' . $hour . ' hour -' . $minutes . ' minutes');
+            }
         } else {
             $start_time = to_sql_date($data['start_time'], true);
             $end_time   = to_sql_date($data['end_time'], true);
@@ -2082,7 +2091,7 @@ class Tasks_model extends App_Model
             $this->db->where('staffid', $timesheet_staff_id);
             $hourly_rate = $this->db->get()->row()->hourly_rate;
 
-            $this->db->insert(db_prefix() . 'taskstimers', [
+            $timesheet_insert = [
                 'start_time'  => $start_time,
                 'end_time'    => $end_time,
                 'staff_id'    => $timesheet_staff_id,
@@ -2091,7 +2100,22 @@ class Tasks_model extends App_Model
                 'note'        => (isset($data['note']) && $data['note'] != '' ? nl2br($data['note']) : null),
                 'bill_type'   => (isset($data['bill_type']) && $data['bill_type'] != '' ? $data['bill_type'] : 'billable'),
                 'status'      => (isset($data['status']) && $data['status'] != '' ? $data['status'] : 'pending'),
-            ]);
+            ];
+
+            // Store project_id directly when the column exists, so the entry shows up
+            // in the main timelog list the same way Add Time Log entries do (and stays
+            // resolvable even if the task→project join is unavailable).
+            if (in_array('project_id', $this->db->list_fields(db_prefix() . 'taskstimers'))) {
+                $this->db->select('rel_id');
+                $this->db->where('id', $data['timesheet_task_id']);
+                $this->db->where('rel_type', 'project');
+                $task_project = $this->db->get(db_prefix() . 'tasks')->row();
+                if ($task_project && $task_project->rel_id) {
+                    $timesheet_insert['project_id'] = $task_project->rel_id;
+                }
+            }
+
+            $this->db->insert(db_prefix() . 'taskstimers', $timesheet_insert);
 
             $insert_id = $this->db->insert_id();
             $tags      = '';
@@ -2231,7 +2255,7 @@ class Tasks_model extends App_Model
     {
         $task_id = $this->db->escape_str($task_id);
 
-        return $this->db->query("SELECT id," . db_prefix() . "taskstimers.note as note, start_time,end_time,task_id,staff_id, CONCAT(firstname, ' ', lastname) as full_name,
+        return $this->db->query("SELECT id," . db_prefix() . "taskstimers.note as note, start_time,end_time,task_id,staff_id," . db_prefix() . "taskstimers.bill_type as bill_type, CONCAT(firstname, ' ', lastname) as full_name,
         end_time - start_time time_spent FROM " . db_prefix() . 'taskstimers JOIN ' . db_prefix() . 'staff ON ' . db_prefix() . 'staff.staffid=' . db_prefix() . "taskstimers.staff_id WHERE task_id = '$task_id' ORDER BY start_time DESC")->result_array();
     }
 

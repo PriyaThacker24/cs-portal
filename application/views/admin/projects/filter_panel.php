@@ -29,11 +29,11 @@
         <div class="filter-panel-footer">
             <div class="filter-match-conditions">
                 <label class="radio-label">
-                    <input type="radio" name="filter_match" value="any" checked>
+                    <input type="radio" name="filter_match" value="any">
                     <span><?= _l('any_of_these'); ?></span>
                 </label>
                 <label class="radio-label">
-                    <input type="radio" name="filter_match" value="all">
+                    <input type="radio" name="filter_match" value="all" checked>
                     <span><?= _l('all_of_these'); ?></span>
                 </label>
             </div>

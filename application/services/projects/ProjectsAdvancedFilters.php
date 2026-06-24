@@ -184,6 +184,7 @@ class ProjectsAdvancedFilters
         }
 
         $config = $this->filters['status'];
+        $operator = $config['operator'] ?? 'is';
 
         // Get the status values using the helper method
         $statusValues = $this->extractFilterValues($config, 'value');
@@ -192,8 +193,12 @@ class ProjectsAdvancedFilters
             return '';
         }
 
-        // Allowed status values: In Progress (2), On Hold (3), Finished (4), Cancelled (5)
-        $allowedStatuses = [2, 3, 4, 5];
+        // Allowed status values come from the project status list (same options as the
+        // project Add/Edit form), so any configured status can be filtered on.
+        $this->ci->load->model('projects_model');
+        $allowedStatuses = array_map(function ($s) {
+            return (int) $s['id'];
+        }, $this->ci->projects_model->get_project_statuses());
 
         // Filter and sanitize status values
         $sanitizedStatuses = [];
@@ -214,6 +219,14 @@ class ProjectsAdvancedFilters
         // Note: A project can only have one status at a time, so "all of these"
         // with multiple statuses would technically return no results.
         // We use IN clause which effectively acts as "any of these" for single-value fields.
+        if ($operator === 'is_not') {
+            if (count($sanitizedStatuses) === 1) {
+                return $column . ' != ' . $sanitizedStatuses[0];
+            }
+
+            return $column . ' NOT IN (' . implode(',', $sanitizedStatuses) . ')';
+        }
+
         if (count($sanitizedStatuses) === 1) {
             return $column . ' = ' . $sanitizedStatuses[0];
         }
@@ -664,8 +677,9 @@ class ProjectsAdvancedFilters
             return '';
         }
 
-        $config = $this->filters['manager'];
-        $ids    = $this->extractFilterValues($config, 'value');
+        $config   = $this->filters['manager'];
+        $operator = $config['operator'] ?? 'is';
+        $ids      = $this->extractFilterValues($config, 'value');
         if (empty($ids)) {
             return '';
         }
@@ -682,6 +696,15 @@ class ProjectsAdvancedFilters
         }
 
         $column = db_prefix() . 'projects.manager_id';
+
+        if ($operator === 'is_not') {
+            if (count($sanitized) === 1) {
+                return $column . ' != ' . $sanitized[0];
+            }
+
+            return $column . ' NOT IN (' . implode(',', $sanitized) . ')';
+        }
+
         if (count($sanitized) === 1) {
             return $column . ' = ' . $sanitized[0];
         }

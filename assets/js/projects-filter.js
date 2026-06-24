@@ -318,8 +318,8 @@ var ProjectsFilter = (function() {
         $accordionItems.find('.filter-accordion-header').attr('aria-expanded', 'false');
         $accordionItems.find('.filter-accordion-body').attr('aria-hidden', 'true').stop(true, true).slideUp(0);
         
-        // Reset match condition to "any"
-        $('input[name="filter_match"][value="any"]').prop('checked', true);
+        // Reset match condition to "all" (multiple filters combine with AND by default)
+        $('input[name="filter_match"][value="all"]').prop('checked', true);
         
         // Clear stored filter data (memory + localStorage so refresh does not re-apply)
         currentFilters = {};
@@ -370,6 +370,12 @@ var ProjectsFilter = (function() {
             } else if (filterType === 'created_by') {
                 // Special handling for created_by filter
                 filterValue = collectCreatedByFilterValues($panel);
+            } else if (filterType === 'status') {
+                // Status filter with is/is_not operator
+                filterValue = collectStatusFilterValues($panel);
+            } else if (filterType === 'manager') {
+                // Project Manager filter with is/is_not operator
+                filterValue = collectManagerFilterValues($panel);
             } else {
                 // Get all inputs/selects for this filter
                 $panel.find('input, select').each(function() {
@@ -600,7 +606,43 @@ var ProjectsFilter = (function() {
         } else {
             return {}; // Return empty if no staff selected
         }
-        
+
+        return filterValue;
+    }
+
+    /**
+     * Collect Status filter values (operator + selected statuses).
+     * Only returns a filter when at least one status is selected.
+     */
+    function collectStatusFilterValues($panel) {
+        var filterValue = {};
+        filterValue.operator = $panel.find('[name="status_operator"]').val() || 'is';
+
+        var selected = $panel.find('[name="status_value[]"]').val();
+        if (selected && selected.length > 0) {
+            filterValue.value = selected;
+        } else {
+            return {}; // No statuses selected
+        }
+
+        return filterValue;
+    }
+
+    /**
+     * Collect Project Manager filter values (operator + selected managers).
+     * Only returns a filter when at least one manager is selected.
+     */
+    function collectManagerFilterValues($panel) {
+        var filterValue = {};
+        filterValue.operator = $panel.find('[name="manager_operator"]').val() || 'is';
+
+        var selected = $panel.find('[name="manager_value[]"]').val();
+        if (selected && selected.length > 0) {
+            filterValue.value = selected;
+        } else {
+            return {}; // No managers selected
+        }
+
         return filterValue;
     }
 
@@ -625,27 +667,13 @@ var ProjectsFilter = (function() {
     }
 
     /**
-     * Load saved filters from localStorage
+     * On a fresh page load we intentionally do NOT restore previously applied
+     * filters — refreshing the projects listing should always start unfiltered.
+     * Any persisted filters from a previous session are cleared here.
      */
     function loadSavedFilters() {
-        try {
-            var saved = localStorage.getItem('projects_filters');
-            if (!saved) {
-                return;
-            }
-            currentFilters = JSON.parse(saved);
-            var hasActiveFilters = currentFilters && Object.keys(currentFilters).some(function(k) {
-                return k !== 'match';
-            });
-            if (!hasActiveFilters) {
-                currentFilters = {};
-                clearSavedFilters();
-                return;
-            }
-            populateFilterUI();
-        } catch (e) {
-            console.error('Could not load filters:', e);
-        }
+        currentFilters = {};
+        clearSavedFilters();
     }
 
     /**

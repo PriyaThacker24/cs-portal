@@ -28,7 +28,7 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                     <th><?= _l('log_title'); ?></th>
                     <th><?= _l('project'); ?></th>
                     <th><?= _l('daily_log_hours'); ?></th>
-                    <th><?= _l('time_period'); ?></th>
+                    <!-- <th><?= _l('time_period'); ?></th> -->
                     <th><?= _l('user'); ?></th>
                             <th><?= _l('billing_type'); ?></th>
                             <th><?= _l('approval_status'); ?></th>
@@ -112,13 +112,13 @@ if (empty($timelog_data) || empty($timelog_data['groups'])) {
                             <td class="log-hours">
                                 <?= seconds_to_time_format($log['duration_seconds']); ?>
                             </td>
-                            <td class="time-period">
+                            <!-- <td class="time-period">
                                 <?php if ($groupBy == 'user') { ?>
                                     <?= e(date('d/m/Y', strtotime($log['log_date'])) . ' - ' . $log['time_period']); ?>
                                 <?php } else { ?>
                                     <?= e($log['time_period']); ?>
                                 <?php } ?>
-                            </td>
+                            </td> -->
                             <!-- <?php if ($groupBy == 'user') { ?> -->
                               
                                 <td class="staff-name">

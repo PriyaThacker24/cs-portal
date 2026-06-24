@@ -4,6 +4,10 @@
 // Get active staff members
 $activeStaff = $this->staff_model->get('', ['active' => 1]);
 
+// Project statuses for the Status filter — use the same list as the project Add/Edit form
+$this->load->model('projects_model');
+$projectStatuses = $this->projects_model->get_project_statuses();
+
 // Get deactive (inactive) staff members
 $deactiveStaff = $this->staff_model->get('', ['active' => 0]);
 
@@ -53,12 +57,18 @@ if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
     </button>
     <div class="filter-accordion-body" aria-hidden="true">
         <div class="form-group">
+            <label><?= _l('operator'); ?></label>
+            <select class="form-control selectpicker" name="status_operator" id="status_operator_select">
+                <option value="is"><?= _l('is'); ?></option>
+                <option value="is_not"><?= _l('is_not'); ?></option>
+            </select>
+        </div>
+        <div class="form-group">
             <label><?= _l('select_status'); ?></label>
             <select class="form-control selectpicker" multiple name="status_value[]" data-actions-box="true">
-                <option value="2"><?= _l('project_status_2'); ?></option>
-                <option value="3"><?= _l('project_status_3'); ?></option>
-                <option value="4"><?= _l('project_status_4'); ?></option>
-                <option value="5"><?= _l('project_status_5'); ?></option>
+                <?php foreach ($projectStatuses as $st) { ?>
+                    <option value="<?= e($st['id']); ?>"><?= e($st['name']); ?></option>
+                <?php } ?>
             </select>
         </div>
     </div>
@@ -125,6 +135,13 @@ if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
     </button>
     <div class="filter-accordion-body" aria-hidden="true">
         <div class="form-group">
+            <label><?= _l('operator'); ?></label>
+            <select class="form-control selectpicker" name="manager_operator" id="manager_operator_select">
+                <option value="is"><?= _l('is'); ?></option>
+                <option value="is_not"><?= _l('is_not'); ?></option>
+            </select>
+        </div>
+        <div class="form-group">
             <label><?= _l('select_manager'); ?></label>
             <select class="form-control selectpicker" multiple name="manager_value[]" data-live-search="true" data-actions-box="true" id="manager_filter_select">
                 <?php foreach ($activeStaff as $member) { ?>
@@ -145,6 +162,7 @@ if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
         <div class="form-group">
             <label><?= _l('operator'); ?></label>
             <select class="form-control selectpicker" name="start_date_operator" id="start_date_operator_select">
+                <option value=""><?= _l('none'); ?></option>
                 <!-- Preset Date Operators -->
                 <optgroup label="<?= _l('preset_dates'); ?>">
                     <option value="today"><?= _l('today'); ?></option>
@@ -199,6 +217,7 @@ if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
         <div class="form-group">
             <label><?= _l('operator'); ?></label>
             <select class="form-control selectpicker" name="due_date_operator" id="due_date_operator_select">
+                <option value=""><?= _l('none'); ?></option>
                 <!-- Preset Date Operators -->
                 <optgroup label="<?= _l('preset_dates'); ?>">
                     <option value="today"><?= _l('today'); ?></option>

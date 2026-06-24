@@ -12,7 +12,7 @@
         
         <div class="timelog-drawer-body">
             <!-- Time Log Restrictions -->
-            <div class="timelog-restrictions-info">
+            <!-- <div class="timelog-restrictions-info">
                 <h4>
                     <i class="fa fa-info-circle"></i>
                     <?= _l('time_log_restrictions'); ?>
@@ -23,7 +23,7 @@
                     <li><?= _l('time_log_restriction_task_hours'); ?></li>
                     <li><?= _l('time_log_restriction_holiday'); ?></li>
                 </ul>
-            </div>
+            </div> -->
             
             <form id="timelog_form" method="post">
                 <!-- Project Selection (Always Visible) -->
@@ -70,7 +70,7 @@
                             <div class="form-group">
                                 <label for="timelog_date"><?= _l('date'); ?> <span class="text-danger">*</span></label>
                                 <div class="timelog-date-input">
-                                    <input type="text" id="timelog_date" name="date" class="form-control datepicker" autocomplete="off" required value="<?= date('d/m/Y'); ?>">
+                                    <input type="text" id="timelog_date" name="date" class="form-control" autocomplete="off" required value="<?= date('d/m/Y'); ?>">
                                     <span class="input-group-addon">
                                         <i class="fa fa-calendar calendar-icon"></i>
                                     </span>

@@ -272,18 +272,37 @@ class Timelog extends AdminController
         
         $this->load->model('projects_model');
         $staffId = get_staff_user_id();
-        
-        // Get project members
-        $members = $this->projects_model->get_project_members($projectId, true);
-        
+
+        // Global users (admin / view global) can log time for anyone assigned
+        // to the project; own-permission users can only log for themselves.
+        $isGlobal = is_admin() || staff_can('view', 'timesheets');
+
         $users = [];
-        foreach ($members as $member) {
-            $users[] = [
-                'staffid' => $member['staff_id'],
-                'full_name' => trim($member['firstname'] . ' ' . $member['lastname']),
-                'firstname' => $member['firstname'],
-                'lastname' => $member['lastname']
-            ];
+        if ($isGlobal) {
+            // Get all project members
+            $members = $this->projects_model->get_project_members($projectId, true);
+
+            foreach ($members as $member) {
+                $users[] = [
+                    'staffid' => $member['staff_id'],
+                    'full_name' => trim($member['firstname'] . ' ' . $member['lastname']),
+                    'firstname' => $member['firstname'],
+                    'lastname' => $member['lastname']
+                ];
+            }
+        } else {
+            // Own-permission user: only show the logged-in user
+            $this->load->model('staff_model');
+            $currentStaff = $this->staff_model->get($staffId);
+
+            if ($currentStaff) {
+                $users[] = [
+                    'staffid' => $currentStaff->staffid,
+                    'full_name' => trim($currentStaff->firstname . ' ' . $currentStaff->lastname),
+                    'firstname' => $currentStaff->firstname,
+                    'lastname' => $currentStaff->lastname
+                ];
+            }
         }
         
         $this->output
@@ -343,6 +362,12 @@ class Timelog extends AdminController
             $staffId = $this->input->post('staff_id');
             $dailyLogTime = $this->input->post('daily_log'); // Format: HH:MM
             $billingType = $this->input->post('billing_type') ?: 'billable';
+
+            // Own-permission users can only log time for themselves
+            $isGlobal = is_admin() || staff_can('view', 'timesheets');
+            if (!$isGlobal) {
+                $staffId = get_staff_user_id();
+            }
             
             // Convert time format (HH:MM) to decimal hours
             $timeParts = explode(':', $dailyLogTime);
@@ -426,7 +451,7 @@ class Timelog extends AdminController
             
             // Calculate start_time (timestamp for the selected date at startHour:startMinute)
             $startTime = mktime($startHour, $startMinute, 0, date('n', $logDate), date('j', $logDate), date('Y', $logDate));
-            
+
             // Calculate end_time (start_time + hours in seconds)
             $endTime = $startTime + ($dailyLogHours * 3600);
             
@@ -831,6 +856,11 @@ class Timelog extends AdminController
             $dailyLogTime = $this->input->post('daily_log');
             $billingType = $this->input->post('billing_type') ?: 'billable';
             $notes = $this->input->post('notes');
+
+            // Own-permission users can only log time for themselves
+            if (!$isGlobal) {
+                $staffId = get_staff_user_id();
+            }
             
             // Convert time format (HH:MM) to decimal hours
             $timeParts = explode(':', $dailyLogTime);

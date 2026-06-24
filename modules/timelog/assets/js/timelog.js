@@ -101,8 +101,13 @@ var TimelogModule = (function() {
             openTimelogDrawer();
         });
         
-        // Close drawer buttons
-        $('#btn_close_drawer, #btn_cancel_timelog, #timelog_drawer_overlay').on('click', function(e) {
+        // Close drawer buttons - always close (clicks may land on inner icon)
+        $('#btn_close_drawer, #btn_cancel_timelog').on('click', function() {
+            closeTimelogDrawer();
+        });
+
+        // Overlay - close only when the backdrop itself is clicked, not its children
+        $('#timelog_drawer_overlay').on('click', function(e) {
             if (e.target === this) {
                 closeTimelogDrawer();
             }

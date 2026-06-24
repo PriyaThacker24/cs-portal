@@ -765,6 +765,42 @@ class Projects extends AdminController
         }
     }
 
+    /**
+     * Save the per-row "Notes" textarea from the projects listing (AJAX).
+     */
+    public function save_listing_notes()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        if (!staff_can('edit', 'projects')) {
+            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            return;
+        }
+
+        $project_id = (int) $this->input->post('project_id');
+        $notes      = $this->input->post('notes');
+
+        if (!$project_id) {
+            echo json_encode(['success' => false, 'message' => _l('project_not_found')]);
+            return;
+        }
+
+        $savedAt = $this->projects_model->save_listing_notes($project_id, $notes);
+
+        if ($savedAt !== false) {
+            echo json_encode([
+                'success'      => true,
+                'message'      => _l('updated_successfully', _l('project_notes')),
+                'updated_at'   => $savedAt,
+                'updated_text' => _l('last_updated') . ' ' . date('F j, Y \a\t H:i', strtotime($savedAt)),
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => _l('something_went_wrong')]);
+        }
+    }
+
     public function discussions($project_id)
     {
         if ($this->projects_model->is_member($project_id) || staff_can('view', 'projects')) {

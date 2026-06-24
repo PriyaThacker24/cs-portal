@@ -204,13 +204,10 @@ echo '<span class="tw-ml-5">' . format_task_status($task->status) . '</span>';
                                     <?= _l('timesheet_user'); ?>
                                 </th>
                                 <th class="tw-text-sm tw-bg-neutral-50">
-                                    <?= _l('timesheet_start_time'); ?>
+                                    <?= _l('date'); ?>
                                 </th>
                                 <th class="tw-text-sm tw-bg-neutral-50">
-                                    <?= _l('timesheet_end_time'); ?>
-                                </th>
-                                <th class="tw-text-sm tw-bg-neutral-50">
-                                    <?= _l('timesheet_time_spend'); ?>
+                                    <?= _l('daily_log'); ?>
                                 </th>
                             </tr>
                         </thead>
@@ -231,26 +228,7 @@ foreach ($task->timesheets as $timesheet) { ?>
                                         <?= e($timesheet['full_name']); ?></a>
                                 </td>
                                 <td class="tw-text-sm">
-                                    <?= e(_dt($timesheet['start_time'], true)); ?>
-                                </td>
-                                <td class="tw-text-sm">
-                                    <?php
-                                      if ($timesheet['end_time'] !== null) {
-                                          echo e(_dt($timesheet['end_time'], true));
-                                      } else {
-                                          // Allow admins to stop forgotten timers by staff member
-                                          if (! $task->billed && is_admin()) { ?>
-                                    <a href="#" data-toggle="popover" data-placement="bottom" data-html="true"
-                                        data-trigger="manual"
-                                        data-title="<?= _l('note'); ?>"
-                                        data-content='<?= render_textarea('timesheet_note'); ?><button type="button" onclick="timer_action(this, <?= e($task->id); ?>, <?= e($timesheet['id']); ?>, 1);" class="btn btn-primary btn-sm"><?= _l('save'); ?></button>'
-                                        class="text-danger" onclick="return false;">
-                                        <i class="fa-regular fa-clock"></i>
-                                        <?= _l('task_stop_timer'); ?>
-                                    </a>
-                                    <?php
-                                          }
-                                      } ?>
+                                    <?= e(date('d/m/Y', $timesheet['start_time'])); ?>
                                 </td>
                                 <td class="tw-text-sm">
                                     <div class="tw-flex">
@@ -259,6 +237,17 @@ foreach ($task->timesheets as $timesheet) { ?>
                                                   if ($timesheet['time_spent'] == null) {
                                                       echo _l('time_h') . ': ' . e(seconds_to_time_format(time() - $timesheet['start_time'])) . '<br />';
                                                       echo _l('time_decimal') . ': ' . e(sec2qty(time() - $timesheet['start_time'])) . '<br />';
+                                                      // Running timer — allow admins to stop forgotten timers
+                                                      if ($timesheet['end_time'] === null && ! $task->billed && is_admin()) { ?>
+                                            <a href="#" data-toggle="popover" data-placement="bottom" data-html="true"
+                                                data-trigger="manual"
+                                                data-title="<?= _l('note'); ?>"
+                                                data-content='<?= render_textarea('timesheet_note'); ?><button type="button" onclick="timer_action(this, <?= e($task->id); ?>, <?= e($timesheet['id']); ?>, 1);" class="btn btn-primary btn-sm"><?= _l('save'); ?></button>'
+                                                class="text-danger" onclick="return false;">
+                                                <i class="fa-regular fa-clock"></i>
+                                                <?= _l('task_stop_timer'); ?>
+                                            </a>
+                                            <?php }
                                                   } else {
                                                       echo _l('time_h') . ': ' . e(seconds_to_time_format($timesheet['time_spent'])) . '<br />';
                                                       echo _l('time_decimal') . ': ' . e(sec2qty($timesheet['time_spent'])) . '<br />';
@@ -286,19 +275,24 @@ foreach ($task->timesheets as $timesheet) { ?>
                 </tr>
                 <tr>
                     <td class="timesheet-edit task-modal-edit-timesheet-<?= $timesheet['id'] ?> hide"
-                        colspan="5">
+                        colspan="3">
                         <form class="task-modal-edit-timesheet-form">
                             <input type="hidden" name="timer_id"
                                 value="<?= $timesheet['id'] ?>">
                             <input type="hidden" name="task_id"
                                 value="<?= $task->id ?>">
-                            <div class="timesheet-start-end-time">
-                                <div class="col-md-6">
-                                    <?= render_datetime_input('start_time', 'task_log_time_start', _dt($timesheet['start_time'], true)); ?>
-                                </div>
-                                <div class="col-md-6">
-                                    <?= render_datetime_input('end_time', 'task_log_time_end', _dt($timesheet['end_time'], true)); ?>
-                                </div>
+                            <div class="col-md-6">
+                                <?= render_date_input('timesheet_date', 'date', _d(date('Y-m-d', $timesheet['start_time'])), ['id' => 'timesheet_date_' . $timesheet['id']]); ?>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- <i class="fa-regular fa-circle-question pointer pull-left mtop2" data-toggle="popover"
+                                    data-html="true" data-content="
+                                    :15 - 15 <?= _l('minutes'); ?><br />
+                                    2 - 2 <?= _l('hours'); ?><br />
+                                    5:5 - 5 <?= _l('hours'); ?> & 5 <?= _l('minutes'); ?><br />
+                                    2:50 - 2 <?= _l('hours'); ?> & 50 <?= _l('minutes'); ?><br />
+                                    "></i> -->
+                                <?= render_input('timesheet_duration', 'daily_log', ($timesheet['time_spent'] !== null ? seconds_to_time_format($timesheet['time_spent']) : ''), 'text', ['placeholder' => 'HH:MM', 'id' => 'timesheet_duration_' . $timesheet['id']]); ?>
                             </div>
                             <div class="col-md-12">
                                 <div class="form-group">
@@ -323,6 +317,16 @@ foreach ($task->timesheets as $timesheet) { ?>
                                         } ?>
                                     </select>
                                 </div>
+                                <div class="form-group">
+                                    <label class="control-label">
+                                        <?= _l('billing_type'); ?>
+                                    </label>
+                                    <br />
+                                    <select name="timesheet_bill_type" id="timesheet_bill_type_<?= $timesheet['id']; ?>" class="selectpicker" data-width="100%">
+                                        <option value="billable" <?= (isset($timesheet['bill_type']) && $timesheet['bill_type'] == 'billable' ? 'selected' : ''); ?>><?= _l('task_billable'); ?></option>
+                                        <option value="non_billable" <?= (isset($timesheet['bill_type']) && $timesheet['bill_type'] == 'non_billable' ? 'selected' : ''); ?>><?= _l('task_not_billable'); ?></option>
+                                    </select>
+                                </div>
                                 <?= render_textarea('note', 'note', $timesheet['note'], ['id' => 'note' . $timesheet['id']]); ?>
                             </div>
                             <div class="col-md-12 text-right">
@@ -338,7 +342,7 @@ foreach ($task->timesheets as $timesheet) { ?>
                 <?php } ?>
                 <?php if ($timers_found == false) { ?>
                 <tr>
-                    <td colspan="5" class="text-center bold">
+                    <td colspan="3" class="text-center bold">
                         <?= _l('no_timers_found'); ?>
                     </td>
                 </tr>
@@ -346,42 +350,25 @@ foreach ($task->timesheets as $timesheet) { ?>
                 <?php if ($task->billed == 0 && ($is_assigned || (count($task->assignees) > 0 && is_admin())) && $task->status != Tasks_model::STATUS_COMPLETE && staff_can('create', 'timesheets')) {
                     ?>
                 <tr class="odd">
-                    <td colspan="5" class="add-timesheet">
+                    <td colspan="3" class="add-timesheet">
                         <div class="col-md-12">
                             <p class="font-medium bold mtop5">
                                 <?= _l('add_timesheet'); ?>
                             </p>
                             <hr class="mtop10 mbot10" />
                         </div>
-                        <div class="timesheet-start-end-time">
-                            <div class="col-md-6">
-                                <?= render_datetime_input('timesheet_start_time', 'task_log_time_start'); ?>
-                            </div>
-                            <div class="col-md-6">
-                                <?= render_datetime_input('timesheet_end_time', 'task_log_time_end'); ?>
-                            </div>
+                        <div class="col-md-6">
+                            <?= render_date_input('timesheet_date', 'date', _d(date('Y-m-d'))); ?>
                         </div>
-                        <div class="timesheet-duration hide">
-                            <div class="col-md-12">
-                                <i class="fa-regular fa-circle-question pointer pull-left mtop2" data-toggle="popover"
-                                    data-html="true" data-content="
-                                    :15 - 15 <?= _l('minutes'); ?><br />
-                                    2 - 2 <?= _l('hours'); ?><br />
-                                    5:5 - 5 <?= _l('hours'); ?> & 5 <?= _l('minutes'); ?><br />
-                                    2:50 - 2 <?= _l('hours'); ?> & 50 <?= _l('minutes'); ?><br />
-                                    "></i>
-                                <?= render_input('timesheet_duration', 'project_timesheet_time_spend', '', 'text', ['placeholder' => 'HH:MM']); ?>
-                            </div>
-                        </div>
-                        <div class="col-md-12 mbot15 mntop15">
-                            <a href="#" class="timesheet-toggle-enter-type">
-                                <span class="timesheet-duration-toggler-text switch-to">
-                                    <?= _l('timesheet_duration_instead'); ?>
-                                </span>
-                                <span class="timesheet-date-toggler-text hide ">
-                                    <?= _l('timesheet_date_instead'); ?>
-                                </span>
-                            </a>
+                        <div class="col-md-6">
+                            <!-- <i class="fa-regular fa-circle-question pointer pull-left mtop2" data-toggle="popover"
+                                data-html="true" data-content="
+                                :15 - 15 <?= _l('minutes'); ?><br />
+                                2 - 2 <?= _l('hours'); ?><br />
+                                5:5 - 5 <?= _l('hours'); ?> & 5 <?= _l('minutes'); ?><br />
+                                2:50 - 2 <?= _l('hours'); ?> & 50 <?= _l('minutes'); ?><br />
+                                "></i> -->
+                            <?= render_input('timesheet_duration', 'daily_log', '', 'text', ['placeholder' => 'HH:MM']); ?>
                         </div>
                         <div class="col-md-12">
                             <div class="form-group">
@@ -404,6 +391,16 @@ foreach ($task->timesheets as $timesheet) { ?>
                                         </option>
                                         <?php
                                     } ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">
+                                    <?= _l('billing_type'); ?>
+                                </label>
+                                <br />
+                                <select name="timesheet_bill_type" class="selectpicker" data-width="100%">
+                                    <option value="billable"><?= _l('task_billable'); ?></option>
+                                    <option value="non_billable"><?= _l('task_not_billable'); ?></option>
                                 </select>
                             </div>
                             <?= render_textarea('task_single_timesheet_note', 'note'); ?>
@@ -1463,10 +1460,11 @@ echo $_followers;
         var data = {};
 
         data.timer_id = form.get('timer_id');
-        data.start_time = form.get('start_time');
-        data.end_time = form.get('end_time');
+        data.timesheet_date = form.get('timesheet_date');
+        data.timesheet_duration = form.get('timesheet_duration');
         data.timesheet_staff_id = form.get('staff_id');
         data.timesheet_task_id = form.get('task_id');
+        data.bill_type = form.get('timesheet_bill_type');
         data.note = form.get('note');
 
         $.post(admin_url + 'tasks/update_timesheet', data).done(function(response) {

@@ -127,7 +127,7 @@ class Timelog_model extends App_Model
         if (!empty($filters['advanced_filters'])) {
             try {
                 $filterData = is_string($filters['advanced_filters']) ? json_decode($filters['advanced_filters'], true) : $filters['advanced_filters'];
-                
+
                 // Handle Project filter separately (not in ProjectTimelogAdvancedFilters).
                 // General logs (task_id=0) have NULL from the projects JOIN (which goes through
                 // tasks.rel_id), so we must also match against taskstimers.project_id for them.

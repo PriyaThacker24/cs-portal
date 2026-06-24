@@ -101,7 +101,7 @@
                     return k !== 'match';
                 });
                 if (hasActiveFilters) {
-                    var payload = $.extend({ match: cf.match || 'any' }, cf);
+                    var payload = $.extend({ match: cf.match || 'all' }, cf);
                     d.filters = JSON.stringify(payload);
                 } else {
                     delete d.filters;
@@ -141,6 +141,95 @@
         }
 
         init_ajax_search('customer', '#clientid_copy_project.ajax-search');
+
+        // Enforce one-at-a-time visibility per notes cell: text when it has content,
+        // textarea when empty. Runs after every DataTable draw so it never shows both.
+        function enforceNoteCellState() {
+            $('.table-projects .project-listing-notes').each(function() {
+                var $cell = $(this);
+                var $ta   = $cell.find('.project-note-input');
+                if ($ta.is(':focus')) { return; } // don't disturb the cell being edited
+                var $display = $cell.find('.project-note-display');
+                if ($.trim($ta.val()) !== '') {
+                    $ta[0].style.setProperty('display', 'none', 'important');
+                    $display[0].style.setProperty('display', 'block', 'important');
+                } else {
+                    $display[0].style.setProperty('display', 'none', 'important');
+                    $ta[0].style.setProperty('display', 'block', 'important');
+                }
+            });
+        }
+        if (table) {
+            table.on('draw.dt', enforceNoteCellState);
+        }
+
+        // Keep clicks inside the notes cell from triggering any row-level handlers
+        $(document).on('click', '.table-projects .project-listing-notes', function(e) {
+            e.stopPropagation();
+        });
+
+        // Remember the value when editing starts (covers both click-to-edit and
+        // the initially-shown textarea for empty notes)
+        $(document).on('focus', '.table-projects .project-note-input', function() {
+            $(this).data('orig', $(this).val());
+        });
+
+        // Click the note text → hide text, show the textarea with the current value
+        $(document).on('click', '.table-projects .project-note-display', function() {
+            var $cell = $(this).closest('.project-listing-notes');
+            var $ta   = $cell.find('.project-note-input');
+            this.style.setProperty('display', 'none', 'important');
+            $ta[0].style.setProperty('display', 'block', 'important');
+            $ta.focus();
+            // place cursor at the end
+            var v = $ta.val();
+            $ta.val('').val(v);
+        });
+
+        // Blur the textarea → show text (when it has content) and save if it changed
+        $(document).on('blur', '.table-projects .project-note-input', function() {
+            var $ta      = $(this);
+            var $cell    = $ta.closest('.project-listing-notes');
+            var $display = $cell.find('.project-note-display');
+            var $stamp   = $cell.find('.project-note-updated');
+            var val      = $ta.val();
+
+            if ($.trim(val) !== '') {
+                // Has content → show text, hide textarea
+                $display.text(val);
+                $ta[0].style.setProperty('display', 'none', 'important');
+                $display[0].style.setProperty('display', 'block', 'important');
+            } else {
+                // Empty → keep the textarea visible
+                $display[0].style.setProperty('display', 'none', 'important');
+                $ta[0].style.setProperty('display', 'block', 'important');
+            }
+
+            // Nothing changed — don't save / don't bump the timestamp
+            if (val === $ta.data('orig')) {
+                return;
+            }
+
+            $stamp.text('<?= _l('saving') . '...'; ?>');
+            $.ajax({
+                url: admin_url + 'projects/save_listing_notes',
+                type: 'POST',
+                dataType: 'json',
+                data: { project_id: $cell.data('project-id'), notes: val },
+                success: function(res) {
+                    if (res && res.success) {
+                        $stamp.text(res.updated_text || '');
+                    } else {
+                        $stamp.text('');
+                        alert_float('danger', (res && res.message) ? res.message : 'Error saving notes');
+                    }
+                },
+                error: function() {
+                    $stamp.text('');
+                    alert_float('danger', 'Error saving notes');
+                }
+            });
+        });
     });
 </script>
 <?php } else { ?>

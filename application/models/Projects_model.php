@@ -726,6 +726,39 @@ class Projects_model extends App_Model
         }
     }
 
+    /**
+     * Ensure the listing notes columns exist on tblprojects (add if missing).
+     * Backs the per-row Notes textarea on the projects listing page.
+     */
+    public function ensure_project_listing_notes_columns()
+    {
+        $table = db_prefix() . 'projects';
+        if (! $this->db->field_exists('listing_notes', $table)) {
+            $this->db->query('ALTER TABLE `' . $table . '` ADD `listing_notes` TEXT NULL DEFAULT NULL');
+        }
+        if (! $this->db->field_exists('listing_notes_updated_at', $table)) {
+            $this->db->query('ALTER TABLE `' . $table . '` ADD `listing_notes_updated_at` DATETIME NULL DEFAULT NULL');
+        }
+    }
+
+    /**
+     * Save the per-row listing note for a project and stamp the update time.
+     * Returns the update timestamp (Y-m-d H:i:s) on success, false on failure.
+     */
+    public function save_listing_notes($project_id, $notes)
+    {
+        $this->ensure_project_listing_notes_columns();
+
+        $now = date('Y-m-d H:i:s');
+        $this->db->where('id', $project_id);
+        $this->db->update(db_prefix() . 'projects', [
+            'listing_notes'            => $notes,
+            'listing_notes_updated_at' => $now,
+        ]);
+
+        return $this->db->affected_rows() >= 0 ? $now : false;
+    }
+
     public function add($data)
     {
         if (isset($data['notify_project_members_status_change'])) {

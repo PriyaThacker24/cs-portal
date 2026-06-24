@@ -896,6 +896,13 @@ $lang['settings_paymentmethod_paypal_password']            = 'PayPal API Passwor
 $lang['settings_paymentmethod_paypal_signature']           = 'API Signature';
 $lang['settings_paymentmethod_stripe_api_secret_key']      = 'Stripe API Secret Key';
 $lang['settings_paymentmethod_stripe_api_publishable_key'] = 'Stripe Publishable Key';
+$lang['settings_paymentmethod_wise_api_token']             = 'Wise API Token';
+$lang['settings_paymentmethod_wise_profile_id']            = 'Wise Profile ID';
+$lang['settings_paymentmethod_wise_webhook_url']           = 'Public Webhook Base URL (optional, e.g. ngrok/staging - Wise rejects local URLs)';
+$lang['settings_paymentmethod_wise_balance_id']            = 'Wise Balance ID (optional, auto-detected by currency if empty)';
+$lang['wise_credit_received_notification']                 = 'Wise payment of %s received - confirm and record payment for invoice %s';
+$lang['settings_paymentmethod_wise_sandbox']               = 'Use Wise Sandbox Environment';
+$lang['settings_paymentmethod_wise_webhook_public_key']    = 'Wise Webhook Public Key (optional, for signature verification)';
 $lang['settings_limit_top_search_bar_results']             = 'Limit Top Search Bar Results to';
 
 ## Clients
@@ -1988,6 +1995,12 @@ $lang['task_not_billable']       = 'Non Billable';
 $lang['billing_type']           = 'Billing Type';
 $lang['billable']               = 'Billable';
 $lang['non_billable']           = 'Non-billable';
+// Task timesheet (Add Time Log style) field labels
+$lang['date']                   = 'Date';
+$lang['daily_log']              = 'Daily Log';
+$lang['notes']                  = 'Notes';
+$lang['last_updated']           = 'Last updated';
+$lang['none']                   = 'None';
 $lang['pending']                = 'Pending';
 $lang['approved']               = 'Approved';
 $lang['rejected']               = 'Rejected';

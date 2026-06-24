@@ -11,7 +11,10 @@ $table_data = [
     ],
    _l('project_start_date'),
    _l('project_progress'),
-   _l('project_resources'),
+    [
+         'name'     => _l('project_resources'),
+         'th_attrs' => ['width' => '150', 'class' => 'project-resources-col'],
+    ],
    _l('project_status'),
 ];
 
@@ -22,6 +25,12 @@ foreach ($custom_fields as $field) {
      'th_attrs' => ['data-type' => $field['type'], 'data-custom-field' => 1],
  ]);
 }
+
+// Per-row Notes column (last column, not sortable)
+$table_data[] = [
+    'name'     => _l('notes'),
+    'th_attrs' => ['width' => '260', 'class' => 'project-notes-col', 'data-orderable' => 'false', 'data-searchable' => 'false'],
+];
 
 $table_data = hooks()->apply_filters('projects_table_columns', $table_data);
 

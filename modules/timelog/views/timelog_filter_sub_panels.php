@@ -8,6 +8,29 @@ $activeStaff = $this->staff_model->get('', ['active' => 1]);
 $hide_project_filter = isset($hide_project_filter) ? $hide_project_filter : false;
 $project_id = isset($project_id) ? $project_id : null;
 
+// Project filter list, scoped by permission. Global users (admin / view global)
+// can filter by any active project; own-permission users only see projects they
+// are assigned to (as a member or as the creator). Only computed when the project
+// filter is actually shown (it is hidden in single-project context).
+$filterProjects = [];
+if (!$hide_project_filter) {
+    $isGlobal = is_admin() || staff_can('view', 'timesheets');
+    if ($isGlobal) {
+        $filterProjects = isset($projects) ? $projects : $this->projects_model->get('', ['status !=' => 0]);
+    } else {
+        $currentStaffId = get_staff_user_id();
+        $this->db->select(db_prefix() . 'projects.id, ' . db_prefix() . 'projects.name');
+        $this->db->from(db_prefix() . 'projects');
+        $this->db->where(db_prefix() . 'projects.status !=', 0);
+        $this->db->group_start();
+        $this->db->where(db_prefix() . 'projects.addedfrom', $currentStaffId);
+        $this->db->or_where(db_prefix() . 'projects.id IN (SELECT project_id FROM ' . db_prefix() . 'project_members WHERE staff_id=' . $this->db->escape_str($currentStaffId) . ')', null, false);
+        $this->db->group_end();
+        $this->db->order_by(db_prefix() . 'projects.name', 'ASC');
+        $filterProjects = $this->db->get()->result_array();
+    }
+}
+
 // Get tasks - filter by project if in project context
 $this->load->model('tasks_model');
 $tasksQuery = $this->db->select('id, name, status, rel_id')
@@ -41,7 +64,7 @@ $allTasks = $tasksQuery->order_by('name', 'ASC')
         <div class="form-group">
             <label><?= _l('select_project'); ?></label>
             <select class="form-control selectpicker" multiple name="project_value[]" data-live-search="true" data-actions-box="true" id="timelog_project_select">
-                <?php foreach ($projects as $project) { ?>
+                <?php foreach ($filterProjects as $project) { ?>
                     <option value="<?= $project['id']; ?>"><?= e($project['name']); ?></option>
                 <?php } ?>
             </select>
@@ -165,6 +188,7 @@ $allTasks = $tasksQuery->order_by('name', 'ASC')
         <div class="form-group">
             <label><?= _l('select_type'); ?></label>
             <select class="form-control selectpicker" name="billing_type_value" id="timelog_billing_type_value_select">
+                <option value=""><?= _l('select_type'); ?></option>
                 <option value="billable"><?= _l('task_billable'); ?></option>
                 <option value="non_billable"><?= _l('task_not_billable'); ?></option>
             </select>
