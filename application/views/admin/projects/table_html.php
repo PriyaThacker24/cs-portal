@@ -6,7 +6,7 @@ $table_data = [
    _l('the_number_sign'),
     [
          'name'     => _l('project_name'),
-         'th_attrs' => ['width' => '200', 'class' => 'project-name-col'],
+         'th_attrs' => ['width' => '230', 'class' => 'project-name-col'],
     ],
     [
          'name'     => _l('project_customer'),
@@ -14,15 +14,19 @@ $table_data = [
     ],
     [
       'name'     => _l('project_start_date'),
-      'th_attrs' => ['width' => '80'],
- ],
+      'th_attrs' => ['width' => '100'],
+     ],
   //  _l('project_start_date'),
    _l('project_progress'),
     [
          'name'     => _l('project_resources'),
          'th_attrs' => ['width' => '100', 'class' => 'project-resources-col'],
     ],
-   _l('project_status'),
+//    _l('project_status'),
+    [
+     'name'     => _l('project_status'),
+     'th_attrs' => ['width' => '100', 'class' => 'project-status-col'],
+    ],
 ];
 
 $custom_fields = get_custom_fields('projects', ['show_on_table' => 1]);

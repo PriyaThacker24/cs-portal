@@ -12,7 +12,7 @@ if (staff_cant('view', 'projects')) {
         style="min-width:120px;max-width:120px;flex-shrink:0;"
         class="tw-bg-transparent tw-border tw-border-solid tw-border-neutral-300 tw-shadow-sm tw-py-1 tw-px-2 tw-rounded-lg tw-text-sm hover:tw-bg-neutral-200/60 tw-text-neutral-600 hover:tw-text-neutral-600 focus:tw-text-neutral-600 tw-text-center tw-flex tw-items-center tw-justify-center"
         @click.prevent="extra.projectsRules = <?= app\services\utilities\Js::from($table->findRule('status')->setValue([(int) $status['id']])); ?>">
-        <span class="tw-font-semibold tw-mr-3 rtl:tw-ml-1">
+        <span class="tw-font-semibold tw-mr-2 rtl:tw-ml-1">
             <?= total_rows(db_prefix() . 'projects', $where); ?>
         </span>
         <span

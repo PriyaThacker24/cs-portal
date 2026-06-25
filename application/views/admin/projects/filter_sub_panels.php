@@ -8,8 +8,25 @@ $activeStaff = $this->staff_model->get('', ['active' => 1]);
 $this->load->model('projects_model');
 $projectStatuses = $this->projects_model->get_project_statuses();
 
-// Get deactive (inactive) staff members
-$deactiveStaff = $this->staff_model->get('', ['active' => 0]);
+// Owner filter: administrators only (admin flag)
+$ownerStaff = $this->staff_model->get('', ['active' => 1, 'admin' => 1]);
+
+// Get deactive (inactive) staff members — owner is restricted to administrators
+$deactiveStaff = $this->staff_model->get('', ['active' => 0, 'admin' => 1]);
+
+// Manager filter: only staff whose role is a Leader/Manager role
+$managerRoleRows = $this->db
+    ->query('SELECT roleid FROM ' . db_prefix() . 'roles WHERE LOWER(name) LIKE "%manager%" OR LOWER(name) LIKE "%leader%"')
+    ->result_array();
+$managerRoleIds = array_column($managerRoleRows, 'roleid');
+
+$managerStaff = [];
+if (! empty($managerRoleIds)) {
+    $this->db->where('active', 1);
+    $this->db->where_in('role', $managerRoleIds);
+    $this->db->order_by('firstname', 'asc');
+    $managerStaff = $this->db->get(db_prefix() . 'staff')->result_array();
+}
 
 // Orphaned owner_id values (project owner field) — not project members or manager
 $deletedStaff = [];
@@ -93,7 +110,7 @@ if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
         <div class="form-group owner-users-group" id="owner_active_users_group">
             <label><?= _l('select_owner'); ?></label>
             <select class="form-control selectpicker" multiple name="owner_value[]" data-live-search="true" data-actions-box="true" id="owner_active_select">
-                <?php foreach ($activeStaff as $member) { ?>
+                <?php foreach ($ownerStaff as $member) { ?>
                     <option value="<?= $member['staffid']; ?>"><?= e($member['firstname'] . ' ' . $member['lastname']); ?></option>
                 <?php } ?>
             </select>
@@ -144,7 +161,7 @@ if ($this->db->field_exists('owner_id', db_prefix() . 'projects')) {
         <div class="form-group">
             <label><?= _l('select_manager'); ?></label>
             <select class="form-control selectpicker" multiple name="manager_value[]" data-live-search="true" data-actions-box="true" id="manager_filter_select">
-                <?php foreach ($activeStaff as $member) { ?>
+                <?php foreach ($managerStaff as $member) { ?>
                     <option value="<?= $member['staffid']; ?>"><?= e($member['firstname'] . ' ' . $member['lastname']); ?></option>
                 <?php } ?>
             </select>

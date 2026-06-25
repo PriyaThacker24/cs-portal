@@ -101,19 +101,13 @@ if ($selected != '') {
                                             }
                                         }
 
-                                        // Restrict OWNER dropdown to specific staff only
-                                        $allowed_owner_names = ['Nirav Mehta', 'Adarsh Verma', 'Kakshak Kalaria'];
-                                        $owner_staff         = [];
+                                        // Restrict OWNER dropdown to administrators only (admin flag)
+                                        $owner_staff = [];
 
                                         foreach ($staff as $staff_member) {
-                                            $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
-                                            $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
-                                            $full_name  = trim($first_name . ' ' . $last_name);
-                                            foreach ($allowed_owner_names as $allowed_name) {
-                                                if (stripos($full_name, $allowed_name) !== false) {
-                                                    $owner_staff[] = $staff_member;
-                                                    break;
-                                                }
+                                            $is_admin = is_array($staff_member) ? ($staff_member['admin'] ?? 0) : ($staff_member->admin ?? 0);
+                                            if ((int) $is_admin === 1) {
+                                                $owner_staff[] = $staff_member;
                                             }
                                         }
 
@@ -168,43 +162,17 @@ if ($selected != '') {
                                             }
                                         }
 
-                                        // Remove specific names from MANAGER dropdown
-                                        // Be deliberately generous with matching to ensure these never appear:
-                                        // - Jaimin/Jaymin Patel
-                                        // - Parth (any last name containing "sangh")
-                                        // - PM Designer (or similar)
-                                        $manager_staff = [];
+                                        // Restrict MANAGER dropdown to Leader/Manager role staff only
+                                        $ci_manager      = &get_instance();
+                                        $managerRoleRows = $ci_manager->db
+                                            ->query('SELECT roleid FROM ' . db_prefix() . 'roles WHERE LOWER(name) LIKE "%manager%" OR LOWER(name) LIKE "%leader%"')
+                                            ->result_array();
+                                        $managerRoleIds  = array_map('intval', array_column($managerRoleRows, 'roleid'));
+                                        $manager_staff   = [];
 
                                         foreach ($staff as $staff_member) {
-                                            $first_name = is_array($staff_member) ? $staff_member['firstname'] : $staff_member->firstname;
-                                            $last_name  = is_array($staff_member) ? $staff_member['lastname'] : $staff_member->lastname;
-                                            $full_name  = trim($first_name . ' ' . $last_name);
-                                            $name_lc    = mb_strtolower($full_name);
-
-                                            $exclude_staff = false;
-
-                                            // Match Jaimin/Jaymin Patel
-                                            if (preg_match('/ja[yi]min\s+patel/i', $full_name)) {
-                                                $exclude_staff = true;
-                                            }
-
-                                            // Match any "Parth" with a Sangh* last name variant
-                                            if (!$exclude_staff && strpos($name_lc, 'parth') !== false && preg_match('/sangh/i', $full_name)) {
-                                                $exclude_staff = true;
-                                            }
-
-                                            // Match any PM Designer variants
-                                            if (
-                                                !$exclude_staff
-                                                && (
-                                                    strpos($name_lc, 'pm designer') !== false
-                                                    || (strpos($name_lc, 'pm') === 0 && strpos($name_lc, 'designer') !== false)
-                                                )
-                                            ) {
-                                                $exclude_staff = true;
-                                            }
-
-                                            if (!$exclude_staff) {
+                                            $role_id = is_array($staff_member) ? ($staff_member['role'] ?? 0) : ($staff_member->role ?? 0);
+                                            if (in_array((int) $role_id, $managerRoleIds, true)) {
                                                 $manager_staff[] = $staff_member;
                                             }
                                         }
