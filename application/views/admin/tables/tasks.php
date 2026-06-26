@@ -21,7 +21,6 @@ return App_table::find('tasks')
             'startdate',
             'duedate',
             get_sql_select_task_asignees_full_names() . ' as assignees',
-            '(SELECT GROUP_CONCAT(name SEPARATOR ",") FROM ' . db_prefix() . 'taggables JOIN ' . db_prefix() . 'tags ON ' . db_prefix() . 'taggables.tag_id = ' . db_prefix() . 'tags.id WHERE rel_id = ' . db_prefix() . 'tasks.id and rel_type="task" ORDER by tag_order ASC) as tags',
             'priority',
         ];
 
@@ -76,24 +75,40 @@ return App_table::find('tasks')
             @$this->ci->db->query('SET SQL_BIG_SELECTS=1');
         }
 
+        $additionalSelect = [
+            'rel_type',
+            'rel_id',
+            'recurring',
+            tasks_rel_name_select_query() . ' as rel_name',
+            'billed',
+            '(SELECT staffid FROM ' . db_prefix() . 'task_assigned WHERE taskid=' . db_prefix() . 'tasks.id AND staffid=' . get_staff_user_id() . ') as is_assigned',
+            get_sql_select_task_assignees_ids() . ' as assignees_ids',
+            '(SELECT MAX(id) FROM ' . db_prefix() . 'taskstimers WHERE task_id=' . db_prefix() . 'tasks.id and staff_id=' . get_staff_user_id() . ' and end_time IS NULL) as not_finished_timer_by_current_staff',
+            '(SELECT staffid FROM ' . db_prefix() . 'task_assigned WHERE taskid=' . db_prefix() . 'tasks.id AND staffid=' . get_staff_user_id() . ') as current_user_is_assigned',
+            '(SELECT CASE WHEN addedfrom=' . get_staff_user_id() . ' AND is_added_from_contact=0 THEN 1 ELSE 0 END) as current_user_is_creator',
+        ];
+
+        // Per-row listing notes: only select the columns if they already exist
+        // (they are created lazily by Tasks_model::ensure_task_listing_notes_columns()).
+        try {
+            $taskFields = $this->ci->db->list_fields(db_prefix() . 'tasks');
+            if (in_array('listing_notes', $taskFields)) {
+                $additionalSelect[] = db_prefix() . 'tasks.listing_notes as listing_notes';
+            }
+            if (in_array('listing_notes_updated_at', $taskFields)) {
+                $additionalSelect[] = db_prefix() . 'tasks.listing_notes_updated_at as listing_notes_updated_at';
+            }
+        } catch (Exception $e) {
+            // If the field check fails, just render without the notes value
+        }
+
         $result = data_tables_init(
             $aColumns,
             $sIndexColumn,
             $sTable,
             $join,
             $where,
-            [
-                'rel_type',
-                'rel_id',
-                'recurring',
-                tasks_rel_name_select_query() . ' as rel_name',
-                'billed',
-                '(SELECT staffid FROM ' . db_prefix() . 'task_assigned WHERE taskid=' . db_prefix() . 'tasks.id AND staffid=' . get_staff_user_id() . ') as is_assigned',
-                get_sql_select_task_assignees_ids() . ' as assignees_ids',
-                '(SELECT MAX(id) FROM ' . db_prefix() . 'taskstimers WHERE task_id=' . db_prefix() . 'tasks.id and staff_id=' . get_staff_user_id() . ' and end_time IS NULL) as not_finished_timer_by_current_staff',
-                '(SELECT staffid FROM ' . db_prefix() . 'task_assigned WHERE taskid=' . db_prefix() . 'tasks.id AND staffid=' . get_staff_user_id() . ') as current_user_is_assigned',
-                '(SELECT CASE WHEN addedfrom=' . get_staff_user_id() . ' AND is_added_from_contact=0 THEN 1 ELSE 0 END) as current_user_is_creator',
-            ]
+            $additionalSelect
         );
 
         $output  = $result['output'];
@@ -219,9 +234,7 @@ return App_table::find('tasks')
 
             $row[] = e(_d($aRow['duedate']));
 
-            $row[] = format_members_by_ids_and_names($aRow['assignees_ids'], $aRow['assignees']);
-
-            $row[] = render_tags($aRow['tags']);
+            $row[] = format_members_by_ids_and_names($aRow['assignees_ids'], $aRow['assignees'], 'md', 4);
 
             // Check if user can change priority - use project-wise permission for project tasks
             $canChangePriority = false;
@@ -260,6 +273,19 @@ return App_table::find('tasks')
             foreach ($customFieldsColumns as $customFieldColumn) {
                 $row[] = (strpos($customFieldColumn, 'date_picker_') !== false ? _d($aRow[$customFieldColumn]) : $aRow[$customFieldColumn]);
             }
+
+            // Per-row Notes: empty starts as a textarea; once it has content it shows as
+            // text and switches back to a textarea on click. Autosaves on blur.
+            $noteValue   = isset($aRow['listing_notes']) ? $aRow['listing_notes'] : '';
+            $noteUpdated = isset($aRow['listing_notes_updated_at']) ? $aRow['listing_notes_updated_at'] : '';
+            $updatedText = $noteUpdated ? _l('last_updated') . ' ' . date('F j, Y \a\t H:i', strtotime($noteUpdated)) : '';
+            $hasNote     = trim($noteValue) !== '';
+            $notesCell  = '<div class="task-listing-notes" data-task-id="' . $aRow['id'] . '">';
+            $notesCell .= '<div class="task-note-display" style="white-space:pre-wrap;cursor:text;min-height:18px;' . ($hasNote ? '' : 'display:none !important;') . '">' . e($noteValue) . '</div>';
+            $notesCell .= '<textarea class="form-control task-note-input" rows="2" placeholder="' . _l('notes') . '" style="' . ($hasNote ? 'display:none !important;' : '') . '">' . e($noteValue) . '</textarea>';
+            $notesCell .= '<small class="text-muted task-note-updated tw-block tw-mt-1" style="font-size:10px;font-style:italic;">' . e($updatedText) . '</small>';
+            $notesCell .= '</div>';
+            $row[] = $notesCell;
 
             $row['DT_RowClass'] = 'has-row-options has-border-left';
 

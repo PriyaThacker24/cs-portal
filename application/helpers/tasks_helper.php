@@ -156,7 +156,7 @@ function task_priority_color($id)
  *
  * @return string
  */
-function format_members_by_ids_and_names($ids, $names, $size = 'md')
+function format_members_by_ids_and_names($ids, $names, $size = 'md', $maxVisible = null)
 {
     if (!$ids) {
         return '';
@@ -167,19 +167,35 @@ function format_members_by_ids_and_names($ids, $names, $size = 'md')
 
     $assignees   = explode(',', $names);
     $assigneeIds = explode(',', $ids);
+
+    // Count the non-empty assignees so the "+N" overflow badge is accurate
+    $totalAssignees = count(array_filter($assignees, function ($a) {
+        return $a !== '';
+    }));
+    $shown = 0;
+
     foreach ($assignees as $key => $assigned) {
         $assignee_id = $assigneeIds[$key];
         $assignee_id = trim($assignee_id);
         if ($assigned != '') {
-            $outputAssignees .= '<a href="' . admin_url('profile/' . $assignee_id) . '">' .
-                staff_profile_image($assignee_id, [
-                    ($size == 'md' ? 'tw-h-7 tw-w-7' : 'tw-h-5 tw-w-5') . ' tw-inline-block tw-rounded-full tw-ring-2 tw-ring-white',
-                ], 'small', [
-                    'data-toggle' => 'tooltip',
-                    'data-title'  => e($assigned),
-                ]) . '</a>';
+            if ($maxVisible === null || $shown < $maxVisible) {
+                $outputAssignees .= '<a href="' . admin_url('profile/' . $assignee_id) . '">' .
+                    staff_profile_image($assignee_id, [
+                        ($size == 'md' ? 'tw-h-7 tw-w-7' : 'tw-h-5 tw-w-5') . ' tw-inline-block tw-rounded-full tw-ring-2 tw-ring-white',
+                    ], 'small', [
+                        'data-toggle' => 'tooltip',
+                        'data-title'  => e($assigned),
+                    ]) . '</a>';
+                $shown++;
+            }
             $exportAssignees .= e($assigned) . ', ';
         }
+    }
+
+    // When capped, show a "+N" badge (same behaviour as the project resources column)
+    if ($maxVisible !== null && $totalAssignees > $maxVisible) {
+        $sizeClasses = ($size == 'md' ? 'tw-h-7 tw-w-7' : 'tw-h-5 tw-w-5');
+        $outputAssignees .= '<span class="tw-inline-flex tw-items-center tw-justify-center ' . $sizeClasses . ' tw-rounded-full tw-ring-2 tw-ring-white tw-bg-neutral-200 tw-text-xs tw-font-medium" data-toggle="tooltip" data-title="' . trim($exportAssignees, ', ') . '">+' . ($totalAssignees - $maxVisible) . '</span>';
     }
 
     if ($exportAssignees != '') {
@@ -272,36 +288,33 @@ function tasks_rel_name_select_query()
  */
 function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = 'vueApp', $filtersDetached = false)
 {
+    // Column widths mirror the main tasks list (application/views/admin/tasks/_table.php)
     $table_data = [
-        _l('the_number_sign'),
         [
-            'name'     => _l('tasks_dt_name'),
-            'th_attrs' => [
-                'style' => 'width:200px',
-            ],
+            'name'     => _l('the_number_sign'),
+            'th_attrs' => ['width' => '50'],
         ],
-        _l('task_status'),
+        _l('tasks_dt_name'),
+        [
+            'name'     => _l('task_status'),
+            'th_attrs' => ['width' => '100'],
+        ],
         [
             'name'     => _l('tasks_dt_datestart'),
-            'th_attrs' => [
-                'style' => 'width:75px',
-            ],
+            'th_attrs' => ['width' => '80', 'class' => 'project-datestart-col'],
         ],
         [
             'name'     => _l('task_duedate'),
-            'th_attrs' => [
-                'style' => 'width:75px',
-                'class' => 'duedate',
-            ],
+            'th_attrs' => ['width' => '80', 'class' => 'duedate'],
         ],
         [
             'name'     => _l('task_assigned'),
-            'th_attrs' => [
-                'style' => 'width:75px',
-            ],
+            'th_attrs' => ['width' => '100', 'class' => 'project-resources-col'],
         ],
-        _l('tags'),
-        _l('tasks_list_priority'),
+        [
+            'name'     => _l('tasks_list_priority'),
+            'th_attrs' => ['width' => '80', 'class' => 'project-priority-col'],
+        ],
     ];
 
     array_unshift($table_data, [
@@ -319,6 +332,12 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
            'th_attrs' => ['data-type' => $field['type'], 'data-custom-field' => 1],
        ]);
     }
+
+    // Per-row Notes column (last column, not sortable)
+    $table_data[] = [
+        'name'     => _l('notes'),
+        'th_attrs' => ['width' => '260', 'class' => 'task-notes-col', 'data-orderable' => 'false', 'data-searchable' => 'false'],
+    ];
 
     $table_data = hooks()->apply_filters('tasks_related_table_columns', $table_data);
 
@@ -440,6 +459,11 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
     $table_attributes['id'] = 'related_tasks';
 
     $table .= render_datatable($table_data, $name, ['number-index-1'], $table_attributes);
+
+    // NOTE: the per-row Notes save JS is intentionally NOT emitted here. This helper
+    // renders inside the project tab's Vue mount (#vueApp), and Vue does not execute
+    // inline <script> tags inside its element. The shared handler partial
+    // (admin/tasks/_listing_notes_js) is loaded OUTSIDE #vueApp by the hosting view.
 
     return $table;
 }

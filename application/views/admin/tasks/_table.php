@@ -3,17 +3,39 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 $table_data = [
-    _l('the_number_sign'),
+    // _l('the_number_sign'),
+    [
+        'name'     => _l('the_number_sign'),
+        'th_attrs' => ['width' => '50'],
+    ],
     _l('tasks_dt_name'),
-    _l('task_status'),
-    _l('tasks_dt_datestart'),
+    // [
+    //     'name'     => _l('tasks_dt_name'),
+    //     'th_attrs' => ['width' => '300'],
+    // ],
+    // _l('task_status'),
+    [
+        'name'     => _l('task_status'),
+        'th_attrs' => ['width' => '100'],
+    ],
+    // _l('tasks_dt_datestart'),
+    [
+        'name'     => _l('tasks_dt_datestart'),
+        'th_attrs' => ['width' => '80', 'class' => 'project-datestart-col'],
+    ],
     [
         'name'     => _l('task_duedate'),
-        'th_attrs' => ['class' => 'duedate'],
+        'th_attrs' => ['width' => '80', 'class' => 'duedate'],
     ],
-    _l('task_assigned'),
-    _l('tags'),
-    _l('tasks_list_priority'),
+    [
+        'name'     => _l('task_assigned'),
+        'th_attrs' => ['width' => '100', 'class' => 'project-resources-col'],
+    ],
+    [
+        'name'     => _l('tasks_list_priority'),
+        'th_attrs' => ['width' => '80', 'class' => 'project-priority-col'],
+    ],
+    // _l('tasks_list_priority'),
 ];
 
 array_unshift($table_data, [
@@ -31,6 +53,12 @@ foreach ($custom_fields as $field) {
         'th_attrs' => ['data-type' => $field['type'], 'data-custom-field' => 1],
     ]);
 }
+
+// Per-row Notes column (last column, not sortable)
+$table_data[] = [
+    'name'     => _l('notes'),
+    'th_attrs' => ['width' => '260', 'class' => 'task-notes-col', 'data-orderable' => 'false', 'data-searchable' => 'false'],
+];
 
 $table_data = hooks()->apply_filters('tasks_table_columns', $table_data);
 

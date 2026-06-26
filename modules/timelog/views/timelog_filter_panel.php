@@ -52,6 +52,9 @@
                 <button type="button" class="btn btn-primary btn-timelog-filter-find">
                     <i class="fa fa-search"></i> <?= _l('find'); ?>
                 </button>
+                <button type="button" class="btn btn-info btn-timelog-filter-save">
+                    <i class="fa fa-bookmark"></i> <?= _l('filter_save'); ?>
+                </button>
                 <button type="button" class="btn btn-default timelog-filter-reset">
                     <?= _l('reset'); ?>
                 </button>

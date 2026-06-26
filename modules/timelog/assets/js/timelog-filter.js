@@ -50,7 +50,8 @@ var TimelogFilter = (function() {
         initializeDatepickers();
         initializeSelectPickers();
         loadSavedFilters();
-        
+        applyDefaultFilterOnLoad();
+
         // Mark as initialized
         $filterPanel.data('initialized', true);
         
@@ -116,7 +117,47 @@ var TimelogFilter = (function() {
         $(document).on('change', '#timelog_start_date_operator_select', function() {
             handleStartDateOperatorChange($(this).val());
         });
-        
+
+        // Open the Save Filter modal (footer button)
+        $(document).on('click', '#timelogFilterPanel .btn-timelog-filter-save', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSaveFilterModal();
+        });
+
+        // Submit the Save/Edit Filter modal
+        $(document).on('click', '#btnSubmitSaveTimelogFilter', function(e) {
+            e.preventDefault();
+            submitSaveFilter();
+        });
+
+        // Apply a saved filter
+        $(document).on('click', '#savedTimelogFiltersMenu .saved-filter-apply', function(e) {
+            e.preventDefault();
+            applySavedFilterItem($(this).closest('.saved-filter-item'));
+        });
+
+        // Toggle a saved filter as default (keep dropdown open)
+        $(document).on('click', '#savedTimelogFiltersMenu .saved-filter-default', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleDefaultFilter($(this).closest('.saved-filter-item'));
+        });
+
+        // Edit a saved filter (open modal in edit mode)
+        $(document).on('click', '#savedTimelogFiltersMenu .saved-filter-edit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSaveFilterModal($(this).closest('.saved-filter-item'));
+        });
+
+        // Delete a saved filter
+        $(document).on('click', '#savedTimelogFiltersMenu .saved-filter-delete', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            deleteSavedFilter($(this).closest('.saved-filter-item'));
+        });
+
         // Debug: Log when events are bound
         console.log('TimelogFilter: Events bound successfully');
     }
@@ -569,6 +610,372 @@ var TimelogFilter = (function() {
     function loadSavedFilters() {
         currentFilters = {};
         localStorage.removeItem('timelog_filters');
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Saved filters (create / apply / edit / delete / default)
+     * ------------------------------------------------------------------ */
+
+    // Payload captured when the Save modal is opened, used as the fallback
+    // "builder" when editing a filter without overwriting its rules.
+    var pendingBuilder = {};
+
+    function escapeHtml(str) {
+        return $('<div>').text(str == null ? '' : str).html();
+    }
+
+    /**
+     * Count active filters in a payload (everything except the match key).
+     */
+    function countActiveFilters(payload) {
+        return Object.keys(payload || {}).filter(function(k) {
+            return k !== 'match';
+        }).length;
+    }
+
+    /**
+     * Clear every input in the panel without reloading the list.
+     */
+    function resetFilterInputs() {
+        $('#timelogFilterPanel .filter-accordion-item input[type="text"]').val('');
+        $('#timelogFilterPanel .filter-accordion-item select').each(function() {
+            var $select = $(this);
+            if ($select.prop('multiple') && typeof $.fn.selectpicker !== 'undefined') {
+                $select.selectpicker('deselectAll');
+            } else {
+                $select.val('');
+            }
+            if ($select.hasClass('selectpicker') && typeof $.fn.selectpicker !== 'undefined') {
+                $select.selectpicker('refresh');
+            }
+        });
+        $('#timelogFilterPanel .start-date-input-group').hide();
+        $('#timelogFilterPanel .filter-accordion-item').removeClass('has-value');
+    }
+
+    /**
+     * Populate the panel UI from a saved builder payload (inverse of
+     * collectFilterValues). Operators are set first and their change handlers
+     * fired so dependent inputs (date groups) become visible.
+     */
+    function loadBuilderIntoUI(builder) {
+        resetFilterInputs();
+
+        if (!builder || typeof builder !== 'object') {
+            return;
+        }
+
+        var match = builder.match || 'any';
+        $('#timelogFilterPanel input[name="timelog_filter_match"][value="' + match + '"]').prop('checked', true);
+
+        $.each(builder, function(filterType, filterValue) {
+            if (filterType === 'match' || !filterValue || typeof filterValue !== 'object') {
+                return;
+            }
+
+            var $panel = $('#timelogFilterPanel .filter-accordion-item[data-filter="' + filterType + '"]');
+            if (!$panel.length) {
+                return;
+            }
+
+            // Set the operator first and trigger its handler so conditional
+            // groups are revealed before we populate their values.
+            if (typeof filterValue.operator !== 'undefined') {
+                var $op = $panel.find('[name="' + filterType + '_operator"]');
+                if ($op.length) {
+                    $op.val(filterValue.operator);
+                    if ($op.hasClass('selectpicker')) {
+                        $op.selectpicker('refresh');
+                    }
+                    $op.trigger('change');
+                }
+            }
+
+            $.each(filterValue, function(key, value) {
+                if (key === 'operator') {
+                    return;
+                }
+                var base = filterType + '_' + key;
+                var $field = $panel.find('[name="' + base + '"], [name="' + base + '[]"]');
+                if ($field.length) {
+                    $field.val(value);
+                    if ($field.hasClass('selectpicker')) {
+                        $field.selectpicker('refresh');
+                    }
+                    markFilterAsActive($field);
+                }
+            });
+
+            toggleAccordion($panel);
+        });
+    }
+
+    /**
+     * Make a builder the active filter set. When reload is true the list is
+     * refreshed immediately; on initial page load it is left to the module's
+     * own bootstrap (loadTimelogs runs right after init).
+     */
+    function setActiveBuilder(builder, reload) {
+        currentFilters = $.extend(true, {}, builder || {});
+        loadBuilderIntoUI(builder);
+        if (reload && typeof TimelogModule !== 'undefined' && TimelogModule.loadTimelogs) {
+            TimelogModule.loadTimelogs();
+        }
+    }
+
+    /**
+     * Open the Save Filter modal. Pass a saved-filter <li> to edit it,
+     * or nothing to save the currently selected filters as a new one.
+     */
+    function openSaveFilterModal($item) {
+        var isEdit = $item && $item.length;
+
+        if (isEdit) {
+            $('#save_timelog_filter_id').val($item.data('id'));
+            $('#save_timelog_filter_name').val($item.data('name'));
+            $('#save_timelog_filter_is_shared').prop('checked', String($item.data('shared')) === '1');
+            $('#save_timelog_filter_is_default').prop('checked', String($item.data('default')) === '1');
+            $('#save_timelog_filter_update_rules').prop('checked', false);
+            $('.save-timelog-filter-update-rules-wrapper').removeClass('hide');
+            pendingBuilder = $item.data('builder') || {};
+        } else {
+            pendingBuilder = collectFilterValues();
+            if (countActiveFilters(pendingBuilder) === 0) {
+                if (typeof alert_float !== 'undefined') {
+                    alert_float('warning', 'Please select at least one filter before saving.');
+                }
+                return;
+            }
+            $('#save_timelog_filter_id').val('');
+            $('#save_timelog_filter_name').val('');
+            $('#save_timelog_filter_is_shared').prop('checked', false);
+            $('#save_timelog_filter_is_default').prop('checked', false);
+            $('.save-timelog-filter-update-rules-wrapper').addClass('hide');
+        }
+
+        // Close the dropdown and the slide-in panel (high z-index) so the
+        // modal is not layered behind them.
+        $('#timelogFilterControls').removeClass('open');
+        closeFilterPanel();
+
+        $('#saveTimelogFilterModal').modal('show');
+    }
+
+    /**
+     * Persist the Save/Edit modal (create or update on the server).
+     */
+    function submitSaveFilter() {
+        var id = $('#save_timelog_filter_id').val();
+        var name = $.trim($('#save_timelog_filter_name').val());
+
+        if (!name) {
+            if (typeof alert_float !== 'undefined') {
+                alert_float('warning', 'Please enter a filter name.');
+            }
+            return;
+        }
+
+        var isEdit = !!id;
+        var rules;
+
+        if (isEdit) {
+            rules = $('#save_timelog_filter_update_rules').is(':checked')
+                ? collectFilterValues()
+                : pendingBuilder;
+        } else {
+            rules = pendingBuilder;
+        }
+
+        var data = {
+            name: name,
+            rules: JSON.stringify(rules),
+            is_shared: $('#save_timelog_filter_is_shared').is(':checked') ? 1 : 0,
+            is_default: $('#save_timelog_filter_is_default').is(':checked') ? 1 : 0
+        };
+
+        var url = admin_url + 'timelog/' + (isEdit ? 'update_filter/' + id : 'save_filter');
+        var $btn = $('#btnSubmitSaveTimelogFilter').prop('disabled', true);
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            data: data,
+            success: function(res) {
+                $btn.prop('disabled', false);
+                if (res && res.success && res.filter) {
+                    upsertMenuItem(res.filter);
+                    $('#saveTimelogFilterModal').modal('hide');
+                    if (typeof alert_float !== 'undefined') {
+                        alert_float('success', isEdit ? 'Filter updated' : 'Filter saved');
+                    }
+                } else {
+                    if (typeof alert_float !== 'undefined') {
+                        alert_float('danger', (res && res.message) ? res.message : 'Could not save filter');
+                    }
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false);
+                if (typeof alert_float !== 'undefined') {
+                    alert_float('danger', 'Could not save filter');
+                }
+            }
+        });
+    }
+
+    /**
+     * Apply a saved filter from its <li> element.
+     */
+    function applySavedFilterItem($item) {
+        if (!$item || !$item.length) {
+            return;
+        }
+        var builder = $item.data('builder') || {};
+        setActiveBuilder(builder, true);
+        if (typeof alert_float !== 'undefined') {
+            alert_float('success', '"' + $item.data('name') + '" applied');
+        }
+    }
+
+    /**
+     * Toggle a saved filter as the current user's default.
+     */
+    function toggleDefaultFilter($item) {
+        var id = $item.data('id');
+        $.ajax({
+            url: admin_url + 'timelog/toggle_default_filter/' + id,
+            type: 'POST',
+            dataType: 'json',
+            success: function(res) {
+                if (res && res.success) {
+                    $('#savedTimelogFiltersMenu .saved-filter-item')
+                        .removeClass('is-default')
+                        .attr('data-default', 0);
+
+                    if (res.is_default) {
+                        $item.addClass('is-default').attr('data-default', 1);
+                        $item.data('default', 1);
+                        if (typeof alert_float !== 'undefined') {
+                            alert_float('success', 'Marked as default');
+                        }
+                    } else {
+                        $item.data('default', 0);
+                        if (typeof alert_float !== 'undefined') {
+                            alert_float('success', 'Default removed');
+                        }
+                    }
+                } else if (typeof alert_float !== 'undefined') {
+                    alert_float('danger', 'Could not update default');
+                }
+            },
+            error: function() {
+                if (typeof alert_float !== 'undefined') {
+                    alert_float('danger', 'Could not update default');
+                }
+            }
+        });
+    }
+
+    /**
+     * Delete a saved filter (after confirmation).
+     */
+    function deleteSavedFilter($item) {
+        if (!confirm('Are you sure you want to delete this filter?')) {
+            return;
+        }
+        var id = $item.data('id');
+        $.ajax({
+            url: admin_url + 'timelog/delete_filter/' + id,
+            type: 'POST',
+            dataType: 'json',
+            success: function(res) {
+                if (res && res.success) {
+                    $item.remove();
+                    toggleEmptyState();
+                    if (typeof alert_float !== 'undefined') {
+                        alert_float('success', 'Filter deleted');
+                    }
+                } else if (typeof alert_float !== 'undefined') {
+                    alert_float('danger', (res && res.message) ? res.message : 'Could not delete filter');
+                }
+            },
+            error: function() {
+                if (typeof alert_float !== 'undefined') {
+                    alert_float('danger', 'Could not delete filter');
+                }
+            }
+        });
+    }
+
+    /**
+     * Insert or update a saved-filter <li> in the dropdown from a server
+     * filter object ({id, name, is_shared, is_default, staff_id, builder}).
+     */
+    function upsertMenuItem(filter) {
+        var $menu = $('#savedTimelogFiltersMenu');
+        var $existing = $menu.find('.saved-filter-item[data-id="' + filter.id + '"]');
+        var isDefault = String(filter.is_default) === '1';
+        var isShared = String(filter.is_shared) === '1';
+
+        var sharedIcon = isShared
+            ? ' <i class="fa fa-users text-muted" aria-hidden="true"></i>'
+            : '';
+
+        var $li = $(
+            '<li class="saved-filter-item">' +
+                '<a href="#" class="saved-filter-apply">' +
+                    '<i class="fa fa-star saved-filter-default-icon" aria-hidden="true"></i> ' +
+                    '<span class="saved-filter-name"></span>' +
+                '</a>' +
+                '<span class="saved-filter-actions">' +
+                    '<a href="#" class="saved-filter-default"><i class="fa fa-star-o"></i></a>' +
+                    '<a href="#" class="saved-filter-edit"><i class="fa fa-pencil"></i></a>' +
+                    '<a href="#" class="saved-filter-delete"><i class="fa fa-trash"></i></a>' +
+                '</span>' +
+            '</li>'
+        );
+
+        $li.attr('data-id', filter.id)
+            .attr('data-name', filter.name)
+            .attr('data-shared', isShared ? 1 : 0)
+            .attr('data-default', isDefault ? 1 : 0)
+            .attr('data-can-manage', 1)
+            .attr('data-builder', JSON.stringify(filter.builder || {}));
+        $li.data('builder', filter.builder || {});
+        $li.toggleClass('is-default', isDefault);
+        $li.find('.saved-filter-name').html(escapeHtml(filter.name) + sharedIcon);
+
+        if (isDefault) {
+            $menu.find('.saved-filter-item').removeClass('is-default').attr('data-default', 0);
+        }
+
+        if ($existing.length) {
+            $existing.replaceWith($li);
+        } else {
+            $menu.append($li);
+        }
+
+        toggleEmptyState();
+    }
+
+    /**
+     * Show/hide the "no saved filters" placeholder based on item count.
+     */
+    function toggleEmptyState() {
+        var hasItems = $('#savedTimelogFiltersMenu .saved-filter-item').length > 0;
+        $('#savedTimelogFiltersMenu .saved-filters-empty').toggleClass('hide', hasItems);
+    }
+
+    /**
+     * On page load, apply the staff member's default saved filter (if any).
+     * The list reload is handled by TimelogModule (loadTimelogs runs after init).
+     */
+    function applyDefaultFilterOnLoad() {
+        var $default = $('#savedTimelogFiltersMenu .saved-filter-item.is-default').first();
+        if ($default.length) {
+            setActiveBuilder($default.data('builder') || {}, false);
+        }
     }
 
     /**

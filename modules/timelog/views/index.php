@@ -48,9 +48,47 @@
                             <!-- <button type="button" class="btn btn-default" id="btn_toggle_view">
                                 <i class="fa fa-list"></i> <?= _l('list_view'); ?>
                             </button> -->
-                            <button type="button" class="btn btn-default" id="btn_filter">
-                                <i class="fa fa-filter"></i> <?= _l('filters'); ?>
-                            </button>
+                            <?php $current_staff_id = get_staff_user_id(); ?>
+                            <div class="btn-group timelog-filter-controls" id="timelogFilterControls">
+                                <button type="button" class="btn btn-default" id="btn_filter">
+                                    <i class="fa fa-filter"></i> <?= _l('filters'); ?>
+                                </button>
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="btnSavedTimelogFilters">
+                                    <i class="fa fa-bookmark-o"></i> <?= _l('saved_filters'); ?>
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-right saved-filters-menu" id="savedTimelogFiltersMenu">
+                                    <li class="saved-filters-empty<?= empty($saved_filters) ? '' : ' hide'; ?>">
+                                        <a href="#" onclick="return false;" class="text-muted"><?= _l('no_filters_found'); ?></a>
+                                    </li>
+                                    <?php foreach (($saved_filters ?? []) as $sf) :
+                                        $can_manage = is_admin() || $sf['staff_id'] == $current_staff_id;
+                                    ?>
+                                    <li class="saved-filter-item<?= $sf['is_default'] == '1' ? ' is-default' : ''; ?>"
+                                        data-id="<?= (int) $sf['id']; ?>"
+                                        data-name="<?= html_escape($sf['name']); ?>"
+                                        data-shared="<?= (int) $sf['is_shared']; ?>"
+                                        data-default="<?= (int) ($sf['is_default'] == '1'); ?>"
+                                        data-can-manage="<?= $can_manage ? 1 : 0; ?>"
+                                        data-builder="<?= html_escape(json_encode($sf['builder'])); ?>">
+                                        <a href="#" class="saved-filter-apply" title="<?= _l('filter_apply'); ?>">
+                                            <i class="fa fa-star saved-filter-default-icon" aria-hidden="true"></i>
+                                            <span class="saved-filter-name"><?= html_escape($sf['name']); ?></span>
+                                            <?php if ($sf['is_shared']) : ?>
+                                                <i class="fa fa-users text-muted" title="<?= _l('filter_share'); ?>" aria-hidden="true"></i>
+                                            <?php endif; ?>
+                                        </a>
+                                        <span class="saved-filter-actions">
+                                            <a href="#" class="saved-filter-default" title="<?= _l('filter_mark_as_default'); ?>"><i class="fa fa-star-o"></i></a>
+                                            <?php if ($can_manage) : ?>
+                                            <a href="#" class="saved-filter-edit" title="<?= _l('filter_edit'); ?>"><i class="fa fa-pencil"></i></a>
+                                            <a href="#" class="saved-filter-delete" title="<?= _l('filter_delete'); ?>"><i class="fa fa-trash"></i></a>
+                                            <?php endif; ?>
+                                        </span>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="timelog-summary-footer" id="timelog_summary">
@@ -107,6 +145,42 @@
 <input type="hidden" id="current_week_end" value="<?= $week_end; ?>">
 <input type="hidden" id="current_date_range_type" value="week">
 <input type="hidden" id="current_group_by" value="<?= $filters['group_by']; ?>">
+
+<!-- Save / Edit Filter Modal -->
+<div class="modal fade" id="saveTimelogFilterModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= _l('close'); ?>"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"><?= _l('filter_save'); ?></h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="save_timelog_filter_id" value="">
+                <div class="form-group">
+                    <label for="save_timelog_filter_name" class="control-label"><?= _l('filter_name'); ?></label>
+                    <input type="text" id="save_timelog_filter_name" class="form-control" autocomplete="off">
+                </div>
+                <div class="checkbox checkbox-primary save-timelog-filter-update-rules-wrapper hide">
+                    <input type="checkbox" id="save_timelog_filter_update_rules">
+                    <label for="save_timelog_filter_update_rules"><?= _l('filter_update_rules'); ?></label>
+                </div>
+                <div class="checkbox checkbox-primary">
+                    <input type="checkbox" id="save_timelog_filter_is_shared">
+                    <label for="save_timelog_filter_is_shared"><?= _l('filter_share'); ?></label>
+                </div>
+                <div class="checkbox checkbox-primary">
+                    <input type="checkbox" id="save_timelog_filter_is_default">
+                    <label for="save_timelog_filter_is_default"><?= _l('filter_mark_as_default'); ?></label>
+                </div>
+                <p class="text-muted"><small><?= _l('default_filter_info'); ?></small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"><?= _l('close'); ?></button>
+                <button type="button" class="btn btn-primary" id="btnSubmitSaveTimelogFilter"><?= _l('submit'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php init_tail(); ?>
 

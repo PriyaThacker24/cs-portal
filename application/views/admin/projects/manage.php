@@ -7,7 +7,7 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="tw-block md:tw-hidden">
-                        <?php $this->load->view('admin/projects/stats'); ?>
+                        <?php // $this->load->view('admin/projects/stats'); // status bar hidden ?>
                     </div>
                     <div class="_buttons">
                         <div class="md:tw-flex md:tw-items-center">
@@ -36,7 +36,7 @@
                                 <?php } ?>
                             </a>
                             <div class="tw-hidden md:tw-block md:tw-ml-6 rtl:md:tw-mr-6 tw-min-w-0 tw-flex-1">
-                                <?php $this->load->view('admin/projects/stats'); ?>
+                                <?php // $this->load->view('admin/projects/stats'); // status bar hidden ?>
                             </div>
                             <div class="ltr:tw-ml-auto rtl:tw-mr-auto tw-flex tw-items-center tw-gap-2">
                                 <!-- Zoho-Style Filter Button -->

@@ -12,6 +12,8 @@
         </div>
     </div>
 </div>
+<?php // Loaded outside #vueApp so the inline <script> actually executes (Vue skips scripts inside its mount) ?>
+<?php $this->load->view('admin/tasks/_listing_notes_js'); ?>
 <script>
 (function () {
     setTimeout(function () {

@@ -26,6 +26,7 @@ var ProjectsFilter = (function() {
         initializeDatepickers();
         initializeSelectPickers();
         loadSavedFilters();
+        applyDefaultFilterOnLoad();
     }
 
     /**
@@ -92,6 +93,45 @@ var ProjectsFilter = (function() {
         // Due Date operator change handler
         $(document).on('change', '#due_date_operator_select', function() {
             handleDueDateOperatorChange($(this).val());
+        });
+
+        // Open the Save Filter modal (footer button)
+        $(document).on('click', '.btn-filter-save', function(e) {
+            e.preventDefault();
+            openSaveFilterModal();
+        });
+
+        // Submit the Save/Edit Filter modal
+        $(document).on('click', '#btnSubmitSaveProjectFilter', function(e) {
+            e.preventDefault();
+            submitSaveFilter();
+        });
+
+        // Apply a saved filter
+        $(document).on('click', '.saved-filter-apply', function(e) {
+            e.preventDefault();
+            applySavedFilterItem($(this).closest('.saved-filter-item'));
+        });
+
+        // Toggle a saved filter as default (keep dropdown open)
+        $(document).on('click', '.saved-filter-default', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleDefaultFilter($(this).closest('.saved-filter-item'));
+        });
+
+        // Edit a saved filter (open modal in edit mode)
+        $(document).on('click', '.saved-filter-edit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSaveFilterModal($(this).closest('.saved-filter-item'));
+        });
+
+        // Delete a saved filter
+        $(document).on('click', '.saved-filter-delete', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            deleteSavedFilter($(this).closest('.saved-filter-item'));
         });
     }
 
@@ -343,21 +383,22 @@ var ProjectsFilter = (function() {
     }
 
     /**
-     * Collect and apply filters
+     * Collect the current filter selections from the panel into a payload
+     * object (the same shape that is sent to the server and stored as a
+     * saved filter "builder").
      */
-    function applyFilters() {
-        currentFilters = {};
-        
+    function buildFiltersPayload() {
+        var payload = {};
+
         // Get match condition
-        var matchCondition = $('input[name="filter_match"]:checked').val();
-        currentFilters.match = matchCondition;
-        
+        payload.match = $('input[name="filter_match"]:checked').val() || 'all';
+
         // Collect filter values from each accordion
         $accordionItems.each(function() {
             var $panel = $(this);
             var filterType = $panel.data('filter');
             var filterValue = {};
-            
+
             // Special handling for owner filter - only collect from visible dropdowns
             if (filterType === 'owner') {
                 filterValue = collectOwnerFilterValues($panel);
@@ -382,7 +423,7 @@ var ProjectsFilter = (function() {
                     var $field = $(this);
                     var fieldName = $field.attr('name');
                     var fieldValue = $field.val();
-                    
+
                     if (fieldName && fieldValue && fieldValue.length > 0) {
                         // Remove filter type prefix from field name
                         var cleanName = fieldName.replace(filterType + '_', '');
@@ -392,13 +433,31 @@ var ProjectsFilter = (function() {
                     }
                 });
             }
-            
+
             // Only add if filter has meaningful values
             if (Object.keys(filterValue).length > 0) {
-                currentFilters[filterType] = filterValue;
+                payload[filterType] = filterValue;
             }
         });
-        
+
+        return payload;
+    }
+
+    /**
+     * Count active filters in a payload (everything except the match key).
+     */
+    function countActiveFilters(payload) {
+        return Object.keys(payload || {}).filter(function(k) {
+            return k !== 'match';
+        }).length;
+    }
+
+    /**
+     * Collect and apply filters
+     */
+    function applyFilters() {
+        currentFilters = buildFiltersPayload();
+
         console.log('Applying filters:', currentFilters);
 
         var activeFilterCount = Object.keys(currentFilters).filter(function(k) {
@@ -740,6 +799,360 @@ var ProjectsFilter = (function() {
      */
     function getCurrentFilters() {
         return currentFilters;
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Saved filters (create / apply / edit / delete / default)
+     * ------------------------------------------------------------------ */
+
+    // Payload captured when the Save modal is opened, used as the fallback
+    // "builder" when editing a filter without overwriting its rules.
+    var pendingBuilder = {};
+
+    /**
+     * Append the CSRF token to an AJAX payload (POST requests require it).
+     */
+    function withCsrf(data) {
+        data = data || {};
+        if (typeof csrfData !== 'undefined' && csrfData.token_name) {
+            data[csrfData.token_name] = csrfData.hash;
+        }
+        return data;
+    }
+
+    function escapeHtml(str) {
+        return $('<div>').text(str == null ? '' : str).html();
+    }
+
+    /**
+     * Clear every input in the panel without reloading the table.
+     */
+    function resetFilterInputs() {
+        $('.filter-accordion-item input[type="text"]').val('');
+        $('.filter-accordion-item select').each(function() {
+            var $select = $(this);
+            if ($select.prop('multiple') && typeof $select.selectpicker === 'function') {
+                $select.selectpicker('deselectAll');
+            } else {
+                $select.val('');
+            }
+            if ($select.hasClass('selectpicker')) {
+                $select.selectpicker('refresh');
+            }
+        });
+        $('.owner-users-group, .start-date-input-group, .due-date-input-group').hide();
+        $accordionItems.removeClass('has-value');
+    }
+
+    /**
+     * Populate the panel UI from a saved builder payload (inverse of
+     * buildFiltersPayload). Operators are set first and their change handlers
+     * fired so dependent inputs (owner/date groups) become visible.
+     */
+    function loadBuilderIntoUI(builder) {
+        resetFilterInputs();
+
+        if (!builder || typeof builder !== 'object') {
+            return;
+        }
+
+        var match = builder.match || 'all';
+        $('input[name="filter_match"][value="' + match + '"]').prop('checked', true);
+
+        $.each(builder, function(filterType, filterValue) {
+            if (filterType === 'match' || !filterValue || typeof filterValue !== 'object') {
+                return;
+            }
+
+            var $panel = $('.filter-accordion-item[data-filter="' + filterType + '"]');
+            if (!$panel.length) {
+                return;
+            }
+
+            // Set the operator first and trigger its handler so conditional
+            // groups are revealed before we populate their values.
+            if (typeof filterValue.operator !== 'undefined') {
+                var $op = $panel.find('[name="' + filterType + '_operator"]');
+                if ($op.length) {
+                    $op.val(filterValue.operator);
+                    if ($op.hasClass('selectpicker')) {
+                        $op.selectpicker('refresh');
+                    }
+                    $op.trigger('change');
+                }
+            }
+
+            $.each(filterValue, function(key, value) {
+                if (key === 'operator') {
+                    return;
+                }
+                var base = filterType + '_' + key;
+                var $field = $panel.find('[name="' + base + '"], [name="' + base + '[]"]');
+                if ($field.length) {
+                    $field.val(value);
+                    if ($field.hasClass('selectpicker')) {
+                        $field.selectpicker('refresh');
+                    }
+                    markFilterAsActive($field);
+                }
+            });
+
+            toggleAccordion($panel, true);
+        });
+    }
+
+    /**
+     * Make a builder the active filter set. When reload is true the table is
+     * refreshed immediately; on initial page load it is left to the table's
+     * own bootstrap (the DataTable is not yet initialised).
+     */
+    function setActiveBuilder(builder, reload) {
+        currentFilters = $.extend(true, {}, builder || {});
+        loadBuilderIntoUI(builder);
+        if (reload) {
+            reloadTableWithFilters();
+        }
+    }
+
+    /**
+     * Open the Save Filter modal. Pass a saved-filter <li> to edit it,
+     * or nothing to save the currently selected filters as a new one.
+     */
+    function openSaveFilterModal($item) {
+        var isEdit = $item && $item.length;
+
+        if (isEdit) {
+            $('#save_filter_id').val($item.data('id'));
+            $('#save_filter_name').val($item.data('name'));
+            $('#save_filter_is_shared').prop('checked', String($item.data('shared')) === '1');
+            $('#save_filter_is_default').prop('checked', String($item.data('default')) === '1');
+            // Editing: rules are kept unless the user opts to overwrite them.
+            $('#save_filter_update_rules').prop('checked', false);
+            $('.save-filter-update-rules-wrapper').removeClass('hide');
+            pendingBuilder = $item.data('builder') || {};
+        } else {
+            pendingBuilder = buildFiltersPayload();
+            if (countActiveFilters(pendingBuilder) === 0) {
+                alert_float('warning', 'Please select at least one filter before saving.');
+                return;
+            }
+            $('#save_filter_id').val('');
+            $('#save_filter_name').val('');
+            $('#save_filter_is_shared').prop('checked', false);
+            $('#save_filter_is_default').prop('checked', false);
+            $('.save-filter-update-rules-wrapper').addClass('hide');
+        }
+
+        // Close the saved-filters dropdown and the slide-in filter panel
+        // (z-index 9999) so the modal isn't layered behind them. The current
+        // selections are already captured in pendingBuilder.
+        $('#projectsFilterControls').removeClass('open');
+        closeFilterPanel();
+
+        $('#saveProjectFilterModal').modal('show');
+    }
+
+    /**
+     * Persist the Save/Edit modal (create or update on the server).
+     */
+    function submitSaveFilter() {
+        var id = $('#save_filter_id').val();
+        var name = $.trim($('#save_filter_name').val());
+
+        if (!name) {
+            alert_float('warning', 'Please enter a filter name.');
+            return;
+        }
+
+        var isEdit = !!id;
+        var rules;
+
+        if (isEdit) {
+            // Only re-capture rules when the user asked to overwrite them.
+            rules = $('#save_filter_update_rules').is(':checked')
+                ? buildFiltersPayload()
+                : pendingBuilder;
+        } else {
+            rules = pendingBuilder;
+        }
+
+        var data = withCsrf({
+            name: name,
+            rules: JSON.stringify(rules),
+            is_shared: $('#save_filter_is_shared').is(':checked') ? 1 : 0,
+            is_default: $('#save_filter_is_default').is(':checked') ? 1 : 0
+        });
+
+        var url = admin_url + 'projects/' + (isEdit ? 'update_filter/' + id : 'save_filter');
+
+        var $btn = $('#btnSubmitSaveProjectFilter').prop('disabled', true);
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            data: data,
+            success: function(res) {
+                $btn.prop('disabled', false);
+                if (res && res.success && res.filter) {
+                    upsertMenuItem(res.filter);
+                    $('#saveProjectFilterModal').modal('hide');
+                    alert_float('success', isEdit ? 'Filter updated' : 'Filter saved');
+                } else {
+                    alert_float('danger', (res && res.message) ? res.message : 'Could not save filter');
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false);
+                alert_float('danger', 'Could not save filter');
+            }
+        });
+    }
+
+    /**
+     * Apply a saved filter from its <li> element.
+     */
+    function applySavedFilterItem($item) {
+        if (!$item || !$item.length) {
+            return;
+        }
+        var builder = $item.data('builder') || {};
+        setActiveBuilder(builder, true);
+        $('input[name="filter_match"][value="' + (builder.match || 'all') + '"]').prop('checked', true);
+        alert_float('success', '"' + $item.data('name') + '" applied');
+    }
+
+    /**
+     * Toggle a saved filter as the current user's default.
+     */
+    function toggleDefaultFilter($item) {
+        var id = $item.data('id');
+        $.ajax({
+            url: admin_url + 'projects/toggle_default_filter/' + id,
+            type: 'POST',
+            dataType: 'json',
+            data: withCsrf({}),
+            success: function(res) {
+                if (res && res.success) {
+                    // Only one default at a time.
+                    $('#savedProjectFiltersMenu .saved-filter-item')
+                        .removeClass('is-default')
+                        .attr('data-default', 0);
+
+                    if (res.is_default) {
+                        $item.addClass('is-default').attr('data-default', 1);
+                        $item.data('default', 1);
+                        alert_float('success', 'Marked as default');
+                    } else {
+                        $item.data('default', 0);
+                        alert_float('success', 'Default removed');
+                    }
+                } else {
+                    alert_float('danger', 'Could not update default');
+                }
+            },
+            error: function() {
+                alert_float('danger', 'Could not update default');
+            }
+        });
+    }
+
+    /**
+     * Delete a saved filter (after confirmation).
+     */
+    function deleteSavedFilter($item) {
+        if (!confirm('Are you sure you want to delete this filter?')) {
+            return;
+        }
+        var id = $item.data('id');
+        $.ajax({
+            url: admin_url + 'projects/delete_filter/' + id,
+            type: 'POST',
+            dataType: 'json',
+            data: withCsrf({}),
+            success: function(res) {
+                if (res && res.success) {
+                    $item.remove();
+                    toggleEmptyState();
+                    alert_float('success', 'Filter deleted');
+                } else {
+                    alert_float('danger', (res && res.message) ? res.message : 'Could not delete filter');
+                }
+            },
+            error: function() {
+                alert_float('danger', 'Could not delete filter');
+            }
+        });
+    }
+
+    /**
+     * Insert or update a saved-filter <li> in the dropdown from a server
+     * filter object ({id, name, is_shared, is_default, staff_id, builder}).
+     */
+    function upsertMenuItem(filter) {
+        var $menu = $('#savedProjectFiltersMenu');
+        var $existing = $menu.find('.saved-filter-item[data-id="' + filter.id + '"]');
+        var isDefault = String(filter.is_default) === '1';
+        var isShared = String(filter.is_shared) === '1';
+
+        var sharedIcon = isShared
+            ? ' <i class="fa fa-users text-muted" aria-hidden="true"></i>'
+            : '';
+
+        var $li = $(
+            '<li class="saved-filter-item">' +
+                '<a href="#" class="saved-filter-apply">' +
+                    '<i class="fa fa-star saved-filter-default-icon" aria-hidden="true"></i> ' +
+                    '<span class="saved-filter-name"></span>' +
+                '</a>' +
+                '<span class="saved-filter-actions">' +
+                    '<a href="#" class="saved-filter-default"><i class="fa fa-star-o"></i></a>' +
+                    '<a href="#" class="saved-filter-edit"><i class="fa fa-pencil"></i></a>' +
+                    '<a href="#" class="saved-filter-delete"><i class="fa fa-trash"></i></a>' +
+                '</span>' +
+            '</li>'
+        );
+
+        $li.attr('data-id', filter.id)
+            .attr('data-name', filter.name)
+            .attr('data-shared', isShared ? 1 : 0)
+            .attr('data-default', isDefault ? 1 : 0)
+            .attr('data-can-manage', 1)
+            .attr('data-builder', JSON.stringify(filter.builder || {}));
+        $li.data('builder', filter.builder || {});
+        $li.toggleClass('is-default', isDefault);
+        $li.find('.saved-filter-name').html(escapeHtml(filter.name) + sharedIcon);
+
+        if (isDefault) {
+            $menu.find('.saved-filter-item').removeClass('is-default').attr('data-default', 0);
+        }
+
+        if ($existing.length) {
+            $existing.replaceWith($li);
+        } else {
+            $menu.append($li);
+        }
+
+        toggleEmptyState();
+    }
+
+    /**
+     * Show/hide the "no saved filters" placeholder based on item count.
+     */
+    function toggleEmptyState() {
+        var hasItems = $('#savedProjectFiltersMenu .saved-filter-item').length > 0;
+        $('#savedProjectFiltersMenu .saved-filters-empty').toggleClass('hide', hasItems);
+    }
+
+    /**
+     * On page load, apply the staff member's default saved filter (if any).
+     * The table reload is handled by the listing bootstrap in manage.php.
+     */
+    function applyDefaultFilterOnLoad() {
+        var $default = $('#savedProjectFiltersMenu .saved-filter-item.is-default').first();
+        if ($default.length) {
+            setActiveBuilder($default.data('builder') || {}, false);
+        }
     }
 
     /**

@@ -4,6 +4,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Timelog extends AdminController
 {
+    /**
+     * Identifier/view used to scope saved timelog filters in the generic
+     * filters tables (shared with the Filters_model used by other modules).
+     */
+    const FILTER_IDENTIFIER = 'timelog';
+    const FILTER_VIEW       = 'timelog';
+
     public function __construct()
     {
         parent::__construct();
@@ -37,7 +44,7 @@ class Timelog extends AdminController
         }
         $data['week_start'] = $weekStart;
         $data['week_end'] = date('Y-m-d', strtotime('sunday this week', strtotime($weekStart)));
-        
+
         // Get current filters (default group_by is 'date')
         $data['filters'] = [
             'project_id' => $this->input->get('project_id'),
@@ -45,9 +52,141 @@ class Timelog extends AdminController
             'billing_type' => $this->input->get('billing_type'),
             'group_by' => $this->input->get('group_by') ?: 'date', // Default to 'date'
         ];
-        
+
+        // Saved filters for the current staff member (personal + shared)
+        $this->load->model('filters_model');
+        $data['saved_filters'] = $this->filters_model->get_for_staff(
+            self::FILTER_IDENTIFIER,
+            self::FILTER_VIEW,
+            get_staff_user_id()
+        );
+
         // Load view - CodeIgniter will automatically look in module views folder
         $this->load->view('index', $data);
+    }
+
+    /**
+     * Persist a new saved filter for the timelog listing.
+     * Stores the Zoho-style filter payload as the filter "builder".
+     */
+    public function save_filter()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $name  = trim((string) $this->input->post('name'));
+        $rules = $this->input->post('rules');
+
+        if ($name === '' || empty($rules)) {
+            echo json_encode(['success' => false, 'message' => _l('filter_name') . ' / ' . _l('filter') . ' required']);
+            return;
+        }
+
+        $this->load->model('filters_model');
+
+        $filter = $this->filters_model->create([
+            'name'       => $name,
+            'identifier' => self::FILTER_IDENTIFIER,
+            'builder'    => json_decode($rules, true),
+            'is_shared'  => filter_var($this->input->post('is_shared'), FILTER_VALIDATE_BOOL),
+            'is_default' => filter_var($this->input->post('is_default'), FILTER_VALIDATE_BOOL),
+            'view'       => self::FILTER_VIEW,
+            'staff_id'   => get_staff_user_id(),
+        ]);
+
+        echo json_encode(['success' => true, 'filter' => $filter]);
+    }
+
+    /**
+     * Update an existing saved filter (rename, sharing, default, and
+     * optionally overwrite its rules with the currently selected ones).
+     */
+    public function update_filter($id)
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $this->load->model('filters_model');
+        $staffId = get_staff_user_id();
+
+        $filter = $this->db->where('id', $id)->get('filters')->row_array();
+
+        if (!$filter || $filter['identifier'] !== self::FILTER_IDENTIFIER) {
+            echo json_encode(['success' => false, 'message' => _l('not_found')]);
+            return;
+        }
+
+        if (!is_admin() && $filter['staff_id'] != $staffId) {
+            ajax_access_denied();
+        }
+
+        $rules = $this->input->post('rules');
+        // When no rules are posted (rename/share/default only) keep the stored ones.
+        $builder = !empty($rules) ? json_decode($rules, true) : json_decode($filter['builder'], true);
+
+        $name = trim((string) $this->input->post('name'));
+
+        $updated = $this->filters_model->update($id, [
+            'name'       => $name !== '' ? $name : $filter['name'],
+            'is_shared'  => filter_var($this->input->post('is_shared'), FILTER_VALIDATE_BOOL),
+            'is_default' => filter_var($this->input->post('is_default'), FILTER_VALIDATE_BOOL),
+            'view'       => self::FILTER_VIEW,
+            'builder'    => $builder,
+        ], $staffId);
+
+        echo json_encode(['success' => true, 'filter' => $updated]);
+    }
+
+    /**
+     * Delete a saved timelog filter (owner or admin only).
+     */
+    public function delete_filter($id)
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $this->load->model('filters_model');
+        $filter = $this->db->where('id', $id)->get('filters')->row_array();
+
+        if (!$filter || $filter['identifier'] !== self::FILTER_IDENTIFIER) {
+            echo json_encode(['success' => false, 'message' => _l('not_found')]);
+            return;
+        }
+
+        if (!is_admin() && $filter['staff_id'] != get_staff_user_id()) {
+            ajax_access_denied();
+        }
+
+        $this->filters_model->delete($id);
+
+        echo json_encode(['success' => true]);
+    }
+
+    /**
+     * Toggle a saved filter as the current staff member's default for the
+     * timelog listing. Default is always per-account.
+     */
+    public function toggle_default_filter($id)
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $this->load->model('filters_model');
+        $staffId = get_staff_user_id();
+
+        // Only one default per account/view — clear any existing one first.
+        $isDefault = $this->filters_model->is_default($id, self::FILTER_IDENTIFIER, self::FILTER_VIEW, $staffId);
+        $this->filters_model->delete_default(self::FILTER_IDENTIFIER, self::FILTER_VIEW, $staffId);
+
+        if (!$isDefault) {
+            $this->filters_model->mark_as_default($id, self::FILTER_IDENTIFIER, self::FILTER_VIEW, $staffId);
+        }
+
+        echo json_encode(['success' => true, 'is_default' => !$isDefault]);
     }
 
     /**

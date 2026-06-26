@@ -149,6 +149,8 @@
         setTimeout(applyTasksLanguageOverride, 500);
     });
 </script>
+<?php // Per-row Notes handlers — shared with the project tasks tab (loaded outside #vueApp) ?>
+<?php $this->load->view('admin/tasks/_listing_notes_js'); ?>
 </body>
 
 </html>

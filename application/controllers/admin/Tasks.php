@@ -1479,4 +1479,40 @@ class Tasks extends AdminController
             ajax_access_denied();
         }
     }
+
+    /**
+     * Save the per-row "Notes" textarea from the tasks listing (AJAX).
+     */
+    public function save_listing_notes()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        if (!staff_can('edit', 'tasks')) {
+            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            return;
+        }
+
+        $task_id = (int) $this->input->post('task_id');
+        $notes   = $this->input->post('notes');
+
+        if (!$task_id) {
+            echo json_encode(['success' => false, 'message' => _l('task_not_found')]);
+            return;
+        }
+
+        $savedAt = $this->tasks_model->save_listing_notes($task_id, $notes);
+
+        if ($savedAt !== false) {
+            echo json_encode([
+                'success'      => true,
+                'message'      => _l('updated_successfully', _l('task_notes')),
+                'updated_at'   => $savedAt,
+                'updated_text' => _l('last_updated') . ' ' . date('F j, Y \a\t H:i', strtotime($savedAt)),
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => _l('something_went_wrong')]);
+        }
+    }
 }
