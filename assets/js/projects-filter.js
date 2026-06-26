@@ -107,6 +107,18 @@ var ProjectsFilter = (function() {
             submitSaveFilter();
         });
 
+        // Sharing with everyone makes the specific-member picker redundant.
+        $(document).on('change', '#save_filter_is_shared', updateSharedWithState);
+
+        // Re-render the member picker once the modal is visible so the
+        // bootstrap-select button picks up the correct width.
+        $(document).on('shown.bs.modal', '#saveProjectFilterModal', function() {
+            var $sel = $('#save_filter_shared_with');
+            if ($sel.length && $sel.data('selectpicker')) {
+                $sel.selectpicker('refresh');
+            }
+        });
+
         // Apply a saved filter
         $(document).on('click', '.saved-filter-apply', function(e) {
             e.preventDefault();
@@ -915,6 +927,40 @@ var ProjectsFilter = (function() {
     }
 
     /**
+     * Set the selected staff in the "share with specific members" picker.
+     * Accepts an array of staff ids (numbers or strings).
+     */
+    function setSharedWithMembers(ids) {
+        var $sel = $('#save_filter_shared_with');
+        if (!$sel.length) {
+            return;
+        }
+        ids = $.isArray(ids) ? ids.map(String) : [];
+        $sel.val(ids);
+        if ($sel.data('selectpicker')) {
+            $sel.selectpicker('refresh');
+        }
+    }
+
+    /**
+     * The specific-member picker is only meaningful when the filter is not
+     * already shared with everyone, so disable it while "share with team"
+     * is ticked.
+     */
+    function updateSharedWithState() {
+        var sharedWithAll = $('#save_filter_is_shared').is(':checked');
+        var $sel = $('#save_filter_shared_with');
+        if (!$sel.length) {
+            return;
+        }
+        $sel.prop('disabled', sharedWithAll);
+        $('#save_filter_shared_with_wrapper').toggleClass('shared-with-disabled', sharedWithAll);
+        if ($sel.data('selectpicker')) {
+            $sel.selectpicker('refresh');
+        }
+    }
+
+    /**
      * Open the Save Filter modal. Pass a saved-filter <li> to edit it,
      * or nothing to save the currently selected filters as a new one.
      */
@@ -926,6 +972,7 @@ var ProjectsFilter = (function() {
             $('#save_filter_name').val($item.data('name'));
             $('#save_filter_is_shared').prop('checked', String($item.data('shared')) === '1');
             $('#save_filter_is_default').prop('checked', String($item.data('default')) === '1');
+            setSharedWithMembers($item.data('shared-with'));
             // Editing: rules are kept unless the user opts to overwrite them.
             $('#save_filter_update_rules').prop('checked', false);
             $('.save-filter-update-rules-wrapper').removeClass('hide');
@@ -940,8 +987,11 @@ var ProjectsFilter = (function() {
             $('#save_filter_name').val('');
             $('#save_filter_is_shared').prop('checked', false);
             $('#save_filter_is_default').prop('checked', false);
+            setSharedWithMembers([]);
             $('.save-filter-update-rules-wrapper').addClass('hide');
         }
+
+        updateSharedWithState();
 
         // Close the saved-filters dropdown and the slide-in filter panel
         // (z-index 9999) so the modal isn't layered behind them. The current
@@ -976,11 +1026,17 @@ var ProjectsFilter = (function() {
             rules = pendingBuilder;
         }
 
+        // Sent as a comma separated string so an empty selection is still
+        // transmitted (jQuery drops empty arrays), letting the server clear
+        // any existing per-member shares on edit.
+        var sharedWith = $('#save_filter_shared_with').val() || [];
+
         var data = withCsrf({
             name: name,
             rules: JSON.stringify(rules),
             is_shared: $('#save_filter_is_shared').is(':checked') ? 1 : 0,
-            is_default: $('#save_filter_is_default').is(':checked') ? 1 : 0
+            is_default: $('#save_filter_is_default').is(':checked') ? 1 : 0,
+            shared_with: sharedWith.join(',')
         });
 
         var url = admin_url + 'projects/' + (isEdit ? 'update_filter/' + id : 'save_filter');
@@ -1094,8 +1150,9 @@ var ProjectsFilter = (function() {
         var $existing = $menu.find('.saved-filter-item[data-id="' + filter.id + '"]');
         var isDefault = String(filter.is_default) === '1';
         var isShared = String(filter.is_shared) === '1';
+        var sharedWith = $.isArray(filter.shared_with) ? filter.shared_with : [];
 
-        var sharedIcon = isShared
+        var sharedIcon = (isShared || sharedWith.length)
             ? ' <i class="fa fa-users text-muted" aria-hidden="true"></i>'
             : '';
 
@@ -1116,10 +1173,12 @@ var ProjectsFilter = (function() {
         $li.attr('data-id', filter.id)
             .attr('data-name', filter.name)
             .attr('data-shared', isShared ? 1 : 0)
+            .attr('data-shared-with', JSON.stringify(sharedWith))
             .attr('data-default', isDefault ? 1 : 0)
             .attr('data-can-manage', 1)
             .attr('data-builder', JSON.stringify(filter.builder || {}));
         $li.data('builder', filter.builder || {});
+        $li.data('shared-with', sharedWith);
         $li.toggleClass('is-default', isDefault);
         $li.find('.saved-filter-name').html(escapeHtml(filter.name) + sharedIcon);
 

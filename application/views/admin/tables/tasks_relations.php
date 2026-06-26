@@ -34,13 +34,15 @@ return App_table::find('related_tasks')
             $where[] = $filtersWhere;
         }
 
+        // With the global VIEW permission (or for admins) all tasks are shown.
+        // Without it, limit non-admin staff to tasks assigned to them.
         if (staff_cant('view', 'tasks')) {
             $where[] = get_tasks_where_string();
-        }
 
-        // For project tasks tab: admins see all tasks; non-admin staff see only their assigned tasks
-        if ($rel_type == 'project' && !is_admin()) {
-            $where[] = 'AND id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid=' . get_staff_user_id() . ')';
+            // For project tasks tab: non-admin staff see only their assigned tasks.
+            if ($rel_type == 'project' && !is_admin()) {
+                $where[] = 'AND id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid=' . get_staff_user_id() . ')';
+            }
         }
 
         if (! $this->ci->input->post('tasks_related_to')) {

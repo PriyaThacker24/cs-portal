@@ -44,6 +44,9 @@ class Projects extends AdminController
             get_staff_user_id()
         );
 
+        // Active staff used by the "share with specific members" picker.
+        $data['filter_share_staff'] = $this->staff_model->get('', ['active' => 1]);
+
         $this->load->view('admin/projects/manage', $data);
     }
 
@@ -82,13 +85,14 @@ class Projects extends AdminController
         $this->load->model('filters_model');
 
         $filter = $this->filters_model->create([
-            'name'       => $name,
-            'identifier' => self::FILTER_IDENTIFIER,
-            'builder'    => json_decode($rules, true),
-            'is_shared'  => filter_var($this->input->post('is_shared'), FILTER_VALIDATE_BOOL),
-            'is_default' => filter_var($this->input->post('is_default'), FILTER_VALIDATE_BOOL),
-            'view'       => self::FILTER_VIEW,
-            'staff_id'   => get_staff_user_id(),
+            'name'        => $name,
+            'identifier'  => self::FILTER_IDENTIFIER,
+            'builder'     => json_decode($rules, true),
+            'is_shared'   => filter_var($this->input->post('is_shared'), FILTER_VALIDATE_BOOL),
+            'is_default'  => filter_var($this->input->post('is_default'), FILTER_VALIDATE_BOOL),
+            'shared_with' => $this->parse_shared_with($this->input->post('shared_with')),
+            'view'        => self::FILTER_VIEW,
+            'staff_id'    => get_staff_user_id(),
         ]);
 
         echo json_encode(['success' => true, 'filter' => $filter]);
@@ -125,14 +129,33 @@ class Projects extends AdminController
         $name = trim((string) $this->input->post('name'));
 
         $updated = $this->filters_model->update($id, [
-            'name'       => $name !== '' ? $name : $filter['name'],
-            'is_shared'  => filter_var($this->input->post('is_shared'), FILTER_VALIDATE_BOOL),
-            'is_default' => filter_var($this->input->post('is_default'), FILTER_VALIDATE_BOOL),
-            'view'       => self::FILTER_VIEW,
-            'builder'    => $builder,
+            'name'        => $name !== '' ? $name : $filter['name'],
+            'is_shared'   => filter_var($this->input->post('is_shared'), FILTER_VALIDATE_BOOL),
+            'is_default'  => filter_var($this->input->post('is_default'), FILTER_VALIDATE_BOOL),
+            'shared_with' => $this->parse_shared_with($this->input->post('shared_with')),
+            'view'        => self::FILTER_VIEW,
+            'builder'     => $builder,
         ], $staffId);
 
         echo json_encode(['success' => true, 'filter' => $updated]);
+    }
+
+    /**
+     * Normalise the posted "share with specific members" value (a comma
+     * separated list of staff ids) into an array of ints. An empty value
+     * yields an empty array, which clears any existing per-member shares.
+     */
+    private function parse_shared_with($posted)
+    {
+        if ($posted === null || $posted === '') {
+            return [];
+        }
+
+        if (! is_array($posted)) {
+            $posted = explode(',', (string) $posted);
+        }
+
+        return array_values(array_filter(array_map('intval', $posted)));
     }
 
     /**

@@ -72,18 +72,20 @@
         <?php foreach (($saved_filters ?? []) as $sf) :
             $can_manage = is_admin() || $sf['staff_id'] == $current_staff_id;
         ?>
+        <?php $sf_shared_with = array_map('intval', $sf['shared_with'] ?? []); ?>
         <li class="saved-filter-item<?= $sf['is_default'] == '1' ? ' is-default' : ''; ?>"
             data-id="<?= (int) $sf['id']; ?>"
             data-name="<?= html_escape($sf['name']); ?>"
             data-shared="<?= (int) $sf['is_shared']; ?>"
+            data-shared-with="<?= html_escape(json_encode($sf_shared_with)); ?>"
             data-default="<?= (int) ($sf['is_default'] == '1'); ?>"
             data-can-manage="<?= $can_manage ? 1 : 0; ?>"
             data-builder="<?= html_escape(json_encode($sf['builder'])); ?>">
             <a href="#" class="saved-filter-apply" title="<?= _l('filter_apply'); ?>">
                 <i class="fa fa-star saved-filter-default-icon" aria-hidden="true"></i>
                 <span class="saved-filter-name"><?= html_escape($sf['name']); ?></span>
-                <?php if ($sf['is_shared']) : ?>
-                    <i class="fa fa-users text-muted" title="<?= _l('filter_share'); ?>" aria-hidden="true"></i>
+                <?php if ($sf['is_shared'] || ! empty($sf_shared_with)) : ?>
+                    <i class="fa fa-users text-muted" title="<?= $sf['is_shared'] ? _l('filter_share') : _l('filter_share_specific_members'); ?>" aria-hidden="true"></i>
                 <?php endif; ?>
             </a>
             <span class="saved-filter-actions">
@@ -119,6 +121,18 @@
                 <div class="checkbox checkbox-primary">
                     <input type="checkbox" id="save_filter_is_shared">
                     <label for="save_filter_is_shared"><?= _l('filter_share'); ?></label>
+                </div>
+                <div class="form-group" id="save_filter_shared_with_wrapper">
+                    <label for="save_filter_shared_with" class="control-label"><?= _l('filter_share_specific_members'); ?></label>
+                    <select id="save_filter_shared_with" class="form-control selectpicker" multiple data-live-search="true" data-actions-box="true" data-none-selected-text="<?= _l('filter_share_select_members'); ?>" title="<?= _l('filter_share_select_members'); ?>">
+                        <?php foreach (($filter_share_staff ?? []) as $member) :
+                            if ($member['staffid'] == $current_staff_id) {
+                                continue;
+                            } ?>
+                            <option value="<?= (int) $member['staffid']; ?>"><?= e($member['firstname'] . ' ' . $member['lastname']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="text-muted"><small><?= _l('filter_share_specific_info'); ?></small></p>
                 </div>
                 <div class="checkbox checkbox-primary">
                     <input type="checkbox" id="save_filter_is_default">

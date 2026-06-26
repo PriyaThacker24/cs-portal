@@ -44,13 +44,14 @@ return App_table::find('tasks')
             }
         }
                 
+        // With the global VIEW permission (or for admins) all tasks are shown.
+        // Without it, limit non-admin staff to tasks assigned to them.
         if (staff_cant('view', 'tasks')) {
             $where[] = get_tasks_where_string();
-        }
 
-        // Non-admin staff see only tasks assigned to them
-        if (!is_admin()) {
-            $where[] = 'AND ' . db_prefix() . 'tasks.id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid=' . get_staff_user_id() . ')';
+            if (!is_admin()) {
+                $where[] = 'AND ' . db_prefix() . 'tasks.id IN (SELECT taskid FROM ' . db_prefix() . 'task_assigned WHERE staffid=' . get_staff_user_id() . ')';
+            }
         }
 
         // Dashboard my tasks table
