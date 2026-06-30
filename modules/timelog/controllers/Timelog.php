@@ -328,6 +328,598 @@ class Timelog extends AdminController
     }
     
     /**
+     * Export the currently filtered timelogs.
+     *
+     * Mirrors the filtering/permission logic of get_data() but reads the
+     * filters from the query string (so it can be triggered as a normal file
+     * download). Supports CSV, XLSX and PDF.
+     *
+     * @param string $format csv|xlsx|pdf
+     */
+    public function export($format = 'csv')
+    {
+        // Same access rule as the listing page.
+        if (!staff_can('view', 'timesheets') && !staff_can('view_own', 'timesheets') && !is_admin()) {
+            access_denied('Timelog');
+        }
+
+        $format  = in_array($format, ['csv', 'xlsx', 'pdf'], true) ? $format : 'csv';
+        $dataset = $this->build_export_dataset();
+
+        $filenameBase = 'timelog-' . $dataset['date_start'] . '_to_' . $dataset['date_end'];
+
+        if ($format === 'xlsx') {
+            $this->export_xlsx($dataset, $filenameBase . '.xlsx');
+        } elseif ($format === 'pdf') {
+            $this->export_pdf($dataset, $filenameBase . '.pdf');
+        } else {
+            $this->export_csv($dataset, $filenameBase . '.csv');
+        }
+    }
+
+    /**
+     * Build the flat dataset (headers + rows + summary) used by every export
+     * format, applying the same filters/permissions as the listing.
+     */
+    private function build_export_dataset()
+    {
+        $dateStart     = $this->input->get('date_start') ?: $this->input->get('week_start');
+        $dateEnd       = $this->input->get('date_end');
+        $dateRangeType = $this->input->get('date_range_type') ?: 'week';
+
+        if (empty($dateStart)) {
+            $dateStart = date('Y-m-d', strtotime('monday this week'));
+        }
+
+        if (empty($dateEnd)) {
+            if ($dateRangeType === 'day') {
+                $dateEnd = $dateStart;
+            } elseif ($dateRangeType === 'month') {
+                $dateEnd = date('Y-m-t', strtotime($dateStart));
+            } else {
+                $dateEnd = date('Y-m-d', strtotime('sunday this week', strtotime($dateStart)));
+            }
+        }
+
+        $currentStaffId = get_staff_user_id();
+        $isGlobal       = is_admin() || staff_can('view', 'timesheets');
+
+        $filters = [
+            'project_id'                  => $this->input->get('project_id'),
+            'staff_id'                    => $this->input->get('staff_id'),
+            'billing_type'                => $this->input->get('billing_type'),
+            'group_by'                    => $this->input->get('group_by') ?: 'date',
+            'date_start'                  => $dateStart,
+            'date_end'                    => $dateEnd,
+            'date_range_type'             => $dateRangeType,
+            'advanced_filters'            => $this->input->get('advanced_filters'),
+            'own_staff_id'                => $isGlobal ? null : $currentStaffId,
+            'assigned_projects_staff_id'  => is_admin() ? null : $currentStaffId,
+        ];
+
+        $timelogData = $this->timelog_model->get_timelogs($dateStart, $filters);
+
+        // Flatten the grouped structure back into individual rows.
+        $rows = [];
+        foreach (($timelogData['groups'] ?? []) as $group) {
+            foreach (($group['logs'] ?? []) as $log) {
+                $status = !empty($log['approval_status']) ? $log['approval_status'] : 'pending';
+
+                $rows[] = [
+                    _d($log['log_date']),
+                    $log['project_name'] ?: '-',
+                    $log['task_name'] ?: '-',
+                    $log['staff_name'],
+                    seconds_to_time_format((int) $log['duration_seconds']),
+                    $log['billing_type_label'],
+                    _l($status),
+                    trim(html_entity_decode(strip_tags((string) $log['note']))),
+                    $log['created_by_name'],
+                ];
+            }
+        }
+
+        $summary = $timelogData['summary'] ?? [
+            'total_billable_hours'     => 0,
+            'total_non_billable_hours' => 0,
+            'total_hours'              => 0,
+            'total_records'            => 0,
+        ];
+
+        return [
+            'title'      => _l('timelog_export_title'),
+            'period'     => _d($dateStart) . ' - ' . _d($dateEnd),
+            'date_start' => $dateStart,
+            'date_end'   => $dateEnd,
+            'headers'    => [
+                _l('date'),
+                _l('project'),
+                _l('task'),
+                _l('user'),
+                _l('total_hours'),
+                _l('billing_type'),
+                _l('status'),
+                _l('note'),
+                _l('created_by'),
+            ],
+            'rows'       => $rows,
+            'summary'    => $summary,
+            'meta'       => $this->build_export_meta($dateStart, $dateEnd, $dateRangeType, $filters, $summary),
+        ];
+    }
+
+    /**
+     * Build the dynamic header metadata shown at the top of every export
+     * (company, title, project, view, custom view name, date range, export
+     * timestamp and the billable/non-billable/total summary).
+     */
+    private function build_export_meta($dateStart, $dateEnd, $dateRangeType, $filters, $summary)
+    {
+        // Resolve the project label from the active filters.
+        $projectIds = [];
+        if (!empty($filters['advanced_filters'])) {
+            $decoded = json_decode($filters['advanced_filters'], true);
+            if (isset($decoded['project']['value']) && !empty($decoded['project']['value'])) {
+                $projectIds = is_array($decoded['project']['value'])
+                    ? $decoded['project']['value']
+                    : [$decoded['project']['value']];
+            }
+        }
+        if (empty($projectIds) && !empty($filters['project_id'])) {
+            $projectIds = [$filters['project_id']];
+        }
+
+        $projectLabel = _l('all_projects');
+        if (!empty($projectIds)) {
+            $names = [];
+            foreach ($projectIds as $pid) {
+                $pid = (int) $pid;
+                if ($pid > 0) {
+                    $names[] = get_project_name_by_id($pid);
+                }
+            }
+            $names = array_filter($names);
+            if (!empty($names)) {
+                $projectLabel = implode(', ', $names);
+            }
+        }
+
+        // View label (matches the on-screen "Group By" control).
+        $viewLabel = ($filters['group_by'] === 'user') ? _l('group_by_user') : _l('group_by_date');
+
+        // Custom view name = the saved filter the user applied (passed from the
+        // client); defaults to "All Time Logs" when none is active.
+        $viewName = trim((string) $this->input->get('view_name'));
+        if ($viewName === '') {
+            $viewName = _l('all_time_logs');
+        }
+
+        // Date label with week number when viewing a week.
+        $dateLabel = _d($dateStart) . ' to ' . _d($dateEnd);
+        if ($dateRangeType === 'week') {
+            $dateLabel .= ' (' . _l('week') . ' - ' . date('W', strtotime($dateStart)) . ')';
+        }
+
+        // Format decimal hours as HH:MM (e.g. 26:00 h).
+        $hms = function ($hours) {
+            return seconds_to_time_format((int) round(((float) $hours) * 3600)) . ' h';
+        };
+
+        return [
+            'company_name'      => get_option('companyname'),
+            'logo'              => pdf_logo_url(),
+            'project_name'      => $projectLabel,
+            'view_label'        => $viewLabel,
+            'view_name'         => $viewName,
+            'date_label'        => $dateLabel,
+            'exported_on'       => date('d/m/Y h:i A'),
+            'billable_hours'    => $hms($summary['total_billable_hours']),
+            'non_billable_hours' => $hms($summary['total_non_billable_hours']),
+            'total_hours'       => $hms($summary['total_hours']),
+        ];
+    }
+
+    /**
+     * Summary lines shown at the bottom of each export (label => value).
+     */
+    private function export_summary_lines($summary)
+    {
+        return [
+            _l('total_billable_hours')     => number_format((float) $summary['total_billable_hours'], 2),
+            _l('total_non_billable_hours') => number_format((float) $summary['total_non_billable_hours'], 2),
+            _l('total_hours')              => number_format((float) $summary['total_hours'], 2),
+            _l('total_records')            => (string) (int) $summary['total_records'],
+        ];
+    }
+
+    /**
+     * Stream the dataset as CSV.
+     */
+    private function export_csv($dataset, $filename)
+    {
+        // Native header() is used because we exit before CodeIgniter's output
+        // stage, so queued output headers would never be sent.
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+
+        // UTF-8 BOM so Excel reads accented characters correctly.
+        fwrite($out, "\xEF\xBB\xBF");
+
+        // Dynamic header block.
+        $m = $dataset['meta'];
+        fputcsv($out, [$m['company_name']]);
+        fputcsv($out, [$dataset['title']]);
+        fputcsv($out, [_l('timelog_export_project'), $m['project_name']]);
+        fputcsv($out, [_l('timelog_export_view'), $m['view_label']]);
+        fputcsv($out, [_l('timelog_export_custom_view'), $m['view_name']]);
+        fputcsv($out, [_l('timelog_export_date'), $m['date_label']]);
+        fputcsv($out, [_l('timelog_export_exported_on'), $m['exported_on']]);
+        fputcsv($out, [_l('billable'), $m['billable_hours'], _l('non_billable'), $m['non_billable_hours'], _l('total'), $m['total_hours']]);
+        fputcsv($out, []);
+
+        fputcsv($out, $dataset['headers']);
+
+        foreach ($dataset['rows'] as $row) {
+            fputcsv($out, $row);
+        }
+
+        // Blank line + summary.
+        fputcsv($out, []);
+        foreach ($this->export_summary_lines($dataset['summary']) as $label => $value) {
+            fputcsv($out, [$label, $value]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    /**
+     * Stream the dataset as a real .xlsx workbook. Built with ZipArchive +
+     * raw OOXML so no third-party spreadsheet library is required.
+     */
+    private function export_xlsx($dataset, $filename)
+    {
+        $headers   = $dataset['headers'];
+        $rows      = $dataset['rows'];
+        $colCount  = count($headers);
+        $lastCol   = $this->xlsx_col_letter($colCount - 1);
+
+        // Sensible per-column widths (Date, Project, Task, User, Hours, Billing, Status, Note, Created by).
+        // Column A is also used for the red info labels in the header, so it is a touch wider.
+        $widths = [20, 26, 32, 22, 10, 14, 12, 40, 22];
+
+        $cols = '<cols>';
+        for ($i = 0; $i < $colCount; $i++) {
+            $w = isset($widths[$i]) ? $widths[$i] : 16;
+            $cols .= '<col min="' . ($i + 1) . '" max="' . ($i + 1) . '" width="' . $w . '" customWidth="1"/>';
+        }
+        $cols .= '</cols>';
+
+        $m = $dataset['meta'];
+
+        $sheetRows = '';
+        $r = 1;
+
+        // Dynamic header block: company name, then the centered title.
+        $sheetRows .= '<row r="' . $r . '" ht="18" customHeight="1">' . $this->xlsx_cell('A' . $r, $m['company_name'], 4) . '</row>';
+        $r++;
+        $sheetRows .= '<row r="' . $r . '" ht="24" customHeight="1">' . $this->xlsx_cell('A' . $r, $dataset['title'], 2) . '</row>';
+        $r++;
+
+        $r++; // spacer
+
+        // Info fields on a single line (red bold labels + values), matching the PDF.
+        $infoFields = [
+            [_l('timelog_export_project'),     $m['project_name']],
+            [_l('timelog_export_view'),        $m['view_label']],
+            [_l('timelog_export_custom_view'), $m['view_name']],
+            [_l('timelog_export_date'),        $m['date_label']],
+            [_l('timelog_export_exported_on'), $m['exported_on']],
+        ];
+        $infoRuns = [];
+        $lastIdx  = count($infoFields) - 1;
+        foreach ($infoFields as $idx => $f) {
+            $infoRuns[] = ['t' => $f[0] . ': ', 'b' => true, 'c' => 'FFE74C3C'];
+            $infoRuns[] = ['t' => $f[1] . ($idx < $lastIdx ? '        ' : ''), 'b' => false, 'c' => null];
+        }
+        $infoRowIndex = $r;
+        $sheetRows .= '<row r="' . $r . '">' . $this->xlsx_rich_cell('A' . $r, $infoRuns, 0) . '</row>';
+        $r++;
+
+        $r++; // spacer
+
+        // Billable / non-billable / total on a single line, matching the PDF bar.
+        $summaryRuns = [
+            ['t' => _l('billable') . ' ',     'b' => false, 'c' => 'FF999999'],
+            ['t' => $m['billable_hours'] . '        ',     'b' => true, 'c' => 'FF2980B9'],
+            ['t' => _l('non_billable') . ' ', 'b' => false, 'c' => 'FF999999'],
+            ['t' => $m['non_billable_hours'] . '        ', 'b' => true, 'c' => 'FFE67E22'],
+            ['t' => _l('total') . ' ',        'b' => false, 'c' => 'FF999999'],
+            ['t' => $m['total_hours'],        'b' => true, 'c' => 'FF222222'],
+        ];
+        $summaryRowIndex = $r;
+        $sheetRows .= '<row r="' . $r . '">' . $this->xlsx_rich_cell('A' . $r, $summaryRuns, 0) . '</row>';
+        $r++;
+
+        $r++; // spacer before the table
+
+        $headerRowIndex = $r;
+        $cells = '';
+        for ($i = 0; $i < $colCount; $i++) {
+            $cells .= $this->xlsx_cell($this->xlsx_col_letter($i) . $r, (string) $headers[$i], 1);
+        }
+        $sheetRows .= '<row r="' . $r . '">' . $cells . '</row>';
+        $r++;
+
+        foreach ($rows as $row) {
+            $cells = '';
+            for ($i = 0; $i < $colCount; $i++) {
+                $cells .= $this->xlsx_cell($this->xlsx_col_letter($i) . $r, (string) ($row[$i] ?? ''), 3);
+            }
+            $sheetRows .= '<row r="' . $r . '">' . $cells . '</row>';
+            $r++;
+        }
+
+        // Merge the company, title, info and summary rows across all columns
+        // so each shows on its own single line.
+        $merges = [
+            'A1:' . $lastCol . '1',
+            'A2:' . $lastCol . '2',
+            'A' . $infoRowIndex . ':' . $lastCol . $infoRowIndex,
+            'A' . $summaryRowIndex . ':' . $lastCol . $summaryRowIndex,
+        ];
+        $mergeXml = '<mergeCells count="' . count($merges) . '">';
+        foreach ($merges as $ref) {
+            $mergeXml .= '<mergeCell ref="' . $ref . '"/>';
+        }
+        $mergeXml .= '</mergeCells>';
+
+        $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<sheetViews><sheetView workbookViewId="0"><pane ySplit="' . $headerRowIndex . '" topLeftCell="A' . ($headerRowIndex + 1) . '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+            . $cols
+            . '<sheetData>' . $sheetRows . '</sheetData>'
+            . $mergeXml
+            . '</worksheet>';
+
+        $files = [
+            '[Content_Types].xml' =>
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                . '<Default Extension="xml" ContentType="application/xml"/>'
+                . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+                . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+                . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+                . '</Types>',
+            '_rels/.rels' =>
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+                . '</Relationships>',
+            'xl/workbook.xml' =>
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+                . '<sheets><sheet name="Timelog" sheetId="1" r:id="rId1"/></sheets>'
+                . '</workbook>',
+            'xl/_rels/workbook.xml.rels' =>
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+                . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+                . '</Relationships>',
+            'xl/styles.xml' => $this->xlsx_styles_xml(),
+            'xl/worksheets/sheet1.xml' => $sheetXml,
+        ];
+
+        $tmp = tempnam(sys_get_temp_dir(), 'tlxlsx');
+        $zip = new ZipArchive();
+        $zip->open($tmp, ZipArchive::OVERWRITE);
+        foreach ($files as $name => $content) {
+            $zip->addFromString($name, $content);
+        }
+        $zip->close();
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($tmp));
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+
+        readfile($tmp);
+        @unlink($tmp);
+        exit;
+    }
+
+    /**
+     * The shared styles for the xlsx workbook.
+     */
+    private function xlsx_styles_xml()
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<fonts count="5">'
+            . '<font><sz val="11"/><name val="Calibri"/></font>'                                       // 0 normal
+            . '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'             // 1 header (bold white)
+            . '<font><b/><sz val="15"/><color rgb="FF222222"/><name val="Calibri"/></font>'             // 2 title (bold large dark)
+            . '<font><b/><sz val="12"/><color rgb="FF222222"/><name val="Calibri"/></font>'             // 3 company (bold dark)
+            . '<font><b/><sz val="11"/><color rgb="FFE74C3C"/><name val="Calibri"/></font>'             // 4 label (bold red)
+            . '</fonts>'
+            . '<fills count="3">'
+            . '<fill><patternFill patternType="none"/></fill>'
+            . '<fill><patternFill patternType="gray125"/></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF4F81BD"/><bgColor indexed="64"/></patternFill></fill>'
+            . '</fills>'
+            . '<borders count="2">'
+            . '<border><left/><right/><top/><bottom/><diagonal/></border>'
+            . '<border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border>'
+            . '</borders>'
+            . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            . '<cellXfs count="6">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'                                                                                              // 0 normal
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center"/></xf>' // 1 header
+            . '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'         // 2 title (centered)
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>'                                  // 3 data
+            . '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'                                                                                  // 4 company (bold dark)
+            . '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>'                                                                                  // 5 label (bold red)
+            . '</cellXfs>'
+            . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+            . '</styleSheet>';
+    }
+
+    /**
+     * Build one inline-string xlsx cell.
+     */
+    private function xlsx_cell($ref, $value, $styleIndex = 0)
+    {
+        $escaped = htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+
+        return '<c r="' . $ref . '" s="' . (int) $styleIndex . '" t="inlineStr"><is><t xml:space="preserve">' . $escaped . '</t></is></c>';
+    }
+
+    /**
+     * Build a rich-text xlsx cell from multiple runs so a single cell can mix
+     * colours/weights (e.g. red bold "Label:" followed by a normal value),
+     * matching the one-line header used in the PDF.
+     *
+     * @param array $runs each: ['t' => text, 'b' => bool bold, 'c' => 'FFRRGGBB'|null]
+     */
+    private function xlsx_rich_cell($ref, array $runs, $styleIndex = 0)
+    {
+        $is = '';
+        foreach ($runs as $run) {
+            $rpr = '';
+            if (!empty($run['b'])) {
+                $rpr .= '<b/>';
+            }
+            if (!empty($run['c'])) {
+                $rpr .= '<color rgb="' . $run['c'] . '"/>';
+            }
+            $rpr .= '<sz val="11"/><rFont val="Calibri"/>';
+
+            $text = htmlspecialchars((string) $run['t'], ENT_QUOTES | ENT_XML1, 'UTF-8');
+            $is .= '<r><rPr>' . $rpr . '</rPr><t xml:space="preserve">' . $text . '</t></r>';
+        }
+
+        return '<c r="' . $ref . '" s="' . (int) $styleIndex . '" t="inlineStr"><is>' . $is . '</is></c>';
+    }
+
+    /**
+     * Column index (0-based) to its spreadsheet letter (A, B, ... Z, AA ...).
+     */
+    private function xlsx_col_letter($index)
+    {
+        $letter = '';
+        $index++;
+        while ($index > 0) {
+            $mod    = ($index - 1) % 26;
+            $letter = chr(65 + $mod) . $letter;
+            $index  = (int) (($index - $mod) / 26);
+        }
+
+        return $letter;
+    }
+
+    /**
+     * Stream the dataset as a PDF (TCPDF, landscape) with a formatted table.
+     */
+    private function export_pdf($dataset, $filename)
+    {
+        $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator('Timelog');
+        $pdf->SetAuthor(get_option('companyname'));
+        $pdf->SetTitle($dataset['title']);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(10, 12, 10);
+        $pdf->SetAutoPageBreak(true, 12);
+        $pdf->AddPage();
+        $pdf->SetFont('helvetica', '', 8);
+
+        $headerCells = '';
+        foreach ($dataset['headers'] as $h) {
+            $headerCells .= '<th style="background-color:#4F81BD;color:#FFFFFF;font-weight:bold;">'
+                . htmlspecialchars((string) $h, ENT_QUOTES, 'UTF-8') . '</th>';
+        }
+
+        $bodyRows = '';
+        if (empty($dataset['rows'])) {
+            $bodyRows = '<tr><td colspan="' . count($dataset['headers']) . '" align="center">'
+                . _l('no_timelogs_found') . '</td></tr>';
+        } else {
+            foreach ($dataset['rows'] as $row) {
+                $cells = '';
+                foreach ($row as $cell) {
+                    $cells .= '<td>' . htmlspecialchars((string) $cell, ENT_QUOTES, 'UTF-8') . '</td>';
+                }
+                $bodyRows .= '<tr>' . $cells . '</tr>';
+            }
+        }
+
+        $m   = $dataset['meta'];
+        $esc = function ($v) {
+            return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        };
+        $field = function ($label, $value) use ($esc) {
+            return '<span style="color:#e74c3c;font-weight:bold;">' . $esc($label) . ':</span> ' . $esc($value);
+        };
+
+        // Top band: company name (left), title (center), logo (right).
+        $headerBand = '<table cellpadding="2" cellspacing="0" style="width:100%;">'
+            . '<tr>'
+            . '<td width="33%" style="font-size:11px;font-weight:bold;">' . $esc($m['company_name']) . '</td>'
+            . '<td width="34%" align="center" style="font-size:15px;font-weight:bold;">' . $esc($dataset['title']) . '</td>'
+            . '<td width="33%" align="right">' . $m['logo'] . '</td>'
+            . '</tr></table>';
+
+        // Dynamic info on a single line. All fields live in one full-width
+        // cell with nobr="true" so nothing wraps to a second line.
+        $infoGap  = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+        $infoLine = $field(_l('timelog_export_project'), $m['project_name']) . $infoGap
+            . $field(_l('timelog_export_view'), $m['view_label']) . $infoGap
+            . $field(_l('timelog_export_custom_view'), $m['view_name']) . $infoGap
+            . $field(_l('timelog_export_date'), $m['date_label']) . $infoGap
+            . $field(_l('timelog_export_exported_on'), $m['exported_on']);
+        $infoRow = '<table cellpadding="4" cellspacing="0" style="width:100%;font-size:9px;">'
+            . '<tr><td nobr="true">' . $infoLine . '</td></tr></table>';
+
+        // Billable / non-billable / total summary bar (extra spacing between groups).
+        $sumGap     = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+        $summaryBar = '<table cellpadding="5" cellspacing="0" style="width:100%;font-size:10px;"><tr><td nobr="true">'
+            . '<span style="color:#999999;">' . _l('billable') . '</span> '
+            . '<span style="color:#2980b9;font-weight:bold;">' . $esc($m['billable_hours']) . '</span>'
+            . $sumGap . '<span style="color:#999999;">' . _l('non_billable') . '</span> '
+            . '<span style="color:#e67e22;font-weight:bold;">' . $esc($m['non_billable_hours']) . '</span>'
+            . $sumGap . '<span style="color:#999999;">' . _l('total') . '</span> '
+            . '<span style="font-weight:bold;">' . $esc($m['total_hours']) . '</span>'
+            . '</td></tr></table>';
+
+        // Spacers between each section for breathing room.
+        $spacer = '<br>';
+
+        $html = $headerBand
+            . $spacer
+            . $infoRow
+            . $spacer
+            . '<hr style="color:#dddddd;">'
+            . $spacer
+            . $summaryBar
+            . $spacer . $spacer
+            . '<table border="0.5" cellpadding="5" cellspacing="0" style="font-size:8px;">'
+            . '<thead><tr>' . $headerCells . '</tr></thead>'
+            . '<tbody>' . $bodyRows . '</tbody>'
+            . '</table>';
+
+        $pdf->writeHTML($html, true, false, true, false, '');
+
+        // 'D' forces a download; TCPDF sends its own headers.
+        $pdf->Output($filename, 'D');
+        exit;
+    }
+
+    /**
      * Get projects assigned to logged-in user (AJAX)
      */
     public function get_user_projects()

@@ -23,6 +23,9 @@ var TimelogFilter = (function() {
     var $filterOverlay;
     var $accordionItems;
     var currentFilters = {};
+    // Name of the saved filter the user last applied (the "Custom View Name"
+    // shown on exports). Empty means no saved filter is active.
+    var activeFilterName = '';
 
     /**
      * Initialize the filter panel
@@ -307,7 +310,10 @@ var TimelogFilter = (function() {
      */
     function resetFilters() {
         console.log('TimelogFilter: Resetting filters...');
-        
+
+        // No saved filter is active after a reset.
+        activeFilterName = '';
+
         // Clear all inputs
         $('#timelogFilterPanel .filter-accordion-item input[type="text"]').val('');
         $('#timelogFilterPanel .filter-accordion-item select').each(function() {
@@ -832,6 +838,7 @@ var TimelogFilter = (function() {
             return;
         }
         var builder = $item.data('builder') || {};
+        activeFilterName = $item.data('name') || '';
         setActiveBuilder(builder, true);
         if (typeof alert_float !== 'undefined') {
             alert_float('success', '"' + $item.data('name') + '" applied');
@@ -987,7 +994,8 @@ var TimelogFilter = (function() {
         closeFilterPanel: closeFilterPanel,
         applyFilters: applyFilters,
         resetFilters: resetFilters,
-        getFilters: getFilters
+        getFilters: getFilters,
+        getActiveFilterName: function() { return activeFilterName; }
     };
 })();
 

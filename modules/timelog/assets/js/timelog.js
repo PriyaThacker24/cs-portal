@@ -60,6 +60,12 @@ var TimelogModule = (function() {
             }
         });
 
+        // Export the currently filtered timelogs (csv / xlsx / pdf)
+        $(document).on('click', '.timelog-export-option', function(e) {
+            e.preventDefault();
+            exportTimelogs($(this).data('format'));
+        });
+
         // Apply filters (legacy - kept for backward compatibility)
         $('#btn_apply_filters').on('click', function() {
             applyFilters();
@@ -222,6 +228,55 @@ var TimelogModule = (function() {
     /**
      * Load timelogs via AJAX
      */
+    /**
+     * Export the currently filtered timelogs. Builds the same filter payload
+     * used by loadTimelogs() and navigates to the export endpoint, which
+     * streams a file download in the requested format (csv | xlsx | pdf).
+     */
+    function exportTimelogs(format) {
+        format = format || 'csv';
+        var projectIdFromInput = $('#current_project_id').val();
+
+        // Reuse the advanced filters from the filter panel (if any).
+        var advancedFilters = '';
+        if (typeof TimelogFilter !== 'undefined' && TimelogFilter.getFilters) {
+            var filterData = TimelogFilter.getFilters();
+            if (filterData && Object.keys(filterData).length > 0) {
+                if (projectIdFromInput) {
+                    filterData.project = {
+                        operator: 'is',
+                        value: [parseInt(projectIdFromInput)]
+                    };
+                }
+                advancedFilters = JSON.stringify(filterData);
+            }
+        }
+
+        var params = {
+            date_start: $('#current_week_start').val() || currentWeekStart || '',
+            date_end: $('#current_week_end').val() || '',
+            date_range_type: $('#current_date_range_type').val() || 'week',
+            group_by: currentGroupBy,
+            project_id: projectIdFromInput || currentFilters.project_id || '',
+            staff_id: currentFilters.staff_id || '',
+            billing_type: currentFilters.billing_type || ''
+        };
+
+        if (advancedFilters) {
+            params.advanced_filters = advancedFilters;
+        }
+
+        // Custom View Name = the saved filter currently applied (if any).
+        if (typeof TimelogFilter !== 'undefined' && TimelogFilter.getActiveFilterName) {
+            var activeName = TimelogFilter.getActiveFilterName();
+            if (activeName) {
+                params.view_name = activeName;
+            }
+        }
+
+        window.location.href = admin_url + 'timelog/export/' + format + '?' + $.param(params);
+    }
+
     function loadTimelogs() {
         var $loading = $('#timelog_loading');
         var $content = $('#timelog_content');

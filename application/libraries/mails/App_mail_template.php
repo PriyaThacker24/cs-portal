@@ -298,7 +298,7 @@ class App_mail_template
             }
 
             if ($fromname == '') {
-                $fromname = get_option('companyname');
+                $fromname = get_option('email_from_name') != '' ? get_option('email_from_name') : get_option('companyname');
             }
 
             return [
@@ -307,9 +307,18 @@ class App_mail_template
             ];
         }
 
+        // The global "From Name" setting takes precedence so it applies across
+        // all templates. Many templates carry a legacy `fromname` (e.g.
+        // "{companyname}"), so we only fall back to the template value, and then
+        // the company name, when the global setting is empty.
+        $fromName = get_option('email_from_name');
+        if ($fromName == '') {
+            $fromName = $this->template->fromname != '' ? $this->template->fromname : get_option('companyname');
+        }
+
         return hooks()->apply_filters('email_template_from_headers', [
                 'fromemail' => get_option('email_from_address') != '' ? get_option('email_from_address') : get_option('smtp_email'),
-                'fromname'  => $this->template->fromname != '' ? $this->template->fromname : get_option('companyname'),
+                'fromname'  => $fromName,
             ], $this->template);
     }
 

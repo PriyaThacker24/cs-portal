@@ -232,7 +232,8 @@ class Emails extends AdminController
             // Simulate fake template to be parsed
             $template           = new StdClass();
             $template->message  = get_option('email_header') . 'This is test SMTP email. <br />If you received this message that means that your SMTP settings is set correctly.' . get_option('email_footer');
-            $template->fromname = get_option('companyname') != '' ? get_option('companyname') : 'TEST';
+            $template->fromname = get_option('email_from_name') != '' ? get_option('email_from_name')
+                : (get_option('companyname') != '' ? get_option('companyname') : 'TEST');
             $template->subject  = 'SMTP Setup Testing';
 
             $template = parse_email_template($template);

@@ -48,6 +48,16 @@
                             <!-- <button type="button" class="btn btn-default" id="btn_toggle_view">
                                 <i class="fa fa-list"></i> <?= _l('list_view'); ?>
                             </button> -->
+                            <div class="btn-group" id="timelogExportControls">
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="<?= _l('export'); ?>">
+                                    <i class="fa fa-download"></i> <?= _l('export'); ?> <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-right">
+                                    <li><a href="#" class="timelog-export-option" data-format="xlsx"><i class="fa fa-file-excel-o"></i> Excel (.xlsx)</a></li>
+                                    <!-- <li><a href="#" class="timelog-export-option" data-format="csv"><i class="fa fa-file-text-o"></i> CSV (.csv)</a></li> -->
+                                    <li><a href="#" class="timelog-export-option" data-format="pdf"><i class="fa fa-file-pdf-o"></i> PDF (.pdf)</a></li>
+                                </ul>
+                            </div>
                             <?php $current_staff_id = get_staff_user_id(); ?>
                             <div class="btn-group timelog-filter-controls" id="timelogFilterControls">
                                 <button type="button" class="btn btn-default" id="btn_filter">

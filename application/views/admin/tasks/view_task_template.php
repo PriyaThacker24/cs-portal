@@ -38,7 +38,7 @@ echo '<span class="tw-ml-5">' . format_task_status($task->status) . '</span>';
 <div class="modal-body">
     <input id="taskid" type="hidden" value="<?= $task->id?>">
     <div class="row">
-        <div class="col-md-8 task-single-col-left">
+        <div class="col-md-9 task-single-col-left">
             <div class="tw-mb-4">
                 <?php if (total_rows(db_prefix() . 'taskstimers', ['end_time' => null, 'staff_id !=' => get_staff_user_id(), 'task_id' => $task->id]) > 0) {
                     $startedTimers = $this->tasks_model->get_timers($task->id, ['staff_id !=' => get_staff_user_id(), 'end_time' => null]);
@@ -765,7 +765,7 @@ echo $comments;
             </div>
         </div>
     </div>
-    <div class="col-md-4 task-single-col-right">
+    <div class="col-md-3 task-single-col-right">
         <div class="pull-right mbot10 task-single-menu task-menu-options">
             <div class="content-menu hide">
                 <ul>

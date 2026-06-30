@@ -7,6 +7,15 @@
 } ?>>
 </div>
 <!-- Task modal view -->
+<style>
+/* Widen the task details popup (only the task modal, not other modals). */
+@media (min-width: 992px) {
+  .task-modal-single .modal-dialog {
+    width: 1200px;
+    max-width: 95%;
+  }
+}
+</style>
 <div class="modal fade task-modal-single" id="task-modal" tabindex="-1" role="dialog"
   aria-labelledby="myLargeModalLabel">
   <div
