@@ -1,6 +1,47 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <link href="<?= base_url('assets/css/projects-filter.css'); ?>" rel="stylesheet" type="text/css" />
+<style>
+    /* Whole-row colouring driven by the per-row Priority dropdown.
+       The Status / Priority pills (a.label) keep their own inline colours — they are
+       excluded via :not(.label) so they stay readable on the coloured row. */
+
+    /* HIGH → red row, white text */
+    .table-projects tr.project-row-priority-high > td {
+        background-color:rgba(220, 38, 38, 0.72) !important;
+        color: #ffffff !important;
+    }
+    .table-projects tr.project-row-priority-high > td a:not(.label),
+    .table-projects tr.project-row-priority-high > td small,
+    .table-projects tr.project-row-priority-high > td .text-muted,
+    .table-projects tr.project-row-priority-high > td .project-table-progress-wrap > span {
+        color: #ffffff !important;
+    }
+
+    /* MEDIUM → orange row, black text */
+    .table-projects tr.project-row-priority-medium > td {
+        background-color:rgba(245, 159, 11, 0.72) !important;
+        color: #000000 !important;
+    }
+    .table-projects tr.project-row-priority-medium > td a:not(.label),
+    .table-projects tr.project-row-priority-medium > td small,
+    .table-projects tr.project-row-priority-medium > td .text-muted,
+    .table-projects tr.project-row-priority-medium > td .project-table-progress-wrap > span {
+        color: #000000 !important;
+    }
+
+    /* LOW → white row, black text */
+    .table-projects tr.project-row-priority-low > td {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .table-projects tr.project-row-priority-low > td a:not(.label),
+    .table-projects tr.project-row-priority-low > td small,
+    .table-projects tr.project-row-priority-low > td .text-muted,
+    .table-projects tr.project-row-priority-low > td .project-table-progress-wrap > span {
+        color: #000000 !important;
+    }
+</style>
 <div id="wrapper">
     <div class="content">
         <div id="vueApp">
@@ -116,9 +157,42 @@
         });
     }
 
+    // Inline project priority change from the list view (called from the priority dropdown).
+    // Global so the inline onclick on each menu item can reach it.
+    function project_set_priority(priority, project_id) {
+        var postData = {
+            project_id: project_id,
+            priority: priority
+        };
+        // CSRF token is required on POST requests (csrf_protection is enabled)
+        if (typeof csrfData !== 'undefined') {
+            postData[csrfData.token_name] = csrfData.hash;
+        }
+
+        $('body').append('<div class="dt-loader"></div>');
+        $.ajax({
+            url: admin_url + 'projects/save_listing_priority',
+            type: 'POST',
+            dataType: 'json',
+            data: postData,
+            success: function(res) {
+                $('body').find('.dt-loader').remove();
+                if (res && res.success) {
+                    $('.table-projects').DataTable().ajax.reload(null, false);
+                } else {
+                    alert_float('danger', (res && res.message) ? res.message : 'Error changing priority');
+                }
+            },
+            error: function() {
+                $('body').find('.dt-loader').remove();
+                alert_float('danger', 'Error changing priority');
+            }
+        });
+    }
+
     $(function() {
         var table = initDataTable('.table-projects', admin_url + 'projects/table', undefined, undefined, {},
-            <?= hooks()->apply_filters('projects_table_default_order', json_encode([3, 'asc'])); ?>
+            <?= hooks()->apply_filters('projects_table_default_order', json_encode([0, 'asc'])); ?>
         );
 
         if (table && typeof ProjectsFilter !== 'undefined') {
@@ -195,6 +269,31 @@
             table.on('draw.dt', enforceNoteCellState);
         }
 
+        // Live "last updated" timestamp under each note. Shows a relative time
+        // (e.g. "last updated 25 seconds ago") that self-refreshes on an interval,
+        // and switches to an absolute date once the note is older than 6 days.
+        var NOTE_UPDATED_LABEL = "<?= _l('last_updated'); ?>";
+        function renderNoteTimestamp($el) {
+            var raw = $el.attr('data-updated');
+            if (!raw || typeof moment === 'undefined') { return; }
+            var m = moment(raw);
+            if (!m.isValid()) { $el.text(''); return; }
+            var text = moment().diff(m, 'days', true) > 6
+                ? m.format('MMMM D, YYYY [at] HH:mm')
+                : m.fromNow();
+            $el.text(NOTE_UPDATED_LABEL + ' ' + text);
+        }
+        function refreshNoteTimestamps() {
+            $('.table-projects .project-note-updated').each(function() {
+                renderNoteTimestamp($(this));
+            });
+        }
+        if (table) {
+            table.on('draw.dt', refreshNoteTimestamps);
+        }
+        // Keep relative times current without a page reload.
+        setInterval(refreshNoteTimestamps, 30000);
+
         // Keep clicks inside the notes cell from triggering any row-level handlers
         $(document).on('click', '.table-projects .project-listing-notes', function(e) {
             e.stopPropagation();
@@ -256,7 +355,8 @@
                 data: noteData,
                 success: function(res) {
                     if (res && res.success) {
-                        $stamp.text(res.updated_text || '');
+                        $stamp.attr('data-updated', res.updated_at || '');
+                        renderNoteTimestamp($stamp);
                     } else {
                         $stamp.text('');
                         alert_float('danger', (res && res.message) ? res.message : 'Error saving notes');

@@ -29,13 +29,17 @@ return App_table::find('projects')
             . 'END AS calc_progress_display';
 
         $aColumns = [
-            db_prefix() . 'projects.id as id',
             'name',
+            // Placeholder to keep column indexes aligned with the Notes display column
+            // (Notes is non-orderable/non-searchable, so this is never used in the query).
+            '"" as listing_notes_placeholder',
             get_sql_select_client_company(),
-            'start_date',
             $progressSelect,
             '(SELECT GROUP_CONCAT(CONCAT(firstname, \' \', lastname) SEPARATOR ",") FROM ' . db_prefix() . 'project_members JOIN ' . db_prefix() . 'staff on ' . db_prefix() . 'staff.staffid = ' . db_prefix() . 'project_members.staff_id WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members',
             'status',
+            // Placeholder to keep column indexes aligned with the Priority display column
+            // (Priority is non-orderable/non-searchable, so this is never used in the query).
+            '"" as listing_priority_placeholder',
         ];
 
 
@@ -89,6 +93,7 @@ return App_table::find('projects')
 
         // Check if owner_id and manager_id columns exist before adding them to query
         $additionalSelect = [
+            db_prefix() . 'projects.id as id',
             'clientid',
             db_prefix() . 'clients.company as client_agency_name',
             '(SELECT CONCAT(TRIM(COALESCE(' . db_prefix() . 'contacts.firstname, \'\')), \' \', TRIM(COALESCE(' . db_prefix() . 'contacts.lastname, \'\'))) FROM ' . db_prefix() . 'contacts WHERE ' . db_prefix() . 'contacts.userid = ' . db_prefix() . 'projects.clientid AND ' . db_prefix() . 'contacts.is_primary = 1 LIMIT 1) as primary_contact_fullname',
@@ -114,6 +119,9 @@ return App_table::find('projects')
             if (in_array('listing_notes_updated_at', $fields)) {
                 $additionalSelect[] = db_prefix() . 'projects.listing_notes_updated_at as listing_notes_updated_at';
             }
+            if (in_array('listing_priority', $fields)) {
+                $additionalSelect[] = db_prefix() . 'projects.listing_priority as listing_priority';
+            }
         } catch (Exception $e) {
             // If there's an error checking fields, just continue without owner_id/manager_id
         }
@@ -128,9 +136,7 @@ return App_table::find('projects')
 
             $link = admin_url('projects/view/' . $aRow['id']);
 
-            $row[] = '<a href="' . $link . '" class="tw-font-medium">' . $aRow['id'] . '</a>';
-
-            $name = '<a href="' . $link . '" class="tw-font-medium">' . e($aRow['name']) . '</a>';
+            $name = '<a href="' . $link . '" class="tw-font-medium">#' . $aRow['id'] . ' ' . e($aRow['name']) . '</a>';
 
             $name .= '<div class="row-options">';
 
@@ -157,6 +163,20 @@ return App_table::find('projects')
 
             $row[] = $name;
 
+            // Per-row Notes: placed right after the Project column. Empty starts as a textarea;
+            // once it has content it shows as text and switches back to a textarea on click.
+            // Autosaves on blur.
+            $noteValue   = isset($aRow['listing_notes']) ? $aRow['listing_notes'] : '';
+            $noteUpdated = isset($aRow['listing_notes_updated_at']) ? $aRow['listing_notes_updated_at'] : '';
+            $updatedText = $noteUpdated ? _l('last_updated') . ' ' . date('F j, Y \a\t H:i', strtotime($noteUpdated)) : '';
+            $hasNote     = trim($noteValue) !== '';
+            $notesCell  = '<div class="project-listing-notes" data-project-id="' . $aRow['id'] . '">';
+            $notesCell .= '<div class="project-note-display" style="white-space:pre-wrap;cursor:text;min-height:18px;' . ($hasNote ? '' : 'display:none !important;') . '">' . e($noteValue) . '</div>';
+            $notesCell .= '<textarea class="form-control project-note-input" rows="2" placeholder="' . _l('notes') . '" style="' . ($hasNote ? 'display:none !important;' : '') . '">' . e($noteValue) . '</textarea>';
+            $notesCell .= '<small class="text-muted project-note-updated tw-block tw-mt-1" style="font-size:10px;font-style:italic;" data-updated="' . e($noteUpdated) . '">' . e($updatedText) . '</small>';
+            $notesCell .= '</div>';
+            $row[] = $notesCell;
+
             $agencyName   = isset($aRow['client_agency_name']) ? trim((string) $aRow['client_agency_name']) : '';
             $contactName  = isset($aRow['primary_contact_fullname']) ? trim(preg_replace('/\s+/', ' ', (string) $aRow['primary_contact_fullname'])) : '';
             $customerLink = admin_url('clients/client/' . $aRow['clientid']);
@@ -171,8 +191,6 @@ return App_table::find('projects')
             }
             $customerHtml .= '</a>';
             $row[] = $customerHtml;
-
-            $row[] = e(_d($aRow['start_date']));
 
             $progressVal = isset($aRow['calc_progress_display']) ? (float) $aRow['calc_progress_display'] : 0;
             $progressVal = min(100, max(0, $progressVal));
@@ -275,25 +293,60 @@ return App_table::find('projects')
                 $row[] = '<span class="label project-status-' . $aRow['status'] . '" style="' . $statusStyle . '">' . e($status['name']) . '</span>';
             }
 
+            // Per-row Priority: inline dropdown (high / medium / low), colour-coded.
+            $priorityStyles = [
+                'high'   => 'color:#ffffff;border:1px solid rgba(185, 28, 28, 0.72);background:rgba(220, 38, 38, 0.72);',
+                'medium' => 'color:#000000;border:1px solid rgba(217, 119, 6, 0.72);background:rgba(245, 159, 11, 0.72);',
+                'low'    => 'color:#000000;border:1px solid #d1d5db;background:#ffffff;',
+            ];
+            $priorityLabels = [
+                'high'   => _l('task_priority_high'),
+                'medium' => _l('task_priority_medium'),
+                'low'    => _l('task_priority_low'),
+            ];
+            // Text colour for each option inside the priority dropdown menu.
+            $priorityMenuColors = [
+                'high'   => 'rgba(220, 38, 38, 0.72)',
+                'medium' => 'rgba(245, 159, 11, 0.72)',
+                'low'    => '#000000',
+            ];
+            $currentPriority = isset($aRow['listing_priority']) ? strtolower(trim((string) $aRow['listing_priority'])) : '';
+            if (!isset($priorityStyles[$currentPriority])) {
+                $currentPriority = '';
+            }
+            $priorityStyle = $currentPriority !== '' ? $priorityStyles[$currentPriority] : 'color:#000000;border:1px dashed #d1d5db;background:#ffffff;';
+            $priorityLabel = $currentPriority !== '' ? $priorityLabels[$currentPriority] : '&mdash;';
+
+            if ($hasPermissionEdit) {
+                $outputPriority  = '<div class="dropdown inline-block project-priority-dropdown">';
+                $outputPriority .= '<a href="#" class="dropdown-toggle label project-priority-' . $aRow['id'] . ' tw-inline-flex tw-items-center tw-gap-1 tw-flex-nowrap hover:tw-opacity-80 tw-align-middle" style="' . $priorityStyle . '" id="tableProjectPriority-' . $aRow['id'] . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                $outputPriority .= $priorityLabel;
+                $outputPriority .= '<i class="fa fa-caret-down tw-shrink-0"></i>';
+                $outputPriority .= '</a>';
+                $outputPriority .= '<ul class="dropdown-menu" aria-labelledby="tableProjectPriority-' . $aRow['id'] . '">';
+                foreach ($priorityLabels as $pKey => $pLabel) {
+                    if ($currentPriority !== $pKey) {
+                        $outputPriority .= '<li><a href="#" onclick="project_set_priority(\'' . $pKey . '\',' . $aRow['id'] . '); return false;" style="color:' . $priorityMenuColors[$pKey] . ';">' . e($pLabel) . '</a></li>';
+                    }
+                }
+                $outputPriority .= '</ul>';
+                $outputPriority .= '</div>';
+                $row[] = $outputPriority;
+            } else {
+                $row[] = '<span class="label" style="' . $priorityStyle . '">' . $priorityLabel . '</span>';
+            }
+
             // Custom fields add values
             foreach ($customFieldsColumns as $customFieldColumn) {
                 $row[] = (strpos($customFieldColumn, 'date_picker_') !== false ? _d($aRow[$customFieldColumn]) : $aRow[$customFieldColumn]);
             }
 
-            // Per-row Notes: empty starts as a textarea; once it has content it shows as
-            // text and switches back to a textarea on click. Autosaves on blur.
-            $noteValue   = isset($aRow['listing_notes']) ? $aRow['listing_notes'] : '';
-            $noteUpdated = isset($aRow['listing_notes_updated_at']) ? $aRow['listing_notes_updated_at'] : '';
-            $updatedText = $noteUpdated ? _l('last_updated') . ' ' . date('F j, Y \a\t H:i', strtotime($noteUpdated)) : '';
-            $hasNote     = trim($noteValue) !== '';
-            $notesCell  = '<div class="project-listing-notes" data-project-id="' . $aRow['id'] . '">';
-            $notesCell .= '<div class="project-note-display" style="white-space:pre-wrap;cursor:text;min-height:18px;' . ($hasNote ? '' : 'display:none !important;') . '">' . e($noteValue) . '</div>';
-            $notesCell .= '<textarea class="form-control project-note-input" rows="2" placeholder="' . _l('notes') . '" style="' . ($hasNote ? 'display:none !important;' : '') . '">' . e($noteValue) . '</textarea>';
-            $notesCell .= '<small class="text-muted project-note-updated tw-block tw-mt-1" style="font-size:10px;font-style:italic;">' . e($updatedText) . '</small>';
-            $notesCell .= '</div>';
-            $row[] = $notesCell;
-
-            $row['DT_RowClass'] = 'has-row-options';
+            $rowClass = 'has-row-options';
+            // Colour the whole row based on the selected priority (see CSS in manage.php).
+            if ($currentPriority !== '') {
+                $rowClass .= ' project-row-priority-' . $currentPriority;
+            }
+            $row['DT_RowClass'] = $rowClass;
 
             $row = hooks()->apply_filters('projects_table_row_data', $row, $aRow);
 

@@ -773,6 +773,27 @@ class Projects_model extends App_Model
         return $this->db->affected_rows() >= 0 ? $now : false;
     }
 
+    /**
+     * Save the per-row listing priority (high|medium|low) for a project.
+     * Returns true on success, false on invalid value / failure.
+     */
+    public function save_listing_priority($project_id, $priority)
+    {
+        
+
+        $priority = strtolower(trim((string) $priority));
+        if (! in_array($priority, ['high', 'medium', 'low', ''], true)) {
+            return false;
+        }
+
+        $this->db->where('id', $project_id);
+        $this->db->update(db_prefix() . 'projects', [
+            'listing_priority' => $priority === '' ? null : $priority,
+        ]);
+
+        return $this->db->affected_rows() >= 0;
+    }
+
     public function add($data)
     {
         if (isset($data['notify_project_members_status_change'])) {

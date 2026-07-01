@@ -964,6 +964,36 @@ class Projects extends AdminController
         }
     }
 
+    /**
+     * Save the per-row "Priority" dropdown from the projects listing (AJAX).
+     */
+    public function save_listing_priority()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        if (!staff_can('edit', 'projects')) {
+            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            return;
+        }
+
+        $project_id = (int) $this->input->post('project_id');
+        $priority   = $this->input->post('priority');
+
+        if (!$project_id) {
+            echo json_encode(['success' => false, 'message' => _l('project_not_found')]);
+            return;
+        }
+
+        $success = $this->projects_model->save_listing_priority($project_id, $priority);
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? _l('updated_successfully', _l('project')) : _l('something_went_wrong'),
+        ]);
+    }
+
     public function discussions($project_id)
     {
         if ($this->projects_model->is_member($project_id) || staff_can('view', 'projects')) {

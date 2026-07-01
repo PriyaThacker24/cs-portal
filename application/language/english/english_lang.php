@@ -671,6 +671,7 @@ $lang['task_priority_low']                  = 'Low';
 $lang['task_priority_medium']               = 'Medium';
 $lang['task_priority_high']                 = 'High';
 $lang['task_priority_urgent']               = 'Urgent';
+$lang['project_priority']                   = 'Priority';
 $lang['task_add_edit_start_date']           = 'Start Date';
 $lang['task_add_edit_due_date']             = 'Due Date';
 $lang['task_add_edit_description']          = 'Task Description';
