@@ -1,5 +1,19 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 
+<?php
+// Whether the invoice has an online payment gateway OTHER than Wise. Wise is
+// paid via the manual "Wise payment link" shown separately, so it is excluded
+// from the on-page "Online Payment" (Pay Now) options.
+$invoice_has_online_payment_mode = false;
+foreach (($payment_modes ?? []) as $__mode) {
+    if (!is_numeric($__mode['id']) && !empty($__mode['id']) && $__mode['id'] !== 'wise'
+        && is_payment_mode_allowed_for_invoice($__mode['id'], $invoice->id)) {
+        $invoice_has_online_payment_mode = true;
+        break;
+    }
+}
+?>
+
 <div class="mtop15 preview-top-wrapper">
     <div class="row">
         <div class="col-md-3">
@@ -40,7 +54,7 @@
 
                     <a href="#" class="btn btn-success action-button invoice-html-pay-now-top hide sticky-hidden
                   <?php if (($invoice->status != Invoices_model::STATUS_PAID && $invoice->status != Invoices_model::STATUS_CANCELLED
-                     && $invoice->total > 0) && found_invoice_mode($payment_modes, $invoice->id, false)) {
+                     && $invoice->total > 0) && $invoice_has_online_payment_mode) {
     echo ' pay-now-top';
 } ?>">
                         <?php echo _l('invoice_html_online_payment_button_text'); ?>
@@ -327,6 +341,21 @@
                     </div>
                 </div>
                 <?php } ?>
+                <?php
+                $__inv_allowed_modes = $invoice->allowed_payment_modes ? unserialize($invoice->allowed_payment_modes) : [];
+                if (!empty($invoice->wise_payment_link) && is_array($__inv_allowed_modes) && in_array('wise', $__inv_allowed_modes)) { ?>
+                <div class="col-md-12 invoice-html-wise-payment">
+                    <hr />
+                    <p>
+                        <b><?php echo _l('wise_payment_link'); ?></b>
+                    </p>
+                    <div class="tw-text-neutral-500 tw-mt-2.5">
+                        <a href="<?php echo e($invoice->wise_payment_link); ?>" target="_blank" rel="noopener">
+                            <?php echo e($invoice->wise_payment_link); ?>
+                        </a>
+                    </div>
+                </div>
+                <?php } ?>
 
                 <div class="col-md-12">
                     <hr />
@@ -387,13 +416,17 @@
                     <div class="row">
                         <?php
                      $found_online_mode = false;
-                     if (found_invoice_mode($payment_modes, $invoice->id, false)) {
+                     if ($invoice_has_online_payment_mode) {
                          $found_online_mode = true; ?>
                         <div class="col-md-6 text-left">
                             <p class="tw-mb-2.5 tw-font-medium"><?php echo _l('invoice_html_online_payment'); ?></p>
                             <?php echo form_open($this->uri->uri_string(), ['id' => 'online_payment_form', 'novalidate' => true]); ?>
                             <?php foreach ($payment_modes as $mode) {
                              if (!is_numeric($mode['id']) && !empty($mode['id'])) {
+                                 // Wise is paid via the manual link shown above, not the online form.
+                                 if ($mode['id'] === 'wise') {
+                                     continue;
+                                 }
                                  if (!is_payment_mode_allowed_for_invoice($mode['id'], $invoice->id)) {
                                      continue;
                                  } ?>

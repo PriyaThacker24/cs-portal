@@ -352,10 +352,24 @@ function init_relation_tasks_table($table_attributes = [], $filtersWrapperId = '
     $CI         = &get_instance();
     $table_name = '.table-' . $name;
 
+    // Default status filter for the project tasks tab: show all statuses except
+    // Completed and Closed (mirrors the main tasks list default). Only applied
+    // for project tasks; other relation tabs keep their previous behaviour.
+    $defaultRuleJs = 'undefined';
+    if (($table_attributes['data-new-rel-type'] ?? '') === 'project') {
+        $CI->load->model('tasks_model');
+        $defaultStatuses = array_values(array_filter(
+            array_map(fn ($s) => (int) $s['id'], $CI->tasks_model->get_statuses()),
+            fn ($id) => ! in_array($id, [Tasks_model::STATUS_COMPLETE, Tasks_model::STATUS_CLOSED], true)
+        ));
+        $defaultRuleJs = \app\services\utilities\Js::from($tasks_table->findRule('status')->setValue($defaultStatuses));
+    }
+
     $CI->load->view('admin/tasks/filters', [
         'tasks_table'=>$tasks_table,
         'filters_wrapper_id'=>$filtersWrapperId,
         'detached'=>$filtersDetached,
+        'default_rule_js'=>$defaultRuleJs,
     ]);
 
     // Check permission with priority logic (staff-level first, then project-level)

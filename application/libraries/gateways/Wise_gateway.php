@@ -5,9 +5,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /**
  * Wise (TransferWise) payment gateway.
  *
- * Built to mirror the Stripe gateway: it dynamically creates a payment link per
- * invoice (via the Wise Payment Requests API) and the invoice status is updated
- * automatically once Wise confirms the payment through its webhook.
+ * Wise has no public API to create a hosted payment link, so the admin enters
+ * the Wise payment link manually on the invoice. "Pay now" redirects the
+ * customer to that link, and the invoice is reconciled automatically via the
+ * "account-details-payment#state-change" webhook (matched by the invoice-number
+ * reference on the payment).
  *
  * The class is auto-registered because every file in libraries/gateways is
  * autoloaded (see config/autoload.php).
@@ -95,8 +97,9 @@ class Wise_gateway extends App_gateway
     }
 
     /**
-     * Process the payment: create a Wise payment request for the invoice and
-     * redirect the customer to the hosted Wise payment link.
+     * Process the payment: Wise has no public API to create a hosted payment
+     * link, so the admin enters the link manually on the invoice. Here we
+     * simply redirect the customer to that stored link.
      *
      * @param array $data
      *
@@ -104,45 +107,13 @@ class Wise_gateway extends App_gateway
      */
     public function process_payment($data)
     {
-        $this->ci->load->library('wise_core');
-
-        $invoice  = $data['invoice'];
-        $currency = $invoice->currency_name;
-
-        $description = str_replace(
-            '{invoice_number}',
-            format_invoice_number($invoice->id),
-            $this->getSetting('description_dashboard')
-        );
-
+        $invoice   = $data['invoice'];
         $cancelUrl = site_url('invoice/' . $data['invoiceid'] . '/' . $invoice->hash);
 
-        try {
-            $balanceId = $this->ci->wise_core->resolve_balance_id($currency);
+        $link = isset($invoice->wise_payment_link) ? trim((string) $invoice->wise_payment_link) : '';
 
-            if (! $balanceId) {
-                throw new Exception('No Wise balance found for currency ' . $currency);
-            }
-
-            $paymentRequest = $this->ci->wise_core->create_payment_request([
-                'balanceId'   => $balanceId,
-                'amount'      => $data['amount'],
-                'currency'    => $currency,
-                'description' => $description,
-                // Used by the webhook to match the payment back to this invoice
-                'reference'   => $data['payment_attempt']->reference,
-            ]);
-        } catch (Exception $e) {
-            set_alert('warning', $e->getMessage());
-            redirect($cancelUrl);
-
-            return;
-        }
-
-        $link = $paymentRequest['link'] ?? null;
-
-        if (! $link) {
-            set_alert('warning', 'Wise did not return a payment link.');
+        if ($link === '') {
+            set_alert('warning', _l('wise_payment_link_missing'));
             redirect($cancelUrl);
 
             return;

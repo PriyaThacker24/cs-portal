@@ -14,11 +14,3 @@
 </div>
 <?php // Loaded outside #vueApp so the inline <script> actually executes (Vue skips scripts inside its mount) ?>
 <?php $this->load->view('admin/tasks/_listing_notes_js'); ?>
-<script>
-(function () {
-    setTimeout(function () {
-        var btn = document.querySelector('#vueApp button[data-status-id="4"]');
-        if (btn) { btn.click(); }
-    }, 300);
-})();
-</script>

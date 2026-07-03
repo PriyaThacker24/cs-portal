@@ -905,7 +905,6 @@ $lang['settings_paymentmethod_wise_api_token']             = 'Wise API Token';
 $lang['settings_paymentmethod_wise_profile_id']            = 'Wise Profile ID';
 $lang['settings_paymentmethod_wise_webhook_url']           = 'Public Webhook Base URL (optional, e.g. ngrok/staging - Wise rejects local URLs)';
 $lang['settings_paymentmethod_wise_balance_id']            = 'Wise Balance ID (optional, auto-detected by currency if empty)';
-$lang['wise_credit_received_notification']                 = 'Wise payment of %s received - confirm and record payment for invoice %s';
 $lang['settings_paymentmethod_wise_sandbox']               = 'Use Wise Sandbox Environment';
 $lang['settings_paymentmethod_wise_webhook_public_key']    = 'Wise Webhook Public Key (optional, for signature verification)';
 $lang['settings_limit_top_search_bar_results']             = 'Limit Top Search Bar Results to';
@@ -947,6 +946,9 @@ $lang['is_active_export']            = 'Yes';
 # Invoice
 $lang['invoice_add_edit_advanced_options']                = 'Advanced Options';
 $lang['invoice_add_edit_allowed_payment_modes']           = 'Allowed payment modes for this invoice';
+$lang['wise_payment_link']                                = 'Wise payment link';
+$lang['wise_payment_link_help']                           = 'Paste the Wise payment link the customer will be redirected to when paying this invoice with Wise. Shown on the invoice and PDF.';
+$lang['wise_payment_link_missing']                        = 'No Wise payment link has been set for this invoice.';
 $lang['invoice_add_edit_recurring_invoices_from_invoice'] = 'Created invoices from this recurring invoice';
 $lang['invoice_add_edit_no_payment_modes_found']          = 'No payment modes found.';
 $lang['invoice_html_total_pay']                           = 'Total: %s';

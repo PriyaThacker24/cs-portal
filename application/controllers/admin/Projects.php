@@ -518,7 +518,8 @@ class Projects extends AdminController
             $project->settings->available_features = unserialize($project->settings->available_features);
             $data['statuses']                      = $this->projects_model->get_project_statuses();
 
-            $group = ! $this->input->get('group') ? 'project_overview' : $this->input->get('group');
+            // Default to the Tasks tab when no tab is explicitly requested.
+            $group = ! $this->input->get('group') ? 'project_tasks' : $this->input->get('group');
 
             // Unable to load the requested file: admin/projects/project_tasks#.php - FIX
             if (strpos($group, '#') !== false) {
@@ -528,9 +529,20 @@ class Projects extends AdminController
             $data['tabs'] = get_project_tabs_admin();
             $data['tab']  = $this->app_tabs->filter_tab($data['tabs'], $group);
 
+            // If the default Tasks tab isn't available for this project, fall
+            // back to the Overview tab instead of showing a 404.
+            if (! $data['tab'] && ! $this->input->get('group')) {
+                $group       = 'project_overview';
+                $data['tab'] = $this->app_tabs->filter_tab($data['tabs'], $group);
+            }
+
             if (! $data['tab']) {
                 show_404();
             }
+
+            // The resolved active tab (so the tab menu highlights it even when
+            // no ?group is in the URL, e.g. the default Tasks tab).
+            $data['active_group'] = $group;
 
             $this->load->model('payment_modes_model');
             $data['payment_modes'] = $this->payment_modes_model->get('', [], true);

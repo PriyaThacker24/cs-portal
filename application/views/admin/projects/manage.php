@@ -33,13 +33,13 @@
     /* LOW → white row, black text */
     .table-projects tr.project-row-priority-low > td {
         background-color: #ffffff !important;
-        color: #000000 !important;
+        color: #374151 !important;
     }
     .table-projects tr.project-row-priority-low > td a:not(.label),
     .table-projects tr.project-row-priority-low > td small,
     .table-projects tr.project-row-priority-low > td .text-muted,
     .table-projects tr.project-row-priority-low > td .project-table-progress-wrap > span {
-        color: #000000 !important;
+        color: #374151 !important;
     }
 </style>
 <div id="wrapper">

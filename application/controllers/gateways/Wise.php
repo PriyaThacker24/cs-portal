@@ -21,13 +21,21 @@ class Wise extends App_Controller
      */
     public function create_webhook()
     {
-        if (! staff_can('edit', 'settings')) {
+        $redirectUrl = admin_url('settings/?group=payment_gateways&tab=online_payments_wise_tab');
+
+        // is_admin() is reliable in this frontend gateway controller (staff_can
+        // was returning false here, causing a silent no-op).
+        if (! is_staff_logged_in() || ! is_admin()) {
+            set_alert('warning', _l('access_denied'));
+            redirect($redirectUrl);
+
             return;
         }
 
         $this->load->library('wise_core');
 
         try {
+            // Remove any existing subscription pointing at our endpoint first.
             foreach ($this->wise_core->list_subscriptions() as $subscription) {
                 $url = $subscription['delivery']['url'] ?? '';
                 if ($url === $this->wise_gateway->webhookEndPoint && isset($subscription['id'])) {
@@ -35,10 +43,21 @@ class Wise extends App_Controller
                 }
             }
 
-            $this->wise_core->create_subscription($this->wise_gateway->webhookEndPoint);
-            set_alert('success', _l('webhook_created'));
+            $results = $this->wise_core->create_subscription($this->wise_gateway->webhookEndPoint);
+
+            $errors = [];
+            foreach ($results as $trigger => $result) {
+                if (isset($result['error'])) {
+                    $errors[] = $trigger . ' → ' . $result['error'];
+                }
+            }
+
+            if (empty($errors)) {
+                set_alert('success', _l('webhook_created'));
+            } else {
+                set_alert('warning', 'Some Wise webhook subscriptions failed: ' . implode(' | ', $errors));
+            }
         } catch (GuzzleHttp\Exception\RequestException $e) {
-            // Surface the actual Wise API error (status code + response body)
             $message = $e->getMessage();
             if ($e->hasResponse()) {
                 $message = 'HTTP ' . $e->getResponse()->getStatusCode() . ': ' . (string) $e->getResponse()->getBody();
@@ -50,17 +69,15 @@ class Wise extends App_Controller
             set_alert('warning', $e->getMessage());
         }
 
-        redirect(admin_url('settings/?group=payment_gateways&tab=online_payments_wise_tab'));
+        redirect($redirectUrl);
     }
 
     /**
      * The application Wise webhook endpoint.
      *
-     * Wise has no payment-request webhook, so we subscribe to "balances#credit"
-     * (money landing in the Wise balance). Because a balance credit does not
-     * carry our invoice reference, we cannot safely auto-record the payment.
-     * Instead we flag likely invoice matches (by amount + currency) and notify
-     * staff to confirm and record the payment in the admin area.
+     * Handles "account-details-payment#state-change": the event carries the
+     * payment reference the link was created with (the invoice number), so the
+     * matching invoice is resolved and the payment recorded automatically.
      *
      * @return mixed
      */
@@ -105,8 +122,10 @@ class Wise extends App_Controller
         }
 
         try {
-            if (stripos($eventType, 'balances#credit') !== false) {
-                $this->process_balance_credit($event['data'] ?? []);
+            if (stripos($eventType, 'account-details-payment') !== false) {
+                // Carries the invoice-number reference, so we match the invoice
+                // and auto-record the payment.
+                $this->process_account_details_payment($event['data'] ?? []);
             }
         } catch (Exception $e) {
             log_activity('Wise webhook error: ' . $e->getMessage());
@@ -116,112 +135,130 @@ class Wise extends App_Controller
     }
 
     /**
-     * Handle a Wise "balances#credit" event: find open invoices whose pending
-     * Wise payment attempt matches the credited amount + currency, and notify
-     * staff to confirm the payment.
+     * Handle a Wise "account-details-payment#state-change" event.
      *
-     * NOTE: the exact field names of the balances#credit payload should be
-     * confirmed against a real Wise event; the lookups below are defensive.
+     * The Wise payment link is created with the invoice number as its
+     * reference, so an incoming payment carries that reference. We match it to
+     * the invoice and record the payment automatically (which flips the invoice
+     * to Paid). Payments without a usable reference are logged and left for
+     * manual recording.
      *
      * @param array $data
      *
      * @return void
      */
-    protected function process_balance_credit($data)
+    protected function process_account_details_payment($data)
     {
-        // Amount can arrive as a scalar or an {value,currency} object
-        $amount = $data['amount'] ?? null;
+        // Only act once the payment is actually received/credited.
+        $state = strtoupper((string) ($data['current_state'] ?? $data['state'] ?? $data['status'] ?? ''));
+        if ($state !== ''
+            && strpos($state, 'CREDIT') === false
+            && strpos($state, 'COMPLET') === false
+            && strpos($state, 'PROCESS') === false
+            && strpos($state, 'RECEIV') === false) {
+            return;
+        }
+
+        // Amount + currency (can be scalar or {value,currency}).
+        $amount   = $data['amount'] ?? null;
+        $currency = $data['currency'] ?? null;
         if (is_array($amount)) {
-            $amount = $amount['value'] ?? null;
+            $currency = $amount['currency'] ?? $currency;
+            $amount   = $amount['value'] ?? null;
         }
 
-        $currency          = $data['currency'] ?? ($data['amount']['currency'] ?? null);
-        $transactionType   = strtolower($data['transaction_type'] ?? 'credit');
+        // Reference the link was created with (should be the invoice number).
+        $reference = trim((string) (
+            $data['reference']
+            ?? $data['paymentReference']
+            ?? $data['payment_reference']
+            ?? ($data['details']['reference'] ?? '')
+        ));
 
-        if ($amount === null || $transactionType !== 'credit') {
-            return;
-        }
-
-        $amount = round((float) $amount, get_decimal_places());
-
-        // Pending Wise payment attempts whose amount matches the credit
-        $this->db->where('payment_gateway', 'wise');
-        $attempts = $this->db->get(db_prefix() . 'payment_attempts')->result();
-
-        $this->load->model('invoices_model');
-        $matchedInvoices = [];
-
-        foreach ($attempts as $attempt) {
-            if (round((float) $attempt->amount, get_decimal_places()) !== $amount) {
-                continue;
-            }
-
-            $invoice = $this->invoices_model->get($attempt->invoice_id);
-            if (! $invoice) {
-                continue;
-            }
-
-            // Match currency when the credit carries one
-            if ($currency && strcasecmp($invoice->currency_name, $currency) !== 0) {
-                continue;
-            }
-
-            $matchedInvoices[$invoice->id] = $invoice;
-        }
-
-        if (empty($matchedInvoices)) {
-            log_activity('Wise credit received (' . $amount . ' ' . $currency . ') with no matching pending invoice.');
+        // No usable reference -> cannot safely match an invoice; log for manual
+        // recording.
+        if ($reference === '' || $amount === null) {
+            log_activity('Wise payment received without a usable reference (amount: ' . (is_scalar($amount) ? $amount : 'n/a') . ' ' . $currency . ') - record manually.');
 
             return;
         }
 
-        foreach ($matchedInvoices as $invoice) {
-            $this->notify_staff_to_confirm($invoice, $amount, $currency);
+        $invoice = $this->find_invoice_by_reference($reference);
+
+        if (! $invoice) {
+            log_activity('Wise payment received (reference: ' . $reference . ') but no matching invoice was found.');
+
+            return;
+        }
+
+        // Currency guard (when the event carries one).
+        if ($currency && strcasecmp($invoice->currency_name, $currency) !== 0) {
+            log_activity('Wise payment reference ' . $reference . ' currency mismatch (' . $currency . ' vs ' . $invoice->currency_name . ').');
+
+            return;
+        }
+
+        // Already paid - nothing to do.
+        if ((int) $invoice->status === Invoices_model::STATUS_PAID) {
+            return;
+        }
+
+        $recordAmount  = round((float) $amount, get_decimal_places());
+        $transactionId = (string) ($data['id'] ?? $data['resource']['id'] ?? $reference);
+
+        // addPayment() records the payment and auto-updates the invoice status.
+        $recorded = $this->wise_gateway->addPayment([
+            'amount'                    => $recordAmount,
+            'invoiceid'                 => $invoice->id,
+            'paymentmethod'             => 'Wise',
+            'transactionid'             => $transactionId,
+            'note'                      => 'Wise payment auto-recorded (reference: ' . $reference . ').',
+            'payment_attempt_reference' => '',
+        ]);
+
+        if ($recorded) {
+            log_activity('Wise payment auto-recorded for invoice ' . format_invoice_number($invoice->id) . ' (reference: ' . $reference . ', amount: ' . $recordAmount . ' ' . $currency . ').');
+        } else {
+            log_activity('Wise payment for invoice ' . format_invoice_number($invoice->id) . ' (reference: ' . $reference . ') could not be recorded automatically.');
         }
     }
 
     /**
-     * Notify the staff responsible for an invoice that a matching Wise credit
-     * arrived and needs manual confirmation/recording.
+     * Resolve an invoice from a Wise payment reference that should contain the
+     * invoice number (e.g. "INV-000755" or "755"). Returns the invoice object
+     * only when the reference confidently identifies it.
      *
-     * @param object $invoice
-     * @param float  $amount
-     * @param string $currency
+     * @param string $reference
      *
-     * @return void
+     * @return object|null
      */
-    protected function notify_staff_to_confirm($invoice, $amount, $currency)
+    protected function find_invoice_by_reference($reference)
     {
-        // Staff to notify: invoice creator + assigned sale agent, else admins
-        $staffIds = array_filter([$invoice->addedfrom ?? 0, $invoice->sale_agent ?? 0]);
+        $ref = strtoupper(trim($reference));
 
-        if (empty($staffIds)) {
-            $admins   = $this->db->select('staffid')->where('admin', 1)->where('active', 1)->get(db_prefix() . 'staff')->result();
-            $staffIds = array_map(function ($s) { return $s->staffid; }, $admins);
+        // Numeric part of the reference -> candidate invoice id.
+        $digits = preg_replace('/\D/', '', $ref);
+        if ($digits === '') {
+            return null;
         }
 
-        $notified = [];
-        foreach (array_unique($staffIds) as $staffId) {
-            $ok = add_notification([
-                'description'     => 'wise_credit_received_notification',
-                'touserid'        => $staffId,
-                'fromcompany'     => 1,
-                'link'            => 'invoices/list_invoices/' . $invoice->id,
-                'additional_data' => serialize([
-                    app_format_money($amount, $currency ?: $invoice->currency_name),
-                    format_invoice_number($invoice->id),
-                ]),
-            ]);
-            if ($ok) {
-                $notified[] = $staffId;
-            }
+        $this->load->model('invoices_model');
+        $invoice = $this->invoices_model->get((int) $digits);
+        if (! $invoice) {
+            return null;
         }
 
-        if ($notified) {
-            pusher_trigger_notification($notified);
+        // Confirm the reference really identifies this invoice: it should equal
+        // the formatted invoice number, or the numeric id should match exactly.
+        $formatted = strtoupper(format_invoice_number($invoice->id));
+        if ($ref === $formatted
+            || (int) $digits === (int) $invoice->id
+            || strpos($ref, $formatted) !== false
+            || strpos($formatted, $ref) !== false) {
+            return $invoice;
         }
 
-        log_activity('Wise credit (' . $amount . ' ' . $currency . ') flagged for invoice ' . format_invoice_number($invoice->id) . ' - staff notified to confirm.');
+        return null;
     }
 
     /**

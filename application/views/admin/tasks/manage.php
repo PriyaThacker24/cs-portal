@@ -64,9 +64,19 @@
                 <div class="pull-right tw-flex tw-items-center tw-gap-1">
                     <!-- App Filters (Vue-based) for status summary click and saved filters -->
                     <div class="tw-inline">
+                        <?php
+                        // Default status filter on page load: show all tasks except
+                        // Completed and Closed. Derived from the configured statuses so
+                        // it stays correct if the status list changes.
+                        $this->load->model('tasks_model');
+                        $defaultTaskStatuses = array_values(array_filter(
+                            array_map(fn ($s) => (int) $s['id'], $this->tasks_model->get_statuses()),
+                            fn ($id) => ! in_array($id, [Tasks_model::STATUS_COMPLETE, Tasks_model::STATUS_CLOSED], true)
+                        ));
+                        ?>
                         <app-filters id="<?= $tasks_table->id(); ?>"
                             view="<?= $tasks_table->viewName(); ?>"
-                            :rules="extra.tasksRules || <?= app\services\utilities\Js::from($tasks_table->findRule('status')->setValue([4])); ?>"
+                            :rules="extra.tasksRules || <?= app\services\utilities\Js::from($tasks_table->findRule('status')->setValue($defaultTaskStatuses)); ?>"
                             :saved-filters="<?= $tasks_table->filtersJs(); ?>"
                             :available-rules="<?= $tasks_table->rulesJs(); ?>">
                         </app-filters>

@@ -298,6 +298,19 @@ if (!empty($invoice->terms)) {
     $pdf->writeHTMLCell('', '', '', '', $invoice->terms, 0, 1, false, true, 'L', true);
 }
 
+// Manual Wise payment link (only when Wise is an allowed payment mode).
+$__inv_allowed_modes = $invoice->allowed_payment_modes ? unserialize($invoice->allowed_payment_modes) : [];
+if (!empty($invoice->wise_payment_link) && is_array($__inv_allowed_modes) && in_array('wise', $__inv_allowed_modes)) {
+    $pdf->Ln(4);
+    $pdf->SetFont($font_name, 'B', $font_size);
+    $pdf->Cell(0, 0, _l('wise_payment_link') . ':', 0, 1, 'L', 0, '', 0);
+    $pdf->SetFont($font_name, '', $font_size);
+    $pdf->Ln(2);
+    $wiseUrl  = $invoice->wise_payment_link;
+    $wiseHtml = '<a href="' . htmlspecialchars($wiseUrl, ENT_QUOTES) . '">' . htmlspecialchars($wiseUrl, ENT_QUOTES) . '</a>';
+    $pdf->writeHTMLCell('', '', '', '', $wiseHtml, 0, 1, false, true, 'L', true);
+}
+
 // Bank details come from the invoice's organization company
 $invoiceBankDetailsHtml = invoice_has_bank_payment_mode($invoice, $payment_modes) ? get_invoice_bank_details_html($invoice) : '';
 if (trim($invoiceBankDetailsHtml) !== '') {

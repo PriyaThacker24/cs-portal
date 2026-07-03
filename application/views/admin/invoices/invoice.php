@@ -34,8 +34,20 @@ $(function() {
     init_ajax_project_search_by_customer_id();
     // Maybe items ajax search
     init_ajax_search('items', '#item_select.ajax-search', undefined, admin_url + 'items/search');
-    
-    
+
+    // Show + require the Wise payment link field only when the Wise payment
+    // method is selected in "Allowed payment modes".
+    function toggle_wise_payment_link() {
+        var val = $('select[name="allowed_payment_modes[]"]').val();
+        var modes = Array.isArray(val) ? val : (val ? [val] : []);
+        var hasWise = modes.indexOf('wise') !== -1;
+        $('#wise_payment_link_wrapper').toggleClass('hide', !hasWise);
+        $('#wise_payment_link').prop('required', hasWise);
+    }
+    $(document).on('change', 'select[name="allowed_payment_modes[]"]', toggle_wise_payment_link);
+    toggle_wise_payment_link();
+
+
     var organizationCompanyManuallySelected = false;
 
     function refresh_invoice_organization_company_preview(companyId) {

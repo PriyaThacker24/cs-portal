@@ -346,6 +346,18 @@
                         <?php } ?>
                     </div>
 
+                    <?php
+                    // Manual Wise payment link. Shown + required (via JS) only when
+                    // the Wise payment method is selected in Allowed Payment Modes.
+                    $wise_link_value = (isset($invoice) && isset($invoice->wise_payment_link)) ? $invoice->wise_payment_link : '';
+                    ?>
+                    <div class="form-group hide" id="wise_payment_link_wrapper">
+                        <label for="wise_payment_link" class="control-label"><?php echo _l('wise_payment_link'); ?></label>
+                        <input type="url" name="wise_payment_link" id="wise_payment_link" class="form-control"
+                            value="<?php echo e($wise_link_value); ?>" placeholder="https://wise.com/pay/...">
+                        <small class="text-muted"><?php echo _l('wise_payment_link_help'); ?></small>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <?php

@@ -11,14 +11,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * Mirrors the role Stripe_core plays for the Stripe integration: it centralises
  * every outbound HTTP call so the gateway/controller never talk to Wise directly.
  *
- * Wise has no Stripe-Checkout equivalent, so "payment links" are created through
- * the Payment Requests ("Request money" / Wise Pay) API and the hosted link Wise
- * returns is what the client is redirected to.
- *
- * NOTE: A few endpoint paths / field names below can vary by Wise account region
- * and product. They are grouped here on purpose so they are trivial to adjust
- * against your specific Wise account if a call returns a 4xx. They should be
- * validated against the Wise sandbox first.
+ * Wise has no public "create payment link" API, so payment links are entered
+ * manually on the invoice. This class is used only for webhook subscription
+ * management and signature verification; incoming payments are reconciled via
+ * the "account-details-payment#state-change" webhook.
  */
 class Wise_core
 {
@@ -29,14 +25,16 @@ class Wise_core
     const BASE_SANDBOX = 'https://api.wise-sandbox.com';
 
     /**
-     * The Wise webhook trigger we subscribe to.
+     * The Wise webhook triggers we subscribe to.
      *
-     * Wise has NO payment-request webhook ("payment-request#state-change" is
-     * rejected by the API as an invalid trigger). When a payer settles a Wise
-     * payment request the money lands in the balance, which fires "balances#credit".
-     * We therefore subscribe to that and reconcile the credit to an invoice.
+     * "account-details-payment#state-change" fires when a payment is received
+     * into the account details. It carries the payment "reference" the link was
+     * created with (the invoice number), which lets us match the invoice and
+     * auto-record the payment.
      */
-    const WEBHOOK_TRIGGER = 'balances#credit';
+    const WEBHOOK_TRIGGERS = [
+        'account-details-payment#state-change',
+    ];
 
     protected $ci;
 
@@ -158,92 +156,6 @@ class Wise_core
     }
 
     /**
-     * List the standard balances of the configured profile.
-     * Used to resolve the balance id money should be received into.
-     *
-     * @throws GuzzleException
-     */
-    public function get_balances(): array
-    {
-        $balances = $this->request('GET', '/v4/profiles/' . $this->profileId . '/balances?types=STANDARD');
-
-        return is_array($balances) ? $balances : [];
-    }
-
-    /**
-     * Find the balance id matching the given currency (e.g. "USD").
-     * Falls back to the explicitly configured balance id setting.
-     *
-     * @param string $currency
-     *
-     * @throws GuzzleException
-     *
-     * @return string|int|null
-     */
-    public function resolve_balance_id($currency)
-    {
-        $configured = $this->ci->wise_gateway->getSetting('balance_id');
-        if ($configured !== '') {
-            return $configured;
-        }
-
-        foreach ($this->get_balances() as $balance) {
-            if (isset($balance['currency']) && strcasecmp($balance['currency'], $currency) === 0) {
-                return $balance['id'];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Create a Wise payment request ("Request money") and return the decoded
-     * response. The hosted payment link is available on the "link" key.
-     *
-     * @param array $data {
-     *
-     *     @var string|int $balanceId   Balance the payment should be received into
-     *     @var float      $amount      Amount value
-     *     @var string     $currency    ISO currency code
-     *     @var string     $description Human readable description
-     *     @var string     $reference   Our internal reference used to match the payment back to the invoice
-     * }
-     *
-     * @throws GuzzleException
-     */
-    public function create_payment_request($data): array
-    {
-        $payload = [
-            'balanceId'   => $data['balanceId'],
-            'amount'      => [
-                'value'    => round((float) $data['amount'], 2),
-                'currency' => strtoupper($data['currency']),
-            ],
-            'description' => $data['description'],
-            // "reference" is echoed back on the payment request and is how the
-            // webhook resolves which invoice the payment belongs to.
-            'reference'   => $data['reference'],
-        ];
-
-        return (array) $this->request('POST', '/v3/profiles/' . $this->profileId . '/payment-requests', $payload);
-    }
-
-    /**
-     * Retrieve a single payment request (authoritative source of truth for its
-     * status and reference). The webhook only acts as a trigger; this call is
-     * what actually confirms a payment, so a forged webhook cannot create a
-     * fake payment.
-     *
-     * @param string $id
-     *
-     * @throws GuzzleException
-     */
-    public function get_payment_request($id): array
-    {
-        return (array) $this->request('GET', '/v3/profiles/' . $this->profileId . '/payment-requests/' . $id);
-    }
-
-    /**
      * List the webhook subscriptions configured for the profile
      *
      * @throws GuzzleException
@@ -256,29 +168,45 @@ class Wise_core
     }
 
     /**
-     * Create a webhook subscription pointing at our endpoint
+     * Create the webhook subscriptions pointing at our endpoint (one per
+     * trigger). Each trigger is attempted independently so a trigger that is
+     * not available for the account does not block the others.
      *
      * @param string $url
      *
-     * @throws GuzzleException
+     * @return array trigger => created subscription | ['error' => message]
      */
     public function create_subscription($url): array
     {
-        $payload = [
-            'name'       => 'CRM payment-request notifications',
-            'trigger_on' => self::WEBHOOK_TRIGGER,
-            'delivery'   => [
-                'version' => '2.0.0',
-                'url'     => $url,
-            ],
-        ];
+        $results = [];
 
-        return (array) $this->request(
-            'POST',
-            '/v3/profiles/' . $this->profileId . '/subscriptions',
-            $payload,
-            ['X-External-Correlation-Id' => $this->correlation_id()]
-        );
+        foreach (self::WEBHOOK_TRIGGERS as $trigger) {
+            try {
+                $results[$trigger] = (array) $this->request(
+                    'POST',
+                    '/v3/profiles/' . $this->profileId . '/subscriptions',
+                    [
+                        'name'       => 'CRM payment notifications',
+                        'trigger_on' => $trigger,
+                        'delivery'   => [
+                            'version' => '2.0.0',
+                            'url'     => $url,
+                        ],
+                    ],
+                    ['X-External-Correlation-Id' => $this->correlation_id()]
+                );
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                $message = $e->getMessage();
+                if ($e->hasResponse()) {
+                    $message = 'HTTP ' . $e->getResponse()->getStatusCode() . ': ' . (string) $e->getResponse()->getBody();
+                }
+                $results[$trigger] = ['error' => $message];
+            } catch (GuzzleException $e) {
+                $results[$trigger] = ['error' => $e->getMessage()];
+            }
+        }
+
+            return $results;
     }
 
     /**

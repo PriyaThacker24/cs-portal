@@ -33,13 +33,13 @@ return App_table::find('projects')
             // Placeholder to keep column indexes aligned with the Notes display column
             // (Notes is non-orderable/non-searchable, so this is never used in the query).
             '"" as listing_notes_placeholder',
-            get_sql_select_client_company(),
-            $progressSelect,
-            '(SELECT GROUP_CONCAT(CONCAT(firstname, \' \', lastname) SEPARATOR ",") FROM ' . db_prefix() . 'project_members JOIN ' . db_prefix() . 'staff on ' . db_prefix() . 'staff.staffid = ' . db_prefix() . 'project_members.staff_id WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members',
             'status',
             // Placeholder to keep column indexes aligned with the Priority display column
             // (Priority is non-orderable/non-searchable, so this is never used in the query).
             '"" as listing_priority_placeholder',
+            get_sql_select_client_company(),
+            $progressSelect,
+            '(SELECT GROUP_CONCAT(CONCAT(firstname, \' \', lastname) SEPARATOR ",") FROM ' . db_prefix() . 'project_members JOIN ' . db_prefix() . 'staff on ' . db_prefix() . 'staff.staffid = ' . db_prefix() . 'project_members.staff_id WHERE project_id=' . db_prefix() . 'projects.id ORDER BY staff_id) as members',
         ];
 
 
@@ -136,6 +136,22 @@ return App_table::find('projects')
 
             $link = admin_url('projects/view/' . $aRow['id']);
 
+            // Priority (computed early so the row-options separator can be tinted).
+            $currentPriority = isset($aRow['listing_priority']) ? strtolower(trim((string) $aRow['listing_priority'])) : '';
+            if (! in_array($currentPriority, ['high', 'medium', 'low'], true)) {
+                $currentPriority = '';
+            }
+
+            // Row-options "|" separator colour follows the priority label colour
+            // (High = red, Medium = amber, Low / none = default).
+            $sepColors = [
+                'high'   => '#ffffff',
+                'medium' => '#000000',
+            ];
+            $sep = isset($sepColors[$currentPriority])
+                ? ' <span style="color:' . $sepColors[$currentPriority] . ' !important;">|</span> '
+                : ' | ';
+
             $name = '<a href="' . $link . '" class="tw-font-medium">#' . $aRow['id'] . ' ' . e($aRow['name']) . '</a>';
 
             $name .= '<div class="row-options">';
@@ -143,7 +159,7 @@ return App_table::find('projects')
             $name .= '<a href="' . $link . '">' . _l('view') . '</a>';
 
             if ($hasPermissionCreate && !$clientid) {
-                $name .= ' | <a href="#" data-name="' . e($aRow['name']) . '" onclick="copy_project(' . $aRow['id'] . ', this);return false;">' . _l('copy_project') . '</a>';
+                $name .= $sep . '<a href="#" data-name="' . e($aRow['name']) . '" onclick="copy_project(' . $aRow['id'] . ', this);return false;">' . _l('copy_project') . '</a>';
             }
 
             // Check permissions per row (for project edit/delete, use priority logic)
@@ -152,16 +168,58 @@ return App_table::find('projects')
             $hasPermissionDelete = can_user_project_action('delete', $aRow['id']);
 
             if ($hasPermissionEdit) {
-                $name .= ' | <a href="' . admin_url('projects/project/' . $aRow['id']) . '">' . _l('edit') . '</a>';
+                $name .= $sep . '<a href="' . admin_url('projects/project/' . $aRow['id']) . '">' . _l('edit') . '</a>';
             }
 
             if ($hasPermissionDelete) {
-                $name .= ' | <a href="' . admin_url('projects/delete/' . $aRow['id']) . '" class="_delete">' . _l('delete') . '</a>';
+                $name .= $sep . '<a href="' . admin_url('projects/delete/' . $aRow['id']) . '" class="_delete">' . _l('delete') . '</a>';
             }
 
             $name .= '</div>';
 
-            $row[] = $name;
+            // Per-row Priority: inline dropdown (high / medium / low), colour-coded.
+            // Built here; pushed into the row in column order below.
+            $priorityStyles = [
+                'high'   => 'color:#ffffff;border:1px solid rgba(185, 28, 28, 0.72);background:rgba(220, 38, 38, 0.72);',
+                'medium' => 'color:#000000;border:1px solid rgba(217, 119, 6, 0.72);background:rgba(245, 159, 11, 0.72);',
+                'low'    => 'color:#374151;border:1px solid #d1d5db;background:#ffffff;',
+            ];
+            $priorityLabels = [
+                'high'   => _l('task_priority_high'),
+                'medium' => _l('task_priority_medium'),
+                'low'    => _l('task_priority_low'),
+            ];
+            // Text colour for each option inside the priority dropdown menu.
+            $priorityMenuColors = [
+                'high'   => 'rgba(220, 38, 38, 0.72)',
+                'medium' => 'rgba(245, 159, 11, 0.72)',
+                'low'    => '#374151',
+            ];
+            $currentPriority = isset($aRow['listing_priority']) ? strtolower(trim((string) $aRow['listing_priority'])) : '';
+            if (!isset($priorityStyles[$currentPriority])) {
+                $currentPriority = '';
+            }
+            $priorityStyle = $currentPriority !== '' ? $priorityStyles[$currentPriority] : 'color:#000000;border:1px dashed #d1d5db;background:#ffffff;';
+            $priorityLabel = $currentPriority !== '' ? $priorityLabels[$currentPriority] : '&mdash;';
+
+            if ($hasPermissionEdit) {
+                $outputPriority  = '<div class="dropdown inline-block project-priority-dropdown">';
+                $outputPriority .= '<a href="#" class="dropdown-toggle label project-priority-' . $aRow['id'] . ' tw-inline-flex tw-items-center tw-gap-1 tw-flex-nowrap hover:tw-opacity-80 tw-align-middle" style="' . $priorityStyle . '" id="tableProjectPriority-' . $aRow['id'] . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                $outputPriority .= $priorityLabel;
+                $outputPriority .= '<i class="fa fa-caret-down tw-shrink-0"></i>';
+                $outputPriority .= '</a>';
+                $outputPriority .= '<ul class="dropdown-menu" aria-labelledby="tableProjectPriority-' . $aRow['id'] . '">';
+                foreach ($priorityLabels as $pKey => $pLabel) {
+                    if ($currentPriority !== $pKey) {
+                        $outputPriority .= '<li><a href="#" onclick="project_set_priority(\'' . $pKey . '\',' . $aRow['id'] . '); return false;" style="color:' . $priorityMenuColors[$pKey] . ';">' . e($pLabel) . '</a></li>';
+                    }
+                }
+                $outputPriority .= '</ul>';
+                $outputPriority .= '</div>';
+                $priorityCell = $outputPriority;
+            } else {
+                $priorityCell = '<span class="label" style="' . $priorityStyle . '">' . $priorityLabel . '</span>';
+            }
 
             // Per-row Notes: placed right after the Project column. Empty starts as a textarea;
             // once it has content it shows as text and switches back to a textarea on click.
@@ -175,7 +233,6 @@ return App_table::find('projects')
             $notesCell .= '<textarea class="form-control project-note-input" rows="2" placeholder="' . _l('notes') . '" style="' . ($hasNote ? 'display:none !important;' : '') . '">' . e($noteValue) . '</textarea>';
             $notesCell .= '<small class="text-muted project-note-updated tw-block tw-mt-1" style="font-size:10px;font-style:italic;" data-updated="' . e($noteUpdated) . '">' . e($updatedText) . '</small>';
             $notesCell .= '</div>';
-            $row[] = $notesCell;
 
             $agencyName   = isset($aRow['client_agency_name']) ? trim((string) $aRow['client_agency_name']) : '';
             $contactName  = isset($aRow['primary_contact_fullname']) ? trim(preg_replace('/\s+/', ' ', (string) $aRow['primary_contact_fullname'])) : '';
@@ -190,7 +247,6 @@ return App_table::find('projects')
                 $customerHtml .= '<span class="tw-font-medium">' . e($contactName !== '' ? $contactName : $aRow['company']) . '</span>';
             }
             $customerHtml .= '</a>';
-            $row[] = $customerHtml;
 
             $progressVal = isset($aRow['calc_progress_display']) ? (float) $aRow['calc_progress_display'] : 0;
             $progressVal = min(100, max(0, $progressVal));
@@ -204,32 +260,69 @@ return App_table::find('projects')
             }
 
             $percentForLabel = (int) round($progressVal >= 99.5 ? 100 : $progressVal);
-            $percentLabel    = $percentForLabel . ' %';
+            $percentLabel    = $percentForLabel . '%';
 
             $tasksDone      = isset($aRow['progress_tasks_completed']) ? (int) $aRow['progress_tasks_completed'] : 0;
             $tasksRemaining = isset($aRow['progress_tasks_remaining']) ? (int) $aRow['progress_tasks_remaining'] : 0;
 
-            $greenHex = '#22c55e';
+            // Progress bar colour follows the project priority (traffic-light):
+            // high = red, medium = amber, low / none = green (default). The track
+            // border uses the priority text colour.
+            $priorityBarColors = [
+                'high'   => 'rgba(220, 38, 38, 0.72)',
+                'medium' => 'rgba(245, 159, 11, 0.72)',
+                'low'    => '#22c55e',
+            ];
+            $priorityBarBorders = [
+                'high'   => '#ffffff',
+                'medium' => '#000000',
+                'low'    => 'transparent',
+            ];
+            $barColor  = $priorityBarColors[$currentPriority] ?? '#22c55e';
+            $barBorder = $priorityBarBorders[$currentPriority] ?? 'transparent';
+
+            // Percentage label colour by priority: high = white, medium = black,
+            // low / none = default (unchanged).
+            $percentLabelColors = [
+                'high'   => '#ffffff',
+                'medium' => '#000000',
+            ];
+            $percentLabelStyle = isset($percentLabelColors[$currentPriority]) ? 'color:' . $percentLabelColors[$currentPriority] . ';' : '';
+
             $greyHex  = '#e5e5e5';
             $isFull   = ($fillWidth >= 100);
             $isEmpty  = ($fillWidth <= 0);
 
-            $trackBg = ($isFull ? $greenHex : $greyHex);
+            $trackBg = ($isFull ? $barColor : $greyHex);
             $trackClass = 'project-table-progress-track tw-relative tw-flex-1 tw-min-w-[100px] tw-overflow-hidden';
-            $trackStyle = 'height: 1rem; border-radius: 5px; background-color: ' . e($trackBg) . ';';
-            $fillStyle = 'background-color: ' . $greenHex . '; width: ' . e((string) $fillWidth) . '%; height: 100%; border-radius: 5px;';
+            $trackStyle = 'height: 1rem; border-radius: 5px; background-color: ' . e($trackBg) . '; border: 1px solid ' . e($barBorder) . ';';
+            $fillStyle = 'background-color: ' . $barColor . '; width: ' . e((string) $fillWidth) . '%; height: 100%; border-radius: 5px;';
             if ($isEmpty) {
-                $fillStyle = 'background-color: ' . $greenHex . '; width: 0; height: 100%; border-radius: 5px;';
+                $fillStyle = 'background-color: ' . $barColor . '; width: 0; height: 100%; border-radius: 5px;';
             }
 
-            $row[] = '<div class="project-table-progress-wrap tw-flex tw-items-center tw-gap-2 tw-min-w-[220px] tw-max-w-[320px]">'
-                . '<span class="tw-tabular-nums tw-text-sm tw-font-medium tw-text-neutral-800 tw-shrink-0 tw-min-w-[1.25rem] tw-text-right">' . e((string) $tasksDone) . '</span>'
+            // Open tasks = tasks not completed/closed (progress_tasks_remaining).
+            $openTasks = (int) $tasksRemaining;
+            if ($openTasks === 0) {
+                $openTasksText = 'No Open Task';
+            } elseif ($openTasks === 1) {
+                $openTasksText = '1 Open Task';
+            } else {
+                $openTasksText = $openTasks . ' Open Tasks';
+            }
+
+            // Open-tasks text colour follows the priority (High/Medium); Low and
+            // no priority keep the default muted colour.
+            $openTasksColorStyle = ($currentPriority === 'high' || $currentPriority === 'medium')
+                ? 'color:' . $percentLabelColors[$currentPriority] . ';'
+                : 'color: #374151';
+
+            $progressCell = '<div class="project-table-progress-wrap tw-min-w-[180px] tw-max-w-[320px]">'
                 . '<div class="' . $trackClass . '" style="' . $trackStyle . '">'
                 . '<div class="project-table-progress-fill tw-absolute tw-top-0 tw-bottom-0 tw-left-0" style="' . $fillStyle . '" aria-hidden="true"></div>'
-                . '<span class="tw-absolute tw-inset-0 tw-flex tw-items-center tw-justify-center tw-text-xs tw-font-medium tw-leading-none tw-text-neutral-900 tw-z-[1] tw-pointer-events-none">' . e($percentLabel) . '</span>'
+                . '<span class="tw-absolute tw-inset-0 tw-flex tw-items-center tw-justify-center tw-text-xs tw-font-medium tw-leading-none tw-text-neutral-900 tw-z-[1] tw-pointer-events-none" style="' . $percentLabelStyle . '">' . e($percentLabel) . '</span>'
                 . '</div>'
-                . '<span class="tw-tabular-nums tw-text-sm tw-font-medium tw-text-neutral-800 tw-shrink-0 tw-min-w-[1.25rem] tw-text-left">' . e((string) $tasksRemaining) . '</span>'
-                . '</div>'
+                . '<div class="tw-text-xs tw-text-neutral-500 tw-mt-1 tw-font-medium tw-text-center" style="' . $openTasksColorStyle . '">' . e($openTasksText) . '</div>'
                 . '<span class="hide">' . e($percentLabel) . ' (' . e((string) $tasksDone) . '/' . e((string) ($tasksDone + $tasksRemaining)) . ')</span>';
 
             $membersOutput = '<div class="tw-flex -tw-space-x-1 project-resources-stack">';
@@ -262,17 +355,31 @@ return App_table::find('projects')
                     $exportMembers .= $member . ', ';
                 }
             }
-
+            $membersBgColors = [
+                'high'   => 'rgba(220, 38, 38, 0.72)',
+                'medium' => 'rgba(245, 159, 11, 0.72)',
+            ];
+            $membersStackStyle = isset($membersBgColors[$currentPriority])
+                ? 'background-color:' . $membersBgColors[$currentPriority] . ';'
+                : '';
             if ($totalMembers > $maxVisible) {
-                $membersOutput .= '<span class="tw-inline-flex tw-items-center tw-justify-center tw-h-7 tw-w-7 tw-rounded-full tw-ring-2 tw-ring-white tw-bg-neutral-200 tw-text-xs tw-font-medium" data-toggle="tooltip" data-title="' . e(trim($exportMembers, ', ')) . '">+' . ($totalMembers - $maxVisible) . '</span>';
+                $membersOutput .= '<span style="' . $membersStackStyle . '" class="tw-inline-flex tw-items-center tw-justify-center tw-h-7 tw-w-7 tw-rounded-full tw-ring-2 tw-ring-white tw-bg-neutral-200 tw-text-xs tw-font-medium" data-toggle="tooltip" data-title="' . e(trim($exportMembers, ', ')) . '">+' . ($totalMembers - $maxVisible) . '</span>';
             }
 
             $membersOutput .= '<span class="hide">' . trim($exportMembers, ', ') . '</span>';
             $membersOutput .= '</div>';
-            $row[] = $membersOutput;
 
-            $status      = get_project_status_by_id($aRow['status']);
-            $statusStyle = 'color:' . $status['color'] . ';border:1px solid ' . adjust_hex_brightness($status['color'], 0.4) . ';background: ' . adjust_hex_brightness($status['color'], 0.04) . ';';
+            $status = get_project_status_by_id($aRow['status']);
+
+            // High/Medium priority status labels use the exact same
+            // background/font/border as the priority dropdown ($priorityStyle set
+            // in the priority block above). Low (and no priority) keep the default
+            // status dropdown appearance.
+            if ($currentPriority === 'high' || $currentPriority === 'medium') {
+                $statusStyle = $priorityStyle;
+            } else {
+                $statusStyle = 'color:' . $status['color'] . ';border:1px solid ' . adjust_hex_brightness($status['color'], 0.4) . ';background: ' . adjust_hex_brightness($status['color'], 0.04) . ';';
+            }
 
             if ($hasPermissionEdit) {
                 $outputStatus  = '<div class="dropdown inline-block project-status-dropdown">';
@@ -288,53 +395,20 @@ return App_table::find('projects')
                 }
                 $outputStatus .= '</ul>';
                 $outputStatus .= '</div>';
-                $row[] = $outputStatus;
+                $statusCell = $outputStatus;
             } else {
-                $row[] = '<span class="label project-status-' . $aRow['status'] . '" style="' . $statusStyle . '">' . e($status['name']) . '</span>';
+                $statusCell = '<span class="label project-status-' . $aRow['status'] . '" style="' . $statusStyle . '">' . e($status['name']) . '</span>';
             }
 
-            // Per-row Priority: inline dropdown (high / medium / low), colour-coded.
-            $priorityStyles = [
-                'high'   => 'color:#ffffff;border:1px solid rgba(185, 28, 28, 0.72);background:rgba(220, 38, 38, 0.72);',
-                'medium' => 'color:#000000;border:1px solid rgba(217, 119, 6, 0.72);background:rgba(245, 159, 11, 0.72);',
-                'low'    => 'color:#000000;border:1px solid #d1d5db;background:#ffffff;',
-            ];
-            $priorityLabels = [
-                'high'   => _l('task_priority_high'),
-                'medium' => _l('task_priority_medium'),
-                'low'    => _l('task_priority_low'),
-            ];
-            // Text colour for each option inside the priority dropdown menu.
-            $priorityMenuColors = [
-                'high'   => 'rgba(220, 38, 38, 0.72)',
-                'medium' => 'rgba(245, 159, 11, 0.72)',
-                'low'    => '#000000',
-            ];
-            $currentPriority = isset($aRow['listing_priority']) ? strtolower(trim((string) $aRow['listing_priority'])) : '';
-            if (!isset($priorityStyles[$currentPriority])) {
-                $currentPriority = '';
-            }
-            $priorityStyle = $currentPriority !== '' ? $priorityStyles[$currentPriority] : 'color:#000000;border:1px dashed #d1d5db;background:#ffffff;';
-            $priorityLabel = $currentPriority !== '' ? $priorityLabels[$currentPriority] : '&mdash;';
-
-            if ($hasPermissionEdit) {
-                $outputPriority  = '<div class="dropdown inline-block project-priority-dropdown">';
-                $outputPriority .= '<a href="#" class="dropdown-toggle label project-priority-' . $aRow['id'] . ' tw-inline-flex tw-items-center tw-gap-1 tw-flex-nowrap hover:tw-opacity-80 tw-align-middle" style="' . $priorityStyle . '" id="tableProjectPriority-' . $aRow['id'] . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-                $outputPriority .= $priorityLabel;
-                $outputPriority .= '<i class="fa fa-caret-down tw-shrink-0"></i>';
-                $outputPriority .= '</a>';
-                $outputPriority .= '<ul class="dropdown-menu" aria-labelledby="tableProjectPriority-' . $aRow['id'] . '">';
-                foreach ($priorityLabels as $pKey => $pLabel) {
-                    if ($currentPriority !== $pKey) {
-                        $outputPriority .= '<li><a href="#" onclick="project_set_priority(\'' . $pKey . '\',' . $aRow['id'] . '); return false;" style="color:' . $priorityMenuColors[$pKey] . ';">' . e($pLabel) . '</a></li>';
-                    }
-                }
-                $outputPriority .= '</ul>';
-                $outputPriority .= '</div>';
-                $row[] = $outputPriority;
-            } else {
-                $row[] = '<span class="label" style="' . $priorityStyle . '">' . $priorityLabel . '</span>';
-            }
+            // Assemble the row in column order:
+            // Name, Notes, Status, Priority, Customer, Progress, Resources.
+            $row[] = $name;
+            $row[] = $notesCell;
+            $row[] = $statusCell;
+            $row[] = $priorityCell;
+            $row[] = $customerHtml;
+            $row[] = $progressCell;
+            $row[] = $membersOutput;
 
             // Custom fields add values
             foreach ($customFieldsColumns as $customFieldColumn) {

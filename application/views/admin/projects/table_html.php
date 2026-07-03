@@ -7,19 +7,10 @@ $table_data = [
          'name'     => _l('project_name'),
          'th_attrs' => ['width' => '230', 'class' => 'project-name-col'],
     ],
-    // Per-row Notes column, placed right after the Project column (not sortable/searchable)
+    // Per-row Notes column (not sortable/searchable)
     [
         'name'     => _l('notes'),
         'th_attrs' => ['width' => '260', 'class' => 'project-notes-col', 'data-orderable' => 'false', 'data-searchable' => 'false'],
-    ],
-    [
-         'name'     => _l('project_customer'),
-         'th_attrs' => ['width' => '160', 'class' => isset($client) ? 'not_visible' : ''],
-    ],
-   _l('project_progress'),
-    [
-         'name'     => _l('project_resources'),
-         'th_attrs' => ['width' => '100', 'class' => 'project-resources-col'],
     ],
     [
      'name'     => _l('project_status'),
@@ -29,6 +20,15 @@ $table_data = [
     [
      'name'     => _l('project_priority'),
      'th_attrs' => ['width' => '110', 'class' => 'project-priority-col', 'data-orderable' => 'false', 'data-searchable' => 'false'],
+    ],
+    [
+         'name'     => _l('project_customer'),
+         'th_attrs' => ['width' => '160', 'class' => isset($client) ? 'not_visible' : ''],
+    ],
+   _l('project_progress'),
+    [
+         'name'     => _l('project_resources'),
+         'th_attrs' => ['width' => '100', 'class' => 'project-resources-col'],
     ],
 ];
 

@@ -7,7 +7,12 @@
             <?php
         foreach (filter_project_visible_tabs($tabs, $project->settings->available_features) as $key => $tab) {
             $dropdown = isset($tab['collapse']) ? true : false; ?>
-            <li class="<?php if ($key == 'project_overview' && !$this->input->get('group')) {
+            <?php
+            // Highlight the active tab. Prefer the ?group in the URL; otherwise
+            // fall back to the controller-resolved active tab (defaults to Tasks).
+            $currentGroup = $this->input->get('group') ?: ($active_group ?? 'project_overview');
+            ?>
+            <li class="<?php if ($key == $currentGroup) {
                 echo 'active ';
             } ?>project_tab_<?php echo e($key); ?><?php if ($dropdown) {
                 echo ' nav-tabs-submenu-parent';
