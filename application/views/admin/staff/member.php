@@ -120,6 +120,23 @@
                                         </div>
                                     </div>
                                     <hr />
+                                    <?php if (is_admin() && isset($member) && $member->staffid != get_staff_user_id() && $member->two_factor_auth_enabled != 0) { ?>
+                                    <div class="form-group">
+                                        <label class="control-label tw-block">
+                                            <?= _l('staff_two_factor_authentication'); ?>
+                                        </label>
+                                        <a href="<?= admin_url('staff/reset_two_factor/' . $member->staffid); ?>"
+                                            class="btn btn-default btn-sm"
+                                            onclick="return confirm('<?= _l('two_factor_reset_confirm'); ?>');">
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                            <?= _l('two_factor_reset'); ?>
+                                        </a>
+                                        <p class="text-muted tw-mt-2 tw-text-sm">
+                                            <?= _l('two_factor_reset_help'); ?>
+                                        </p>
+                                    </div>
+                                    <hr />
+                                    <?php } ?>
                                     <?php if ((isset($member) && $member->profile_image == null) || ! isset($member)) { ?>
                                     <div class="form-group">
                                         <label for="profile_image"

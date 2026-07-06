@@ -70,7 +70,6 @@ class Authentication extends App_Controller
                             redirect(admin_url('authentication/two_factor'));
                         }
                     } else {
-                        set_alert('success', _l('enter_two_factor_auth_code_from_mobile'));
                         redirect(admin_url('authentication/two_factor/app'));
                     }
                 } elseif ($data == false) {
@@ -120,7 +119,8 @@ class Authentication extends App_Controller
 
                     hooks()->do_action('after_staff_login');
                     redirect(admin_url());
-                } elseif ($this->Authentication_model->is_google_two_factor_code_valid($code) && $type = 'app') {
+                } elseif (($this->Authentication_model->is_google_two_factor_code_valid($code)
+                    || $this->Authentication_model->verify_and_consume_backup_code($this->session->userdata('tfa_staffid'), $code)) && $type = 'app') {
                     $user = get_staff($this->session->userdata('tfa_staffid'));
                     $this->Authentication_model->two_factor_auth_login($user);
                     $this->session->unset_userdata('_two_factor_auth_established');
@@ -140,7 +140,7 @@ class Authentication extends App_Controller
             }
         }
 
-        $this->load->view('authentication/set_two_factor_auth_code');
+        $this->load->view('authentication/set_two_factor_auth_code', ['type' => $type]);
     }
 
     public function forgot_password()

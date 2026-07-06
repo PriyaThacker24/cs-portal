@@ -351,6 +351,37 @@ function is_staff_logged_in()
     return get_instance()->session->has_userdata('staff_logged_in');
 }
 /**
+ * Whether the logged in staff should be reminded to enable Two Factor Authentication.
+ * Returns true only when the staff is logged in, has no 2FA enabled and hasn't
+ * skipped the reminder for the current login session.
+ *
+ * @return bool
+ */
+function should_remind_two_factor_auth()
+{
+    static $should = null;
+
+    if ($should !== null) {
+        return $should;
+    }
+
+    $CI = &get_instance();
+
+    if (! is_staff_logged_in() || $CI->session->userdata('two_factor_reminder_skipped')) {
+        return $should = false;
+    }
+
+    // Don't nag while the staff is on their own profile page (where 2FA is enabled).
+    if ($CI->router->fetch_class() === 'staff' && $CI->router->fetch_method() === 'edit_profile') {
+        return $should = false;
+    }
+
+    $CI->load->model('staff_model');
+    $member = $CI->staff_model->get(get_staff_user_id());
+
+    return $should = ($member && (int) $member->two_factor_auth_enabled === 0);
+}
+/**
  * Return logged staff User ID from session
  *
  * @return mixed

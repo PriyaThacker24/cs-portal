@@ -21,7 +21,15 @@
             <?= form_open($this->uri->uri_string()); ?>
             <?= validation_errors('<div class="alert alert-danger text-center">', '</div>'); ?>
             <?php $this->load->view('authentication/includes/alerts'); ?>
-            <?= render_input('code', 'two_factor_authentication_code'); ?>
+            <?php if (isset($type) && $type === 'app') { ?>
+            <label class="control-label tw-block tw-mb-3 tw-font-medium tw-text-neutral-700">
+                <?= _l('enter_two_factor_auth_code_from_mobile'); ?>
+            </label>
+            <?php } ?>
+            <?= render_input('code', '', '', 'text', ['placeholder' => '* * * * * *']); ?>
+            <p class="text-muted tw-text-sm tw-mt-1 tw-mb-4">
+                <?= _l('two_factor_backup_code_login_hint'); ?>
+            </p>
             <div class="form-group">
                 <a
                     href="<?= admin_url('authentication'); ?>">

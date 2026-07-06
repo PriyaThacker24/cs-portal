@@ -44,8 +44,11 @@
             secret: secret,
         }, function(response) {
             if (response.status == 'success') {
-                $('#submit_2fa').prop("disabled", false);
                 alert_float('success', response.message);
+                // Code verified — automatically enable & save 2FA. The save
+                // generates the recovery codes, which are shown on reload.
+                $('#two_factor_auth_value').val('google');
+                $('#two_factor_auth_form').submit();
             } else {
                 $('#submit_2fa').prop("disabled", true);
                 alert_float('danger', response.message);

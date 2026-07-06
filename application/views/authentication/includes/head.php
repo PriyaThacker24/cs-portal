@@ -56,4 +56,5 @@
     <link href="<?php echo base_url('assets/css/custom.css'); ?>" rel="stylesheet" id="custom-css">
     <?php } ?>
     <?php hooks()->do_action('app_admin_authentication_head'); ?>
+    <script src="<?php echo base_url('assets/js/password-toggle.js'); ?>" defer></script>
 </head>

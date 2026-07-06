@@ -43,4 +43,7 @@ if (get_option('pusher_realtime_notifications') == 1) { ?>
     });
 </script>
 <?php } ?>
+<?php if (should_remind_two_factor_auth()) {
+    $this->load->view('admin/includes/two_factor_reminder');
+} ?>
 <?php app_admin_footer(); ?>

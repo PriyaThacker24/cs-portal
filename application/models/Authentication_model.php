@@ -690,6 +690,119 @@ class Authentication_model extends App_Model
         return false;
     }
 
+    /**
+     * Generate a fresh set of plaintext Two-Factor backup/recovery codes.
+     *
+     * @param  int $count
+     * @return array plaintext codes (format: XXXX-XXXX)
+     */
+    public function generate_backup_codes($count = 10)
+    {
+        $codes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $raw     = strtoupper(bin2hex(random_bytes(4))); // 8 hex chars
+            $codes[] = substr($raw, 0, 4) . '-' . substr($raw, 4, 4);
+        }
+
+        return $codes;
+    }
+
+    /**
+     * Hash and persist backup codes for a staff member (overwrites existing set).
+     *
+     * @param int   $staffid
+     * @param array $plainCodes
+     */
+    public function store_backup_codes($staffid, array $plainCodes)
+    {
+        $hashed = array_map(function ($code) {
+            return password_hash($code, PASSWORD_DEFAULT);
+        }, $plainCodes);
+
+        $this->db->where('staffid', $staffid);
+        $this->db->update(db_prefix() . 'staff', [
+            'two_factor_backup_codes' => json_encode($hashed),
+        ]);
+    }
+
+    /**
+     * Number of unused backup codes remaining for a staff member.
+     *
+     * @param  int $staffid
+     * @return int
+     */
+    public function get_backup_codes_count($staffid)
+    {
+        $this->db->select('two_factor_backup_codes')->where('staffid', $staffid);
+        $row = $this->db->get(db_prefix() . 'staff')->row();
+
+        if (! $row || empty($row->two_factor_backup_codes)) {
+            return 0;
+        }
+
+        $codes = json_decode($row->two_factor_backup_codes, true);
+
+        return is_array($codes) ? count($codes) : 0;
+    }
+
+    /**
+     * Validate a backup code for the given staff member and, when valid, consume
+     * it (remove it from the stored set so it can only be used once).
+     *
+     * @param  int    $staffid
+     * @param  string $code
+     * @return bool
+     */
+    public function verify_and_consume_backup_code($staffid, $code)
+    {
+        $code = strtoupper(trim($code));
+
+        $this->db->select('two_factor_backup_codes')->where('staffid', $staffid);
+        $row = $this->db->get(db_prefix() . 'staff')->row();
+
+        if (! $row || empty($row->two_factor_backup_codes)) {
+            return false;
+        }
+
+        $codes = json_decode($row->two_factor_backup_codes, true);
+        if (! is_array($codes)) {
+            return false;
+        }
+
+        foreach ($codes as $index => $hash) {
+            if (password_verify($code, $hash)) {
+                unset($codes[$index]);
+                $this->db->where('staffid', $staffid);
+                $this->db->update(db_prefix() . 'staff', [
+                    'two_factor_backup_codes' => json_encode(array_values($codes)),
+                ]);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Completely reset (disable) Two-Factor Authentication for a staff member,
+     * clearing the stored secret and backup codes. Used by admins to recover a
+     * locked-out account.
+     *
+     * @param  int $staffid
+     * @return bool
+     */
+    public function reset_two_factor($staffid)
+    {
+        $this->db->where('staffid', $staffid);
+
+        return $this->db->update(db_prefix() . 'staff', [
+            'two_factor_auth_enabled' => 0,
+            'google_auth_secret'      => null,
+            'two_factor_backup_codes' => null,
+        ]);
+    }
+
     public function encrypt($string)
     {
         $this->load->library('encryption');

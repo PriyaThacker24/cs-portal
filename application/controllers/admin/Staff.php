@@ -403,12 +403,25 @@ class Staff extends AdminController
                     $secret = $this->input->post('secret');
                     $success = $this->authentication_model->set_google_two_factor($secret);
                     $fail_reason = _l('set_google_two_factor_authentication_failed');
+
+                    // Generate a fresh set of recovery codes on successful enrollment
+                    // and expose them once via flashdata so they can be shown/saved.
+                    if ($success) {
+                        $codes = $this->authentication_model->generate_backup_codes();
+                        $this->authentication_model->store_backup_codes($id, $codes);
+                        $this->session->set_flashdata('two_factor_backup_codes', $codes);
+                    }
                 } elseif ($two_factor_auth_mode == 'email') {
                     $this->db->where('staffid', $id);
                     $success = $this->db->update(db_prefix() . 'staff', ['two_factor_auth_enabled' => 1]);
                 } else {
+                    // Disabling 2FA — also clear any stored secret and recovery codes.
                     $this->db->where('staffid', $id);
-                    $success = $this->db->update(db_prefix() . 'staff', ['two_factor_auth_enabled' => 0]);
+                    $success = $this->db->update(db_prefix() . 'staff', [
+                        'two_factor_auth_enabled' => 0,
+                        'google_auth_secret'      => null,
+                        'two_factor_backup_codes' => null,
+                    ]);
                 }
                 if ($success) {
                     set_alert('success', _l('set_two_factor_authentication_successful'));
@@ -418,6 +431,67 @@ class Staff extends AdminController
         }
         set_alert('danger', $fail_reason);
         redirect(admin_url('staff/edit_profile/' . get_staff_user_id()));
+    }
+
+    public function skip_two_factor_reminder()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            die;
+        }
+
+        // Dismiss the "enable 2FA" reminder for the current login session only,
+        // so the staff is prompted again on the next login until 2FA is enabled.
+        $this->session->set_userdata('two_factor_reminder_skipped', true);
+
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'success']);
+        die;
+    }
+
+    /**
+     * Regenerate the logged-in staff's Two-Factor recovery codes.
+     * Only available when Google 2FA is currently enabled.
+     */
+    public function regenerate_backup_codes()
+    {
+        $id     = get_staff_user_id();
+        $member = $this->staff_model->get($id);
+
+        if (! $member || (int) $member->two_factor_auth_enabled !== 2) {
+            set_alert('danger', _l('two_factor_backup_codes_regenerate_failed'));
+            redirect(admin_url('staff/edit_profile/' . $id));
+        }
+
+        $this->load->model('Authentication_model');
+        $codes = $this->authentication_model->generate_backup_codes();
+        $this->authentication_model->store_backup_codes($id, $codes);
+        $this->session->set_flashdata('two_factor_backup_codes', $codes);
+
+        set_alert('success', _l('two_factor_backup_codes_regenerated'));
+        redirect(admin_url('staff/edit_profile/' . $id));
+    }
+
+    /**
+     * Admin action: reset (disable) Two-Factor Authentication for another staff
+     * member who has lost access to their authenticator app. The member can then
+     * log in with just their password and re-enroll.
+     *
+     * @param int $staff_id
+     */
+    public function reset_two_factor($staff_id)
+    {
+        if (! is_admin()) {
+            access_denied('staff');
+        }
+
+        $this->load->model('Authentication_model');
+        $this->authentication_model->reset_two_factor($staff_id);
+
+        log_activity('Two Factor Authentication Reset By Admin [Staff ID: ' . $staff_id . ']');
+        set_alert('success', _l('two_factor_reset_successful'));
+
+        redirect(admin_url('staff/member/' . $staff_id));
     }
 
     public function verify_google_two_factor()
