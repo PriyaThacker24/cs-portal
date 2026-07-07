@@ -113,7 +113,11 @@
                             <!-- Notes -->
                             <div class="form-group">
                                 <label for="timelog_notes"><?= _l('notes'); ?></label>
-                                <textarea id="timelog_notes" name="notes" class="form-control" rows="4"></textarea>
+                                <!-- Rich text editor, same as the task description field.
+                                     The editor is initialized lazily on first focus (see
+                                     init_editor in main.js) so it also works while this
+                                     field is inside the initially-hidden fields wrapper. -->
+                                <textarea id="timelog_notes" name="notes" class="form-control tinymce-timelog" rows="4" onfocus="init_editor('.tinymce-timelog', {height: 200, auto_focus: true});"></textarea>
                             </div>
                         </div>
                     </div>

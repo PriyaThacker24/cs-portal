@@ -409,6 +409,18 @@ class Tasks extends AdminController
                     die;
                 }
                 $success = $this->tasks_model->update($data, $id);
+
+                // Handle attachments uploaded from the edit modal dropzone. This runs
+                // even when update() reports no changed fields, so adding only a file
+                // still saves. A successful upload counts as a successful edit.
+                $uploadedFiles = handle_task_attachments_array($id);
+                if ($uploadedFiles && is_array($uploadedFiles)) {
+                    foreach ($uploadedFiles as $file) {
+                        $this->misc_model->add_attachment_to_database($id, 'task', [$file]);
+                    }
+                    $success = true;
+                }
+
                 $message = '';
                 if ($success) {
                     $message = _l('updated_successfully', _l('task'));
@@ -448,6 +460,16 @@ class Tasks extends AdminController
             if ($data['task']->rel_type == 'project') {
                 $data['milestones'] = $this->projects_model->get_milestones($data['task']->rel_id);
             }
+
+            // Existing direct task attachments (not the ones attached to comments) so the
+            // edit modal dropzone can display and remove already-uploaded files.
+            $data['task_attachments'] = array_values(array_filter(
+                $this->tasks_model->get_task_attachments($id),
+                function ($attachment) {
+                    return empty($attachment['comment_file_id']);
+                }
+            ));
+
             $title = _l('edit', _l('task')) . ' ' . $data['task']->name;
         }
 

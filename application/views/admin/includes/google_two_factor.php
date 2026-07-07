@@ -1,4 +1,16 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<style>
+/* Hide the native up/down spinner arrows on the authentication code field. */
+#google_auth_code::-webkit-outer-spin-button,
+#google_auth_code::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#google_auth_code {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+</style>
 <div class="google_auth">
     <div class="row mbot25">
         <div class="col-sm-12">

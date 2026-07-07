@@ -1700,6 +1700,125 @@ body.noscroll .backdrop {
   z-index: 99999;
 }
 
+/* Wider task add/edit modal for more comfortable form layout.
+   max-width keeps it responsive so it never overflows on smaller screens. */
+#_task_modal .modal-dialog {
+  width: 900px;
+  max-width: 95%;
+}
+
+/* Task attachments dropzone (new-task modal) */
+.task-dropzone {
+  position: relative;
+  border: 2px dashed #c7ced6;
+  border-radius: 6px;
+  background: #f8fafc;
+  text-align: center;
+  padding: 28px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.task-dropzone.dragover {
+  border-color: #4caf50;
+  background: #f1f8f2;
+}
+.task-dropzone.has-files {
+  border-style: solid;
+}
+.task-dropzone input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.task-dropzone-message {
+  pointer-events: none;
+  color: #7a8794;
+}
+.task-dropzone-icon {
+  display: block;
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: #9aa7b4;
+}
+.task-dropzone-text {
+  display: block;
+  font-weight: 600;
+}
+.task-dropzone-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.task-dropzone-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.task-file-square {
+  position: relative;
+  width: 96px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  text-align: center;
+}
+.task-file-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f5f7fa;
+}
+.task-file-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.task-file-thumb-icon i {
+  font-size: 28px;
+  color: #9aa7b4;
+}
+.task-file-name {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #55606b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-file-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 14px;
+  line-height: 18px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.task-file-remove:hover {
+  background: #c0392b;
+}
+
 .mce-floatpanel {
   z-index: 999999 !important;
 }

@@ -409,11 +409,20 @@ class Staff extends AdminController
                     if ($success) {
                         $codes = $this->authentication_model->generate_backup_codes();
                         $this->authentication_model->store_backup_codes($id, $codes);
-                        $this->session->set_flashdata('two_factor_backup_codes', $codes);
+                        // Keep the plaintext codes in the session (not flashdata) so the recovery
+        // codes screen persists across refreshes until the user explicitly clicks
+        // "Complete". Completion clears this key; see complete_two_factor_setup().
+        $this->session->set_userdata('two_factor_pending_codes', $codes);
+
+                        // 2FA is now enabled; reset the skip allowance so it starts
+                        // fresh if the staff ever disables and re-enrolls later.
+                        update_staff_meta($id, 'two_factor_reminder_skips', 0);
                     }
                 } elseif ($two_factor_auth_mode == 'email') {
                     $this->db->where('staffid', $id);
                     $success = $this->db->update(db_prefix() . 'staff', ['two_factor_auth_enabled' => 1]);
+                    // Not a Google-authenticator enrollment; drop any pending codes.
+                    $this->session->unset_userdata('two_factor_pending_codes');
                 } else {
                     // Disabling 2FA — also clear any stored secret and recovery codes.
                     $this->db->where('staffid', $id);
@@ -422,6 +431,10 @@ class Staff extends AdminController
                         'google_auth_secret'      => null,
                         'two_factor_backup_codes' => null,
                     ]);
+                    // Clear the pending recovery codes screen state as well.
+                    $this->session->unset_userdata('two_factor_pending_codes');
+                    // Reset the skip allowance so a future re-enrollment starts fresh.
+                    update_staff_meta($id, 'two_factor_reminder_skips', 0);
                 }
                 if ($success) {
                     set_alert('success', _l('set_two_factor_authentication_successful'));
@@ -440,12 +453,39 @@ class Staff extends AdminController
             die;
         }
 
-        // Dismiss the "enable 2FA" reminder for the current login session only,
-        // so the staff is prompted again on the next login until 2FA is enabled.
-        $this->session->set_userdata('two_factor_reminder_skipped', true);
+        $id       = get_staff_user_id();
+        $maxSkips = two_factor_reminder_max_skips();
+        $used     = (int) get_staff_meta($id, 'two_factor_reminder_skips');
+
+        // The "Enable" button dismisses the reminder without spending a skip
+        // (it posts count=0); the "Skip for now" button consumes one skip.
+        $consume = $this->input->post('count') !== '0';
+
+        // Consume one skip if any remain. The count is persisted (staff meta) so
+        // the 3-skip allowance is enforced across login sessions, not just one.
+        $didConsume = false;
+        if ($consume && $used < $maxSkips) {
+            $used++;
+            update_staff_meta($id, 'two_factor_reminder_skips', $used);
+            $didConsume = true;
+        }
+
+        $left = max(0, $maxSkips - $used);
+
+        // Dismiss the reminder for this login session whenever a skip was actually
+        // spent — INCLUDING the last one, so the user can keep working after using
+        // their final skip. The mandatory (disabled) state then appears on the NEXT
+        // login, where 0 skips remain and the reminder is shown fresh.
+        if ($didConsume || ! $consume) {
+            $this->session->set_userdata('two_factor_reminder_skipped', true);
+        }
 
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'success']);
+        echo json_encode([
+            'status'        => 'success',
+            'skips_left'    => $left,
+            'limit_reached' => $left <= 0,
+        ]);
         die;
     }
 
@@ -466,10 +506,118 @@ class Staff extends AdminController
         $this->load->model('Authentication_model');
         $codes = $this->authentication_model->generate_backup_codes();
         $this->authentication_model->store_backup_codes($id, $codes);
-        $this->session->set_flashdata('two_factor_backup_codes', $codes);
+        // Keep the plaintext codes in the session (not flashdata) so the recovery
+        // codes screen persists across refreshes until the user explicitly clicks
+        // "Complete". Completion clears this key; see complete_two_factor_setup().
+        $this->session->set_userdata('two_factor_pending_codes', $codes);
 
         set_alert('success', _l('two_factor_backup_codes_regenerated'));
         redirect(admin_url('staff/edit_profile/' . $id));
+    }
+
+    /**
+     * Finalize 2FA setup after the user has saved their recovery codes.
+     *
+     * Clears the one-time pending recovery codes from the session so the profile
+     * stops showing the recovery codes screen and displays the 2FA summary
+     * instead (and keeps showing the summary on refresh). 2FA itself was already
+     * enabled during verification; this is the explicit acknowledgement step.
+     */
+    public function complete_two_factor_setup()
+    {
+        $id = get_staff_user_id();
+
+        $this->session->unset_userdata('two_factor_pending_codes');
+
+        redirect(admin_url('staff/edit_profile/' . $id . '#two_factor_authentication'));
+    }
+
+    /**
+     * Ajax: email the current staff member their 2FA recovery (backup) codes.
+     *
+     * Backup codes are stored hashed and only displayed once, so the plaintext
+     * values cannot be read back on the server. The browser therefore posts the
+     * set the user is currently viewing; the codes are always sent to the
+     * logged-in staff member's OWN email address (the recipient is never taken
+     * from the request) and only values matching the generated XXXX-XXXX format
+     * are accepted, so the mail server cannot be used to relay arbitrary text.
+     */
+    public function email_backup_codes()
+    {
+        if (! $this->input->is_ajax_request()) {
+            ajax_access_denied();
+        }
+
+        $id     = get_staff_user_id();
+        $member = $this->staff_model->get($id);
+
+        if (! $member || empty($member->email) || (int) $member->two_factor_auth_enabled !== 2) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('two_factor_backup_codes_email_failed'),
+            ]);
+            die;
+        }
+
+        $codes = $this->input->post('codes');
+        if (! is_array($codes)) {
+            $codes = explode("\n", (string) $codes);
+        }
+        $codes = array_values(array_filter(
+            array_map(function ($code) {
+                return trim((string) $code);
+            }, $codes),
+            function ($code) {
+                return preg_match('/^[A-Z0-9]{4}-[A-Z0-9]{4}$/i', $code);
+            }
+        ));
+
+        if (empty($codes)) {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('two_factor_backup_codes_email_failed'),
+            ]);
+            die;
+        }
+
+        // Build the exact same plain-text body used by the Copy / Download actions
+        // on the recovery codes screen, so all three stay identical. Wrapped in
+        // <pre> so the HTML email preserves the layout (whitespace and newlines).
+        $plain = "Concatstring Portal - BACKUP VERIFICATION CODES\n\n\n"
+            . "Points to note\n"
+            . "--------------\n"
+            . "# Each code can be used only once.\n"
+            . "# Do not share these codes with anyone.\n"
+            . "# If you have used up all your codes or lost them, you can always generate a new set of codes.\n"
+            . "# Whenever you generate a new set of codes, the old unused codes will become invalid.\n\n\n"
+            . "Generated codes\n"
+            . "---------------\n"
+            . implode("\n", $codes) . "\n";
+
+        $message = '<pre style="font-family:monospace;font-size:13px;line-height:1.5;">'
+            . e($plain)
+            . '</pre>';
+
+        $this->load->config('email');
+        $this->email->clear(true);
+        $this->email->set_newline(config_item('newline'));
+
+        $fromemail = get_option('email_from_address') != '' ? get_option('email_from_address') : get_option('smtp_email');
+        $fromname  = get_option('email_from_name') != '' ? get_option('email_from_name') : get_option('companyname');
+
+        $this->email->from($fromemail, $fromname);
+        $this->email->to($member->email);
+        $this->email->subject(_l('two_factor_backup_codes_email_subject'));
+        $this->email->message($message);
+
+        // Skip the queue so the user gets immediate, truthful send feedback.
+        $sent = $this->email->send(true);
+
+        echo json_encode([
+            'success' => (bool) $sent,
+            'message' => $sent ? _l('two_factor_backup_codes_email_sent') : _l('two_factor_backup_codes_email_failed'),
+        ]);
+        die;
     }
 
     /**

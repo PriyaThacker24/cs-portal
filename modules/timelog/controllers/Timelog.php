@@ -61,6 +61,22 @@ class Timelog extends AdminController
             get_staff_user_id()
         );
 
+        // Inject the timelog stylesheets into the document <head> so the page
+        // is styled on first paint. Emitting these <link> tags at the bottom of
+        // the body (after init_tail) caused a flash of unstyled content (FOUC):
+        // the browser painted the raw header/table markup first, then restyled
+        // once the late CSS loaded. Hooking app_admin_head keeps the CSS scoped
+        // to this page while placing it in the head. Cache-busting via filemtime
+        // mirrors the JS versioning so deploys don't serve stale styles.
+        hooks()->add_action('app_admin_head', function () {
+            $version = function ($relative_path) {
+                $absolute_path = module_dir_path('timelog', $relative_path);
+                return is_file($absolute_path) ? filemtime($absolute_path) : '';
+            };
+            echo '<link rel="stylesheet" href="' . module_dir_url('timelog', 'assets/css/timelog.css') . '?v=' . $version('assets/css/timelog.css') . '">';
+            echo '<link rel="stylesheet" href="' . base_url('assets/css/project-timelog-filter.css') . '">';
+        });
+
         // Load view - CodeIgniter will automatically look in module views folder
         $this->load->view('index', $data);
     }
@@ -1105,7 +1121,10 @@ class Timelog extends AdminController
             $hours = intval($timeParts[0]);
             $minutes = intval($timeParts[1]);
             $dailyLogHours = $hours + ($minutes / 60); // Convert to decimal hours
-            $notes = $this->input->post('notes');
+            // Notes come from a TinyMCE rich text editor, so read the raw HTML
+            // (false = skip CI's global XSS filter) and sanitize with HTMLPurifier,
+            // mirroring how task descriptions are handled.
+            $notes = html_purify($this->input->post('notes', false));
             
             // Validate date format and ensure it's not a future date
             $dateParts = explode('/', $date);
@@ -1195,8 +1214,9 @@ class Timelog extends AdminController
             // Prepare billing type
             $billType = ($billingType == 'non_billable') ? 'non_billable' : 'billable';
             
-            // Prepare note
-            $noteContent = !empty($notes) ? nl2br(e($notes)) : null;
+            // Prepare note — store the sanitized editor HTML as-is (it is already
+            // purified above). Escaping/nl2br here would double-encode the markup.
+            $noteContent = !empty($notes) ? $notes : null;
             
             // Build insert data using existing columns only to avoid SQL errors
             $columns = $this->db->list_fields(db_prefix() . 'taskstimers');
@@ -1492,7 +1512,8 @@ class Timelog extends AdminController
                     'staff_id' => $timelog->staff_id,
                     'daily_log' => $daily_log,
                     'billing_type' => $timelog->bill_type ?: 'billable',
-                    'notes' => $timelog->note ? strip_tags($timelog->note) : ''
+                    // Send the raw note HTML so the TinyMCE editor restores formatting.
+                    'notes' => $timelog->note ?: ''
                 ]
             ]));
     }
@@ -1586,7 +1607,10 @@ class Timelog extends AdminController
             $staffId = $this->input->post('staff_id');
             $dailyLogTime = $this->input->post('daily_log');
             $billingType = $this->input->post('billing_type') ?: 'billable';
-            $notes = $this->input->post('notes');
+            // Notes come from a TinyMCE rich text editor, so read the raw HTML
+            // (false = skip CI's global XSS filter) and sanitize with HTMLPurifier,
+            // mirroring how task descriptions are handled.
+            $notes = html_purify($this->input->post('notes', false));
 
             // Own-permission users can only log time for themselves
             if (!$isGlobal) {
@@ -1622,8 +1646,9 @@ class Timelog extends AdminController
             // Prepare billing type
             $billType = ($billingType == 'non_billable') ? 'non_billable' : 'billable';
             
-            // Prepare note
-            $noteContent = !empty($notes) ? nl2br(e($notes)) : null;
+            // Prepare note — store the sanitized editor HTML as-is (it is already
+            // purified above). Escaping/nl2br here would double-encode the markup.
+            $noteContent = !empty($notes) ? $notes : null;
             
             // Update timelog
             $timerColumns = $this->db->list_fields(db_prefix() . 'taskstimers');

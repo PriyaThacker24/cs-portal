@@ -1488,7 +1488,15 @@ var TimelogModule = (function() {
 
                                 $('#timelog_daily_log').val(data.daily_log);
                                 $('#timelog_billing_type').val(data.billing_type).selectpicker('refresh');
-                                $('#timelog_notes').val(data.notes);
+                                $('#timelog_notes').val(data.notes || '');
+                                // The editor initializes lazily on focus and reads the
+                                // textarea value; if it is already open, push content in.
+                                if (typeof tinymce !== 'undefined') {
+                                    var notesEditor = tinymce.get('timelog_notes');
+                                    if (notesEditor) {
+                                        notesEditor.setContent(data.notes || '');
+                                    }
+                                }
                                 $('#btn_add_timelog_submit').text(typeof _l !== 'undefined' ? _l('update') : 'Update');
                             }
                         }
@@ -1509,6 +1517,13 @@ var TimelogModule = (function() {
      */
     var originalSubmitTimelogForm = submitTimelogForm;
     submitTimelogForm = function() {
+        // Flush the TinyMCE notes editor back into its textarea so the HTML
+        // content is picked up by $('#timelog_notes').val() in both the add and
+        // update paths below.
+        if (typeof tinymce !== 'undefined') {
+            tinymce.triggerSave();
+        }
+
         var isEditMode = $('#timelog_drawer').data('edit-mode') === true;
         var timelogId = $('#timelog_drawer').data('timelog-id');
         
@@ -1679,6 +1694,17 @@ var TimelogModule = (function() {
      * Reset timelog form
      */
     function resetTimelogForm() {
+        // Remove the TinyMCE notes editor (if it was initialized) before resetting.
+        // The native form reset() does not clear the editor iframe, and removing the
+        // instance restores the plain textarea so it re-initializes on next focus
+        // when the drawer is reopened.
+        if (typeof tinymce !== 'undefined') {
+            var notesEditor = tinymce.get('timelog_notes');
+            if (notesEditor) {
+                notesEditor.remove();
+            }
+        }
+
         $('#timelog_form')[0].reset();
         $('#timelog_other_fields').hide();
         $('#timelog_task_group').show();

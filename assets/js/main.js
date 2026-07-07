@@ -1143,6 +1143,32 @@ $(function () {
     $(this).find(".data").empty();
   });
 
+  // When the task single modal is closed, drop the taskid query param from the URL
+  // so refreshing the page does not auto-reopen the modal (e.g. after creating a
+  // task in the project area, which reloads with ?taskid=NNNN). The modal is
+  // reopened elsewhere via init_task_modal(id) directly, so it does not rely on
+  // this param being present.
+  $("body").on("hidden.bs.modal", "#task-modal", function () {
+    if (
+      typeof URLSearchParams !== "undefined" &&
+      window.history &&
+      window.history.replaceState
+    ) {
+      var _taskUrl = new URL(window.location.href);
+      if (_taskUrl.searchParams.has("taskid")) {
+        _taskUrl.searchParams.delete("taskid");
+        window.history.replaceState(
+          {},
+          document.title,
+          _taskUrl.pathname + _taskUrl.search + _taskUrl.hash
+        );
+      }
+    }
+    if (typeof taskid !== "undefined") {
+      taskid = "";
+    }
+  });
+
   // On task single modal shown perform few actions
   $("body").on("shown.bs.modal", "#task-modal", function () {
     var $taskModal = $("#task-modal");

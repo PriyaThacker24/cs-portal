@@ -204,10 +204,8 @@ $timelog_asset_version = function ($relative_path) {
     return is_file($absolute_path) ? filemtime($absolute_path) : '';
 };
 ?>
-<!-- Timelog CSS -->
-<link rel="stylesheet" href="<?= module_dir_url('timelog', 'assets/css/timelog.css'); ?>?v=<?= $timelog_asset_version('assets/css/timelog.css'); ?>">
-<!-- Project Timelog Filter CSS (for advanced filter panel) -->
-<link rel="stylesheet" href="<?= base_url('assets/css/project-timelog-filter.css'); ?>">
+<!-- Timelog CSS is enqueued into the document <head> via the app_admin_head
+     hook in Timelog::index() to prevent a flash of unstyled content (FOUC). -->
 
 <!-- Timelog Filter JavaScript -->
 <script src="<?= module_dir_url('timelog', 'assets/js/timelog-filter.js'); ?>?v=<?= $timelog_asset_version('assets/js/timelog-filter.js'); ?>"></script>

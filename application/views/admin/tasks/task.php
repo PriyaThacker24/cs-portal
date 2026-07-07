@@ -108,35 +108,10 @@
                            } ?>>
                             <label for="task_visible_to_client"><?php echo _l('task_visible_to_client'); ?></label>
                         </div>
-                        <?php if (!isset($task)) { ?>
-                        <a href="#" class="pull-right tw-pt-2"
-                            onclick="slideToggle('#new-task-attachments'); return false;">
-                            <?php echo _l('attach_files'); ?>
-                        </a>
-                        <div id="new-task-attachments" class="hide">
-                            <hr class="-tw-mx-3.5" />
-                            <div class="row attachments">
-                                <div class="attachment">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label for="attachment"
-                                                class="control-label"><?php echo _l('add_task_attachments'); ?></label>
-                                            <div class="input-group">
-                                                <input type="file"
-                                                    extension="<?php echo str_replace('.', '', get_option('allowed_files')); ?>"
-                                                    filesize="<?php echo file_upload_max_size(); ?>"
-                                                    class="form-control" name="attachments[0]">
-                                                <span class="input-group-btn">
-                                                    <button class="btn btn-default add_more_attachments"
-                                                        type="button"><i class="fa fa-plus"></i></button>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <?php
+                        <?php if (!isset($task)) {
+                            // Attachments have been moved to the bottom of the modal and
+                            // redesigned as a drag-and-drop dropzone (see below). The
+                            // ticket_to_task hidden field stays here where it originally was.
                             if ($this->input->get('ticket_to_task')) {
                                 echo form_hidden('ticket_to_task', $rel_id);
                             }
@@ -292,8 +267,16 @@
                                 </div>
                             </div>
                         </div>
+                        <?php
+                        // When adding a plain task (not editing, and not launched from a
+                        // specific relation context such as a project/invoice), the
+                        // "Related To" selector is hidden and defaults to Project (see the
+                        // JS below). The select stays in the DOM so the existing rel_type
+                        // change logic keeps working.
+                        $hide_task_rel_type = !isset($task) && !$this->input->get('rel_type');
+                        ?>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-6"<?php if ($hide_task_rel_type) { echo ' style="display:none;"'; } ?>>
                                 <div class="form-group">
                                     <label for="rel_type"
                                         class="control-label"><?php echo _l('task_related_to'); ?></label>
@@ -448,6 +431,53 @@
                         <?php
                // onclick and onfocus used for convert ticket to task too
                echo render_textarea('description', '', (isset($task) ? $task->description : ''), ['rows' => 6, 'placeholder' => _l('task_add_description'), 'data-task-ae-editor' => true, !is_mobile() ? 'onclick' : 'onfocus' => (!isset($task) || isset($task) && $task->description == '' ? 'init_editor(\'.tinymce-task\', {height:200, auto_focus: true});' : '')], [], 'no-mbot', 'tinymce-task'); ?>
+                        <hr />
+                        <div class="form-group task-dropzone-wrapper">
+                            <label class="control-label"><?php echo _l('add_task_attachments'); ?></label>
+                            <div id="task-attachments-dropzone" class="task-dropzone">
+                                <input type="file" id="task_attachments_input" name="attachments[]" multiple
+                                    extension="<?php echo str_replace('.', '', get_option('allowed_files')); ?>"
+                                    filesize="<?php echo file_upload_max_size(); ?>">
+                                <div class="task-dropzone-message">
+                                    <i class="fa fa-cloud-upload task-dropzone-icon" aria-hidden="true"></i>
+                                    <span class="task-dropzone-text"><?php echo _l('drop_files_here_to_upload'); ?></span>
+                                    <small class="task-dropzone-hint"><?php echo _l('add_task_attachments'); ?></small>
+                                </div>
+                            </div>
+                            <!-- Single grid holds both already-uploaded attachments (edit mode,
+                                 server-rendered below) and newly selected files (added by JS),
+                                 so create and edit lay images out identically, side by side. -->
+                            <div class="task-dropzone-files" id="task_attachments_files">
+                                <?php if (isset($task) && !empty($task_attachments)) { ?>
+                                <?php foreach ($task_attachments as $attachment) {
+                                    $is_external = !empty($attachment['external']);
+                                    $att_path    = get_upload_path_by_type('task') . $task->id . '/' . $attachment['file_name'];
+                                    $is_image    = !$is_external ? is_image($att_path) : false;
+                                    $href_url    = $is_external
+                                        ? $attachment['external_link']
+                                        : site_url('download/file/taskattachment/' . $attachment['attachment_key']);
+                                    $img_url     = $is_image
+                                        ? site_url('download/preview_image?path=' . protected_file_url_by_path($att_path, true) . '&type=' . $attachment['filetype'])
+                                        : '';
+                                ?>
+                                <div class="task-file-square" data-task-attachment-id="<?php echo e($attachment['id']); ?>">
+                                    <a href="<?php echo e($href_url); ?>" target="_blank" class="task-file-thumb<?php echo $is_image ? '' : ' task-file-thumb-icon'; ?>">
+                                        <?php if ($is_image) { ?>
+                                        <img src="<?php echo e($img_url); ?>" alt="">
+                                        <?php } else { ?>
+                                        <i class="fa fa-file-o" aria-hidden="true"></i>
+                                        <?php } ?>
+                                    </a>
+                                    <span class="task-file-name" title="<?php echo e($attachment['file_name']); ?>"><?php echo e($attachment['file_name']); ?></span>
+                                    <?php if ($attachment['staffid'] == get_staff_user_id() || is_admin()) { ?>
+                                    <button type="button" class="task-file-remove" aria-label="<?php echo _l('remove'); ?>"
+                                        onclick="remove_task_attachment(this, <?php echo e($attachment['id']); ?>); return false;">&times;</button>
+                                    <?php } ?>
+                                </div>
+                                <?php } ?>
+                                <?php } ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -527,6 +557,13 @@
         init_selectpicker();
         task_rel_select();
 
+        <?php if ($hide_task_rel_type) { ?>
+        // Default a plain new task to a Project relation and reveal the Project
+        // dropdown by reusing the standard rel_type change flow. If no project is
+        // ultimately selected, the server treats it as a standalone task as before.
+        _rel_type.val('project').selectpicker('refresh').trigger('change');
+        <?php } ?>
+
         var _allAssigneeSelect = $("#assignees").html();
 
         $('body').on('change', '#rel_id', function() {
@@ -593,6 +630,105 @@
                 $("#assignees").selectpicker('refresh')
             }
         });
+
+        // Task attachments dropzone. The file input fills the drop area (opacity 0),
+        // so both clicking to browse and dropping files onto it are handled natively
+        // by the browser. Selected files are kept in a DataTransfer that is the single
+        // source of truth: it lets us render a removable square per file and keep the
+        // input's FileList in sync so everything still submits as attachments[].
+        (function() {
+            var $dz = $('#task-attachments-dropzone');
+            if (!$dz.length || typeof DataTransfer === 'undefined') {
+                return;
+            }
+            var $input = $('#task_attachments_input');
+            var input = $input[0];
+            var $files = $('#task_attachments_files');
+            var store = new DataTransfer();
+            var objectUrls = [];
+
+            function syncInput() {
+                input.files = store.files;
+            }
+
+            function fileKey(f) {
+                return f.name + '|' + f.size + '|' + f.lastModified;
+            }
+
+            function removeAt(index) {
+                var next = new DataTransfer();
+                for (var i = 0; i < store.files.length; i++) {
+                    if (i !== index) {
+                        next.items.add(store.files[i]);
+                    }
+                }
+                store = next;
+                syncInput();
+                render();
+            }
+
+            function render() {
+                objectUrls.forEach(function(url) { URL.revokeObjectURL(url); });
+                objectUrls = [];
+                // Only clear the JS-managed squares; server-rendered existing
+                // attachments stay so both flow together in the same grid.
+                $files.find('.task-file-square-new').remove();
+
+                for (var i = 0; i < store.files.length; i++) {
+                    (function(file, index) {
+                        var $square = $('<div class="task-file-square task-file-square-new"></div>');
+                        var $thumb;
+                        if (file.type && file.type.indexOf('image/') === 0) {
+                            var url = URL.createObjectURL(file);
+                            objectUrls.push(url);
+                            $thumb = $('<div class="task-file-thumb"></div>')
+                                .append($('<img alt="">').attr('src', url));
+                        } else {
+                            $thumb = $('<div class="task-file-thumb task-file-thumb-icon"></div>')
+                                .append($('<i class="fa fa-file-o" aria-hidden="true"></i>'));
+                        }
+                        var $remove = $('<button type="button" class="task-file-remove" aria-label="remove">&times;</button>')
+                            .on('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                removeAt(index);
+                            });
+                        $square.append($thumb)
+                            .append($('<span class="task-file-name"></span>').text(file.name).attr('title', file.name))
+                            .append($remove);
+                        $files.append($square);
+                    })(store.files[i], i);
+                }
+
+                $dz.toggleClass('has-files', $files.children('.task-file-square').length > 0);
+            }
+
+            // Reflect any server-rendered existing attachments in the initial state.
+            $dz.toggleClass('has-files', $files.children('.task-file-square').length > 0);
+
+            $input.on('dragenter dragover', function() {
+                $dz.addClass('dragover');
+            }).on('dragleave dragend drop', function() {
+                $dz.removeClass('dragover');
+            });
+
+            // Native browse/drop replaces the input's FileList with the new selection,
+            // so merge those into the store (skipping duplicates) and re-sync.
+            $input.on('change', function() {
+                var existing = {};
+                for (var j = 0; j < store.files.length; j++) {
+                    existing[fileKey(store.files[j])] = true;
+                }
+                var picked = this.files || [];
+                for (var i = 0; i < picked.length; i++) {
+                    if (!existing[fileKey(picked[i])]) {
+                        store.items.add(picked[i]);
+                    }
+                }
+                syncInput();
+                render();
+            });
+        })();
 
     });
 

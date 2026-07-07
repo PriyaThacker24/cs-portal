@@ -89,6 +89,79 @@ html[dir="rtl"] .g2fa-switch .g2fa-slider:before {
 html[dir="rtl"] .g2fa-switch input:checked + .g2fa-slider:before {
     transform: translateX(-20px);
 }
+/* Skeleton placeholder shown while the QR/secret is generated on the server.
+   Mirrors the real google_two_factor view: guide text on top, a centered QR
+   with the secret info below it, then the code label and input + verify button. */
+.g2fa-skeleton {
+    padding: 20px;
+}
+.g2fa-skeleton .g2fa-skel {
+    background: #e9edf2;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+}
+.g2fa-skeleton .g2fa-skel::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+    animation: g2fa-shimmer 1.2s infinite;
+}
+@keyframes g2fa-shimmer {
+    100% { transform: translateX(100%); }
+}
+.g2fa-skeleton .g2fa-skel-line {
+    height: 12px;
+    margin-bottom: 12px;
+}
+/* Centered QR + secret block */
+.g2fa-skeleton .g2fa-skel-qr-wrap {
+    text-align: center;
+    margin: 28px 0 26px;
+}
+.g2fa-skeleton .g2fa-skel-qr {
+    height: 180px;
+    width: 180px;
+    margin: 0 auto 16px;
+}
+.g2fa-skeleton .g2fa-skel-secret {
+    height: 14px;
+    width: 38%;
+    margin: 0 auto 10px;
+}
+.g2fa-skeleton .g2fa-skel-secret-sm {
+    height: 10px;
+    width: 55%;
+    margin: 0 auto;
+}
+/* Code label + input group (input beside verify button) */
+.g2fa-skeleton .g2fa-skel-label {
+    height: 12px;
+    width: 30%;
+    margin-bottom: 12px;
+}
+.g2fa-skeleton .g2fa-skel-inputgroup {
+    display: flex;
+    gap: 0;
+}
+.g2fa-skeleton .g2fa-skel-input {
+    height: 40px;
+    flex: 1 1 auto;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.g2fa-skeleton .g2fa-skel-btn {
+    height: 40px;
+    width: 96px;
+    flex: 0 0 auto;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
 </style>
 <div id="wrapper">
     <div class="content">
@@ -347,7 +420,10 @@ html[dir="rtl"] .g2fa-switch input:checked + .g2fa-slider:before {
                                 </div>
 
                                 <?php
-                                $flashCodes  = $this->session->flashdata('two_factor_backup_codes');
+                                // Pending recovery codes live in the session (not flashdata) so this
+                                // screen survives refreshes until the user clicks "Complete", which
+                                // clears them (see Staff::complete_two_factor_setup).
+                                $flashCodes  = $this->session->userdata('two_factor_pending_codes');
                                 $g2faEnabled = ($member->two_factor_auth_enabled == 2);
                                 $backupCount = 0;
                                 if (isset($member->two_factor_backup_codes) && ! empty($member->two_factor_backup_codes)) {
@@ -376,6 +452,19 @@ html[dir="rtl"] .g2fa-switch input:checked + .g2fa-slider:before {
                                     <button type="button" class="btn btn-default btn-sm" id="download_backup_codes">
                                         <?= _l('two_factor_backup_codes_download'); ?>
                                     </button>
+                                    <button type="button" class="btn btn-default btn-sm" id="email_backup_codes">
+                                        <i class="fa fa-envelope-o"></i> <?= _l('two_factor_backup_codes_email'); ?>
+                                    </button>
+                                    <hr class="tw-my-3">
+                                    <div class="tw-flex tw-justify-between tw-items-center tw-gap-4">
+                                        <p class="tw-mb-0 text-muted">
+                                            <?= _l('two_factor_backup_codes_complete_hint'); ?>
+                                        </p>
+                                        <a href="<?= admin_url('staff/complete_two_factor_setup'); ?>"
+                                            class="btn btn-primary tw-flex-shrink-0" id="complete_two_factor_setup">
+                                            <i class="fa fa-check"></i> <?= _l('two_factor_setup_complete'); ?>
+                                        </a>
+                                    </div>
                                 </div>
                                 <?php } elseif ($g2faEnabled) { ?>
                                 <hr />
@@ -509,6 +598,31 @@ html[dir="rtl"] .g2fa-switch input:checked + .g2fa-slider:before {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(a.href);
             });
+            $('#email_backup_codes').on('click', function() {
+                var $btn = $(this);
+                var codes = $('#backup_codes_list').children().map(function() {
+                    return $(this).text().trim();
+                }).get();
+                if (!codes.length || $btn.prop('disabled')) {
+                    return;
+                }
+                var originalHtml = $btn.html();
+                $btn.prop('disabled', true).text('<?= _l('two_factor_backup_codes_email_sending'); ?>');
+                $.post(admin_url + 'staff/email_backup_codes', {
+                    codes: codes
+                }, function(response) {
+                    if (response && response.success) {
+                        alert_float('success', response.message);
+                    } else {
+                        alert_float('danger', response && response.message ?
+                            response.message : '<?= _l('two_factor_backup_codes_email_failed'); ?>');
+                    }
+                }, 'json').fail(function() {
+                    alert_float('danger', '<?= _l('two_factor_backup_codes_email_failed'); ?>');
+                }).always(function() {
+                    $btn.prop('disabled', false).html(originalHtml);
+                });
+            });
 
             $('.profile-settings-nav a').on('click', function(e) {
                 e.preventDefault();
@@ -549,6 +663,29 @@ html[dir="rtl"] .g2fa-switch input:checked + .g2fa-slider:before {
                     }
 
                     if (qr_loaded == 0) {
+                        // Generating the TOTP secret + QR image on the server takes ~2s.
+                        // Show a skeleton placeholder immediately; the .load() response
+                        // replaces the inner HTML (skeleton included) once it arrives.
+                        var g2faSkeleton =
+                            '<div class="g2fa-skeleton">' +
+                                // guide text (top)
+                                '<div class="g2fa-skel g2fa-skel-line" style="width:92%"></div>' +
+                                '<div class="g2fa-skel g2fa-skel-line" style="width:78%"></div>' +
+                                // centered QR + secret info
+                                '<div class="g2fa-skel-qr-wrap">' +
+                                    '<div class="g2fa-skel g2fa-skel-qr"></div>' +
+                                    '<div class="g2fa-skel g2fa-skel-secret"></div>' +
+                                    '<div class="g2fa-skel g2fa-skel-secret-sm"></div>' +
+                                '</div>' +
+                                // code label + input beside verify button
+                                '<div class="g2fa-skel g2fa-skel-label"></div>' +
+                                '<div class="g2fa-skel-inputgroup">' +
+                                    '<div class="g2fa-skel g2fa-skel-input"></div>' +
+                                    '<div class="g2fa-skel g2fa-skel-btn"></div>' +
+                                '</div>' +
+                            '</div>';
+                        $('#qr_image').html(g2faSkeleton).show();
+
                         $('#qr_image').load(admin_url + 'authentication/get_qr', {}, function(response,
                             status) {
                             qr_loaded = 1;

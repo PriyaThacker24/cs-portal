@@ -367,11 +367,13 @@ function should_remind_two_factor_auth()
 
     $CI = &get_instance();
 
-    if (! is_staff_logged_in() || $CI->session->userdata('two_factor_reminder_skipped')) {
+    if (! is_staff_logged_in()) {
         return $should = false;
     }
 
-    // Don't nag while the staff is on their own profile page (where 2FA is enabled).
+    // Don't nag while the staff is on their own profile page (where 2FA is set
+    // up) — otherwise the static-backdrop modal would block the very page needed
+    // to complete the setup.
     if ($CI->router->fetch_class() === 'staff' && $CI->router->fetch_method() === 'edit_profile') {
         return $should = false;
     }
@@ -379,7 +381,48 @@ function should_remind_two_factor_auth()
     $CI->load->model('staff_model');
     $member = $CI->staff_model->get(get_staff_user_id());
 
-    return $should = ($member && (int) $member->two_factor_auth_enabled === 0);
+    if (! $member || (int) $member->two_factor_auth_enabled !== 0) {
+        return $should = false;
+    }
+
+    // Show once per login session until the reminder is dismissed for the session.
+    // When the skip allowance is exhausted (0 left), a fresh login has no dismiss
+    // flag set, so the reminder shows with the Skip button disabled (see the view)
+    // and stays mandatory — the user can't dismiss it, so it persists until 2FA is
+    // enabled. Using the final skip still dismisses the current session normally.
+    return $should = ! $CI->session->userdata('two_factor_reminder_skipped');
+}
+
+/**
+ * Maximum number of times a staff member may skip the 2FA setup reminder.
+ */
+function two_factor_reminder_max_skips()
+{
+    return 3;
+}
+
+/**
+ * Number of 2FA setup skips the logged-in staff member has already used.
+ *
+ * @return int
+ */
+function two_factor_reminder_skips_used()
+{
+    if (! is_staff_logged_in()) {
+        return 0;
+    }
+
+    return (int) get_staff_meta(get_staff_user_id(), 'two_factor_reminder_skips');
+}
+
+/**
+ * Number of 2FA setup skips still available to the logged-in staff member.
+ *
+ * @return int
+ */
+function two_factor_reminder_skips_left()
+{
+    return max(0, two_factor_reminder_max_skips() - two_factor_reminder_skips_used());
 }
 /**
  * Return logged staff User ID from session

@@ -82,9 +82,6 @@ define('SESS_DRIVER', 'database');
 define('SESS_SAVE_PATH', 'sessions');
 define('APP_SESSION_COOKIE_SAME_SITE', 'Lax');
 
-// Keep the login session alive for 7 days (in seconds) so users aren't
-// forced to re-authenticate (and re-do 2FA) too frequently.
-define('APP_SESSION_EXPIRATION', 604800);
 
 /**
  * Enables CSRF Protection

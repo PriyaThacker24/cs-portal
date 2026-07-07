@@ -1,4 +1,10 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<?php
+$twoFaSkipsLeft = two_factor_reminder_skips_left();
+$twoFaSkipsText = $twoFaSkipsLeft == 1
+    ? _l('two_factor_reminder_skips_left_one', $twoFaSkipsLeft)
+    : _l('two_factor_reminder_skips_left_many', $twoFaSkipsLeft);
+?>
 <div class="modal fade" id="two_factor_reminder_modal" tabindex="-1" role="dialog"
     data-backdrop="static" data-keyboard="false" aria-labelledby="two_factor_reminder_title">
     <div class="modal-dialog" role="document">
@@ -20,9 +26,16 @@
                 </p>
             </div>
             <div class="modal-footer tw-flex tw-justify-between tw-items-center">
-                <button type="button" class="btn btn-link text-muted" id="two_factor_reminder_skip">
-                    <?= _l('two_factor_reminder_skip'); ?>
-                </button>
+                <div class="text-left">
+                    <button type="button" class="btn btn-link text-muted" id="two_factor_reminder_skip"
+                        <?= $twoFaSkipsLeft <= 0 ? 'disabled' : ''; ?>>
+                        <?= _l('two_factor_reminder_skip'); ?>
+                    </button>
+                    <div class="text-muted tw-text-xs" id="two_factor_reminder_skips_left"
+                        style="padding-left:15px;">
+                        <?= $twoFaSkipsText; ?>
+                    </div>
+                </div>
                 <a href="<?= admin_url('staff/edit_profile'); ?>#two_factor_authentication"
                     class="btn btn-primary" id="two_factor_reminder_enable">
                     <?= _l('two_factor_reminder_enable'); ?>
@@ -34,30 +47,41 @@
 <script>
     $(function() {
         var $modal = $('#two_factor_reminder_modal');
+        var $skipBtn = $('#two_factor_reminder_skip');
+
         $modal.modal('show');
 
-        // Persist the "reminder handled" flag for this login session.
+        // Spend one skip and dismiss the reminder for this login session.
         function dismissReminder() {
-            var data = {};
+            var data = {
+                count: 1
+            };
             if (typeof csrfData !== 'undefined') {
                 data[csrfData.token_name] = csrfData.hash;
             }
-            return $.post(admin_url + 'staff/skip_two_factor_reminder', data);
+            return $.post(admin_url + 'staff/skip_two_factor_reminder', data, null, 'json');
         }
 
-        $('#two_factor_reminder_skip').on('click', function() {
-            dismissReminder();
-            $modal.modal('hide');
-        });
+        $skipBtn.on('click', function() {
+            if ($skipBtn.prop('disabled')) {
+                return;
+            }
+            // Prevent double submits while the request is in flight.
+            $skipBtn.prop('disabled', true);
 
-        // Clicking "Enable" should also stop the popup from re-appearing while
-        // the staff is setting 2FA up. Wait for the flag to be saved, then go.
-        $('#two_factor_reminder_enable').on('click', function(e) {
-            e.preventDefault();
-            var href = $(this).attr('href');
-            dismissReminder().always(function() {
-                window.location.href = href;
+            dismissReminder().done(function() {
+                // The skip was recorded — including the final one — so close the
+                // popup and let the user continue. If that was the last skip, the
+                // Skip button will be disabled the next time they log in (0 left).
+                $modal.modal('hide');
+            }).fail(function() {
+                // Let the user try again if the request failed.
+                $skipBtn.prop('disabled', false);
             });
         });
+
+        // "Enable" navigates straight to the 2FA setup page (its own href) and
+        // must NOT dismiss/skip the reminder — the reminder is simply suppressed
+        // on the setup page itself.
     });
 </script>
