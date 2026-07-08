@@ -617,6 +617,38 @@ var TimelogModule = (function() {
     /**
      * Open timelog drawer
      */
+    /**
+     * Always show the rich text editor for the notes field.
+     *
+     * The textarea initializes TinyMCE lazily on focus, which means an opened
+     * drawer (especially in edit mode) shows raw HTML tags until the field is
+     * clicked. Calling this on drawer open initializes the editor eagerly so
+     * the notes are always rendered in the editor, not as HTML source.
+     *
+     * @param {string} [content]  HTML to load into the editor.
+     */
+    function initTimelogNotesEditor(content) {
+        content = content || '';
+
+        if (typeof tinymce === 'undefined') {
+            $('#timelog_notes').val(content);
+            return;
+        }
+
+        var existing = tinymce.get('timelog_notes');
+        if (existing) {
+            existing.setContent(content);
+            return;
+        }
+
+        // Seed the textarea before init so TinyMCE picks the content up.
+        $('#timelog_notes').val(content);
+
+        if (typeof init_editor === 'function') {
+            init_editor('.tinymce-timelog', {height: 200});
+        }
+    }
+
     function openTimelogDrawer(editMode) {
         editMode = editMode || false;
 
@@ -626,6 +658,11 @@ var TimelogModule = (function() {
         }
         $('#timelog_drawer_overlay').fadeIn(300);
         $('#timelog_drawer').addClass('open');
+
+        // Always show the notes rich text editor (not just on focus).
+        if (!editMode) {
+            initTimelogNotesEditor('');
+        }
 
         // If a project context is set (e.g. project timesheets tab), pre-select it
         var contextProjectId = $('#current_project_id').val() || '';
@@ -1488,15 +1525,10 @@ var TimelogModule = (function() {
 
                                 $('#timelog_daily_log').val(data.daily_log);
                                 $('#timelog_billing_type').val(data.billing_type).selectpicker('refresh');
-                                $('#timelog_notes').val(data.notes || '');
-                                // The editor initializes lazily on focus and reads the
-                                // textarea value; if it is already open, push content in.
-                                if (typeof tinymce !== 'undefined') {
-                                    var notesEditor = tinymce.get('timelog_notes');
-                                    if (notesEditor) {
-                                        notesEditor.setContent(data.notes || '');
-                                    }
-                                }
+                                // Eagerly show the notes editor with the saved HTML
+                                // rendered, instead of leaving raw tags in the textarea
+                                // until the field is focused.
+                                initTimelogNotesEditor(data.notes || '');
                                 $('#btn_add_timelog_submit').text(typeof _l !== 'undefined' ? _l('update') : 'Update');
                             }
                         }
