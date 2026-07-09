@@ -361,7 +361,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <?php
-                        $currency_attr = ['disabled' => true, 'data-show-subtext' => true];
+                        $currency_attr = ['data-show-subtext' => true];
                         $currency_attr = apply_filters_deprecated('invoice_currency_disabled', [$currency_attr], '2.3.0', 'invoice_currency_attributes');
 
                         foreach ($currencies as $currency) {

@@ -646,11 +646,12 @@ var TimelogFilter = (function() {
         $('#timelogFilterPanel .filter-accordion-item input[type="text"]').val('');
         $('#timelogFilterPanel .filter-accordion-item select').each(function() {
             var $select = $(this);
-            if ($select.prop('multiple') && typeof $.fn.selectpicker !== 'undefined') {
-                $select.selectpicker('deselectAll');
-            } else {
-                $select.val('');
-            }
+            // Clear the value directly rather than calling selectpicker('deselectAll').
+            // deselectAll routes through bootstrap-select's changeAll(), which throws
+            // "Cannot read properties of undefined (reading 'length')" when the picker
+            // has no options / is not fully initialized. That exception would abort the
+            // rest of this reset (and loadBuilderIntoUI), leaving the date filter unset.
+            $select.val($select.prop('multiple') ? [] : '');
             if ($select.hasClass('selectpicker') && typeof $.fn.selectpicker !== 'undefined') {
                 $select.selectpicker('refresh');
             }
