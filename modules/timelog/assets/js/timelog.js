@@ -32,13 +32,14 @@ var TimelogModule = (function() {
      * Bind all event handlers
      */
     function bindEvents() {
-        // Week navigation
+        // Date navigation — steps by the currently selected filter unit
+        // (day / week / month). Disabled for Date Range and Project Span.
         $('#btn_prev_week').on('click', function() {
-            navigateWeek('prev');
+            navigateDate('prev');
         });
 
         $('#btn_next_week').on('click', function() {
-            navigateWeek('next');
+            navigateDate('next');
         });
 
         // Group by change
@@ -183,45 +184,84 @@ var TimelogModule = (function() {
     }
 
     /**
-     * Navigate to previous/next week
+     * Enable/disable the header prev/next navigation based on the active date
+     * filter. Day / Week / Month can be stepped; Date Range and Project Span are
+     * fixed custom ranges, so their navigation is disabled.
      */
-    function navigateWeek(direction) {
-        // Get current week start from input field (always use latest value)
+    function updateDateNavState() {
+        var type = $('#current_date_range_type').val() || 'week';
+        var isFixed = (type === 'range' || type === 'project_span');
+        $('#btn_prev_week, #btn_next_week')
+            .prop('disabled', isFixed)
+            .toggleClass('disabled', isFixed);
+        // Mirror the state on the in-picker navigation for consistency.
+        $('#date_picker_prev_range, #date_picker_next_range')
+            .prop('disabled', isFixed)
+            .toggleClass('disabled', isFixed);
+    }
+
+    /**
+     * Navigate to the previous/next period. The step matches the currently
+     * selected date filter:
+     *   - day   -> +/- 1 day
+     *   - week  -> +/- 1 week (Monday–Sunday)
+     *   - month -> +/- 1 month (1st–last day)
+     * Date Range and Project Span use a fixed custom range and cannot be stepped.
+     */
+    function navigateDate(direction) {
+        var type = $('#current_date_range_type').val() || 'week';
+
+        // Fixed custom ranges: navigation is disabled (buttons are also disabled
+        // in the UI — this is a safety guard for programmatic calls).
+        if (type === 'range' || type === 'project_span') {
+            return;
+        }
+
+        // Get current start from the input field (always use latest value)
         var currentValue = $('#current_week_start').val();
         if (!currentValue) {
             console.error('No current week start value found');
             return;
         }
-        currentWeekStart = currentValue;
-        
-        // Parse the current week start date (YYYY-MM-DD format)
-        var dateParts = currentWeekStart.split('-');
+
+        var dateParts = currentValue.split('-');
         if (dateParts.length !== 3) {
-            console.error('Invalid date format:', currentWeekStart);
+            console.error('Invalid date format:', currentValue);
             return;
         }
-        
-        var currentDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
-        
-        // Add or subtract 7 days
-        var daysToAdd = direction === 'next' ? 7 : -7;
-        currentDate.setDate(currentDate.getDate() + daysToAdd);
 
-        // Ensure we get Monday of the week
-        var day = currentDate.getDay();
-        var diff = currentDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-        var mondayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), diff);
-        var sundayDate = new Date(mondayDate);
-        sundayDate.setDate(mondayDate.getDate() + 6);
+        var start = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        var end;
+        var step = direction === 'next' ? 1 : -1;
 
-        // Update both start and end of the week
-        currentWeekStart = formatDate(mondayDate);
-        var currentWeekEnd = formatDate(sundayDate);
+        if (type === 'day') {
+            start.setDate(start.getDate() + step);
+            end = new Date(start);
+        } else if (type === 'month') {
+            start = new Date(start.getFullYear(), start.getMonth() + step, 1);
+            end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        } else {
+            // Week (default): shift a full week and snap to Monday–Sunday.
+            start.setDate(start.getDate() + step * 7);
+            var day = start.getDay();
+            var diff = start.getDate() - day + (day === 0 ? -6 : 1);
+            start = new Date(start.getFullYear(), start.getMonth(), diff);
+            end = new Date(start);
+            end.setDate(start.getDate() + 6);
+        }
 
+        currentWeekStart = formatDate(start);
         $('#current_week_start').val(currentWeekStart);
-        $('#current_week_end').val(currentWeekEnd);
-        
-        // Load new week data (server will return correct week number)
+        $('#current_week_end').val(formatDate(end));
+        $('#current_date_range_type').val(type);
+
+        // Keep the date picker's internal state in sync so reopening it reflects
+        // the range the header navigation moved to.
+        if (typeof TimelogDatePicker !== 'undefined' && TimelogDatePicker.syncFromInputs) {
+            TimelogDatePicker.syncFromInputs();
+        }
+
+        // Load new data (server returns the correct week number / labels)
         loadTimelogs();
     }
 
@@ -334,7 +374,10 @@ var TimelogModule = (function() {
         var dateStart = $('#current_week_start').val() || currentWeekStart;
         var dateEnd = $('#current_week_end').val();
         var dateRangeType = $('#current_date_range_type').val() || 'week';
-        
+
+        // Reflect the active filter on the prev/next navigation buttons.
+        updateDateNavState();
+
         // Validate and set default dates if needed
         if (!dateStart) {
             // Default to current week

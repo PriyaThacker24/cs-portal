@@ -24,7 +24,12 @@
             <button type="button" class="date-picker-tab active" data-type="week" id="tab_week"><?= _l('week'); ?></button>
             <button type="button" class="date-picker-tab" data-type="month" id="tab_month"><?= _l('month'); ?></button>
             <button type="button" class="date-picker-tab" data-type="range" id="tab_range"><?= _l('range'); ?></button>
+            <?php /* Project Span only makes sense in a single-project context (Project
+                     Details -> Timelog). It is hidden in the main Timelog module,
+                     where no single project is selected. */ ?>
+            <?php if (!empty($show_project_span)) : ?>
             <button type="button" class="date-picker-tab" data-type="quick" id="tab_quick"><?= _l('project_span'); ?></button>
+            <?php endif; ?>
         </div>
 
         <!-- Calendar View (for Day and Week tabs) -->
@@ -122,37 +127,11 @@
             <div class="project-span-content">
                 <!-- Calendar Illustration -->
                 <div class="project-span-calendar-illustration">
-                    <svg width="200" height="180" viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Calendar base -->
-                        <rect x="60" y="40" width="80" height="100" fill="#f5e6d3" stroke="#d4a574" stroke-width="2" rx="2"/>
-                        <!-- Calendar spiral binding -->
-                        <circle cx="60" cy="50" r="8" fill="#c9a961" opacity="0.7"/>
-                        <circle cx="60" cy="70" r="8" fill="#c9a961" opacity="0.7"/>
-                        <circle cx="60" cy="90" r="8" fill="#c9a961" opacity="0.7"/>
-                        <circle cx="60" cy="110" r="8" fill="#c9a961" opacity="0.7"/>
-                        <circle cx="60" cy="130" r="8" fill="#c9a961" opacity="0.7"/>
-                        <!-- Calendar grid lines -->
-                        <line x1="70" y1="60" x2="130" y2="60" stroke="#d4a574" stroke-width="1"/>
-                        <line x1="70" y1="80" x2="130" y2="80" stroke="#d4a574" stroke-width="1"/>
-                        <line x1="70" y1="100" x2="130" y2="100" stroke="#d4a574" stroke-width="1"/>
-                        <line x1="90" y1="50" x2="90" y2="130" stroke="#d4a574" stroke-width="1"/>
-                        <line x1="110" y1="50" x2="110" y2="130" stroke="#d4a574" stroke-width="1"/>
-                        <!-- Green square (START) -->
-                        <rect x="75" y="65" width="12" height="12" fill="#4caf50" rx="1"/>
-                        <!-- Red square (CURRENT DATE) -->
-                        <rect x="95" y="105" width="12" height="12" fill="#f44336" rx="1"/>
-                        <!-- Decorative dots -->
-                        <circle cx="30" cy="30" r="4" fill="#4caf50"/>
-                        <circle cx="170" cy="50" r="4" fill="#9c27b0"/>
-                        <circle cx="40" cy="160" r="4" fill="#2196f3"/>
-                        <circle cx="160" cy="150" r="4" fill="#ffeb3b"/>
-                        <!-- START label with line -->
-                        <line x1="75" y1="65" x2="30" y2="20" stroke="#4caf50" stroke-width="2" stroke-dasharray="3,3"/>
-                        <text x="20" y="15" fill="#4caf50" font-size="12" font-weight="bold">START</text>
-                        <!-- CURRENT DATE label with line -->
-                        <line x1="101" y1="117" x2="170" y2="170" stroke="#f44336" stroke-width="2" stroke-dasharray="3,3"/>
-                        <text x="150" y="180" fill="#f44336" font-size="12" font-weight="bold">CURRENT DATE</text>
-                    </svg>
+                    <?php
+                    $span_img_path = module_dir_path('timelog', 'assets/images/project-span.svg');
+                    $span_img_ver  = is_file($span_img_path) ? filemtime($span_img_path) : '';
+                    ?>
+                    <img src="<?= module_dir_url('timelog', 'assets/images/project-span.svg'); ?>?v=<?= $span_img_ver; ?>" alt="<?= _l('project_span'); ?>">
                 </div>
                 <!-- Descriptive Text -->
                 <div class="project-span-text">

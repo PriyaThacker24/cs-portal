@@ -18,6 +18,16 @@ if (empty($week_start)) {
 }
 $week_end = date('Y-m-d', strtotime('sunday this week', strtotime($week_start)));
 
+// Project Span range = project start date -> today. Fall back to the project
+// creation date (then today) if no start date is set on the project.
+if (!empty($project->start_date) && $project->start_date != '0000-00-00') {
+    $project_start_date = $project->start_date;
+} elseif (!empty($project->datecreated)) {
+    $project_start_date = date('Y-m-d', strtotime($project->datecreated));
+} else {
+    $project_start_date = date('Y-m-d');
+}
+
 // Get current filters (default group_by is 'date')
 $filters = [
     'project_id' => $project->id, // Always filter by current project
@@ -42,17 +52,20 @@ $staff = $this->staff_model->get('', ['active' => 1]);
                 </select>
             </div>
         </div>
-        <!-- Week Navigation -->
+        <!-- Date Range Navigation -->
         <div class="timelog-header-center">
-            <div class="timelog-week-nav">
-                <button type="button" class="btn btn-default btn-week-nav" id="btn_prev_week" title="<?= _l('previous_week'); ?>">
+            <div class="timelog-date-nav">
+                <button type="button" class="btn btn-default btn-date-nav" id="btn_prev_week" title="<?= _l('previous'); ?>">
                     <i class="fa fa-chevron-left"></i>
                 </button>
-                <span class="timelog-week-display" id="week_display">
-                    <?= date('d/m/Y', strtotime($week_start)); ?> - <?= date('d/m/Y', strtotime($week_end)); ?> 
-                    (<?= _l('week'); ?> <?= date('W', strtotime($week_start)); ?>)
-                </span>
-                <button type="button" class="btn btn-default btn-week-nav" id="btn_next_week" title="<?= _l('next_week'); ?>">
+                <button type="button" class="btn btn-default btn-date-display" id="btn_open_date_picker" title="<?= _l('select_date_range'); ?>">
+                    <i class="fa fa-calendar"></i>
+                    <span class="timelog-date-display" id="date_display">
+                        <?= date('d/m/Y', strtotime($week_start)); ?> - <?= date('d/m/Y', strtotime($week_end)); ?>
+                        (<?= _l('week'); ?> <?= date('W', strtotime($week_start)); ?>)
+                    </span>
+                </button>
+                <button type="button" class="btn btn-default btn-date-nav" id="btn_next_week" title="<?= _l('next'); ?>">
                     <i class="fa fa-chevron-right"></i>
                 </button>
             </div>
@@ -89,12 +102,23 @@ $staff = $this->staff_model->get('', ['active' => 1]);
         </div>
     </div>
     
+    <!-- Date Range Picker (Day / Week / Month / Range / Project Span) -->
+    <?php
+    // date_picker.php reads $week_start / $week_end. These are local vars in this
+    // view, so pass them explicitly — nested views only inherit controller $data.
+    $this->load->view('timelog/date_picker', [
+        'week_start'        => $week_start,
+        'week_end'          => $week_end,
+        'show_project_span' => true, // enable the Project Span tab in project context
+    ]);
+    ?>
+
     <!-- Advanced Filter Panel (Included via view) -->
-    <?php 
+    <?php
     // Pass project context to filter panel
     $data['hide_project_filter'] = true;
     $data['project_id'] = $project->id;
-    $this->load->view('timelog/timelog_filter_panel', $data); 
+    $this->load->view('timelog/timelog_filter_panel', $data);
     ?>
     
     <!-- Loading Indicator -->
@@ -114,6 +138,9 @@ $staff = $this->staff_model->get('', ['active' => 1]);
 
 <!-- Hidden inputs for current state -->
 <input type="hidden" id="current_week_start" value="<?= $week_start; ?>">
+<input type="hidden" id="current_week_end" value="<?= $week_end; ?>">
+<input type="hidden" id="current_date_range_type" value="week">
+<input type="hidden" id="project_start_date" value="<?= $project_start_date; ?>">
 <input type="hidden" id="current_group_by" value="<?= $filters['group_by']; ?>">
 <input type="hidden" id="current_project_id" value="<?= $project->id; ?>">
 
@@ -121,7 +148,7 @@ $staff = $this->staff_model->get('', ['active' => 1]);
 <script>
 (function() {
     var scriptsLoaded = 0;
-    var scriptsToLoad = 2;
+    var scriptsToLoad = 3;
     
     function checkAndInit() {
         scriptsLoaded++;
@@ -163,7 +190,12 @@ $staff = $this->staff_model->get('', ['active' => 1]);
                     console.error('TimelogModule not available or init function missing');
                     console.log('TimelogModule:', typeof TimelogModule);
                 }
-                
+
+                // Initialize the date range picker (Day / Week / Month / Range / Project Span)
+                if (typeof TimelogDatePicker !== 'undefined' && TimelogDatePicker && typeof TimelogDatePicker.init === 'function') {
+                    TimelogDatePicker.init();
+                }
+
                 // Initialize filter panel if available
                 if (typeof TimelogFilter !== 'undefined' && TimelogFilter && typeof TimelogFilter.init === 'function') {
                     TimelogFilter.init();
@@ -182,6 +214,15 @@ $staff = $this->staff_model->get('', ['active' => 1]);
     };
     document.head.appendChild(filterScript);
     
+    var datePickerScript = document.createElement('script');
+    datePickerScript.src = '<?= module_dir_url('timelog', 'assets/js/timelog-date-picker.js'); ?>?v=<?= time(); ?>';
+    datePickerScript.onload = checkAndInit;
+    datePickerScript.onerror = function() {
+        console.error('Failed to load timelog-date-picker.js');
+        checkAndInit();
+    };
+    document.head.appendChild(datePickerScript);
+
     var timelogScript = document.createElement('script');
     timelogScript.src = '<?= module_dir_url('timelog', 'assets/js/timelog.js'); ?>';
     timelogScript.onload = checkAndInit;

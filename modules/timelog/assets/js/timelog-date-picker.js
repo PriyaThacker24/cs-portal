@@ -173,6 +173,25 @@ var TimelogDatePicker = (function() {
             handleRangeDayClick($(this));
         });
 
+        // Range hover preview: after the start date is picked (and before the
+        // end date), hovering a day previews the tentative range so the
+        // selection animates as the pointer moves.
+        $('.timelog-date-picker').on('mouseenter', '.range-calendar-day', function() {
+            if (!rangeSelectionState.selecting || !rangeSelectionState.startDate) {
+                return;
+            }
+            var dateStr = $(this).data('date');
+            if (!dateStr) {
+                return;
+            }
+            previewRangeTo(parseDate(dateStr));
+        });
+
+        // Clear the preview when the pointer leaves the range calendars.
+        $('.timelog-date-picker').on('mouseleave', '#date_picker_range', function() {
+            clearRangePreview();
+        });
+
         // Prevent closing when clicking inside picker
         $('.timelog-date-picker').on('click', function(e) {
             e.stopPropagation();
@@ -285,7 +304,28 @@ var TimelogDatePicker = (function() {
             renderRangeCalendars();
             updateSelectedRangeDisplay();
         } else if (type === 'quick') {
+            // Project Span — select everything from the project's start date to
+            // today. The start date is provided by the project context via the
+            // #project_start_date hidden input.
             $('#date_picker_quick').show();
+            $('#btn_current_week').hide();
+            $('#btn_current_month').hide();
+
+            var projectStartVal = $('#project_start_date').val();
+            var spanStart = projectStartVal ? parseDate(projectStartVal) : null;
+            if (!spanStart) {
+                // No project start date available — fall back to the current
+                // range start (or today) so the selection stays valid.
+                spanStart = currentDateRange.start ? new Date(currentDateRange.start) : new Date();
+            }
+            var spanEnd = new Date();
+            spanEnd.setHours(0, 0, 0, 0);
+
+            selectedDates.start = spanStart;
+            selectedDates.end = spanEnd;
+            currentDateRange.type = 'project_span';
+
+            updateSelectedRangeDisplay();
         } else if (type === 'month') {
             // Month view - show month grid instead of calendar
             $('#date_picker_month_view').show();
@@ -606,54 +646,95 @@ var TimelogDatePicker = (function() {
     }
 
     /**
-     * Navigate range (prev/next based on current type) - Public method
+     * Sync the picker's internal state from the hidden inputs (the single source
+     * of truth read by TimelogModule.loadTimelogs). Called before navigation so
+     * stepping is correct even when the range/type was changed elsewhere (header
+     * navigation, a saved filter, etc.) since the picker was last opened.
+     */
+    function syncFromInputs() {
+        var startVal = $('#current_week_start').val();
+        var endVal = $('#current_week_end').val();
+        var typeVal = $('#current_date_range_type').val();
+
+        if (startVal) {
+            currentDateRange.start = parseDate(startVal) || new Date(startVal);
+        }
+        if (endVal) {
+            currentDateRange.end = parseDate(endVal) || new Date(endVal);
+        }
+        if (typeVal) {
+            currentDateRange.type = typeVal;
+        }
+        if (currentDateRange.start) {
+            selectedDates.start = new Date(currentDateRange.start);
+            currentCalendarMonth = new Date(currentDateRange.start);
+        }
+        if (currentDateRange.end) {
+            selectedDates.end = new Date(currentDateRange.end);
+        }
+    }
+
+    /**
+     * Navigate range (prev/next based on current type) - Public method.
+     * Steps by the selected unit: day (+/-1 day), week (+/-1 week), month
+     * (+/-1 month). Date Range and Project Span are fixed custom ranges and are
+     * not stepped.
      */
     function navigateRange(direction) {
-        var days = 0;
-        if (currentDateRange.type === 'day') {
-            days = direction === 'next' ? 1 : -1;
-        } else if (currentDateRange.type === 'week') {
-            days = direction === 'next' ? 7 : -7;
-        } else if (currentDateRange.type === 'month') {
-            var newDate = new Date(currentDateRange.start);
-            newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-            if (currentDateRange.type === 'month') {
-                currentDateRange.start = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
-                currentDateRange.end = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
-            }
-            updateDateDisplay();
+        // Re-sync from the inputs so we step from the currently-applied range,
+        // regardless of what changed the range last.
+        syncFromInputs();
+
+        var type = currentDateRange.type;
+
+        // Fixed custom ranges: nothing to step.
+        if (type === 'range' || type === 'project_span') {
             return;
         }
 
-        if (days !== 0) {
-            var newStart = new Date(currentDateRange.start);
-            newStart.setDate(newStart.getDate() + days);
-            
-            if (currentDateRange.type === 'week') {
-                currentDateRange.start = getMonday(newStart);
-                currentDateRange.end = getSunday(newStart);
-            } else {
-                currentDateRange.start = newStart;
-                currentDateRange.end = newStart;
-            }
-            
-            selectedDates.start = new Date(currentDateRange.start);
-            selectedDates.end = new Date(currentDateRange.end);
-            
-            // Update hidden inputs
-            $('#current_week_start').val(formatDate(currentDateRange.start));
-            $('#current_week_end').val(formatDate(currentDateRange.end));
-            $('#current_date_range_type').val(currentDateRange.type);
-            
-            updateDateDisplay();
-            updateSelectedRangeDisplay();
+        var step = direction === 'next' ? 1 : -1;
+        var start = new Date(currentDateRange.start);
+        var end;
+
+        if (type === 'day') {
+            start.setDate(start.getDate() + step);
+            end = new Date(start);
+        } else if (type === 'month') {
+            start = new Date(start.getFullYear(), start.getMonth() + step, 1);
+            end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        } else {
+            // Week (default)
+            start.setDate(start.getDate() + step * 7);
+            start = getMonday(start);
+            end = getSunday(start);
+        }
+
+        currentDateRange.start = start;
+        currentDateRange.end = end;
+        selectedDates.start = new Date(start);
+        selectedDates.end = new Date(end);
+        currentCalendarMonth = new Date(start);
+
+        // Update hidden inputs (read by loadTimelogs and the header display)
+        $('#current_week_start').val(formatDate(start));
+        $('#current_week_end').val(formatDate(end));
+        $('#current_date_range_type').val(type);
+
+        updateDateDisplay();
+        updateSelectedRangeDisplay();
+
+        // Keep whichever calendar view is on screen in sync.
+        if (type === 'month') {
+            renderMonthGrid();
+        } else {
             renderCalendar();
-            
-            // Reload timelogs if picker is closed
-            if (!$('#timelog_date_picker_wrapper').is(':visible')) {
-                if (typeof TimelogModule !== 'undefined' && TimelogModule.loadTimelogs) {
-                    TimelogModule.loadTimelogs();
-                }
+        }
+
+        // Reload timelogs if picker is closed (header navigation). When the
+        // picker is open, the selection updates live and applies on OK.
+        if (!$('#timelog_date_picker_wrapper').is(':visible')) {
+            if (typeof TimelogModule !== 'undefined' && TimelogModule.loadTimelogs) {
+                TimelogModule.loadTimelogs();
             }
         }
     }
@@ -755,9 +836,12 @@ var TimelogDatePicker = (function() {
 
             currentDateRange.type = 'range';
         } else if ($('#tab_quick').hasClass('active')) {
-            // Already set in applyQuickFilter
+            // Project Span — a fixed custom range covering the project's span.
+            // Dates were already set in applyQuickFilter; tag the type so the
+            // prev/next navigation is disabled for it.
             start = selectedDates.start;
             end = selectedDates.end;
+            currentDateRange.type = 'project_span';
         } else {
             start = selectedDates.start;
             end = selectedDates.end;
@@ -877,8 +961,10 @@ var TimelogDatePicker = (function() {
             displayText += ' (' + (typeof _l !== 'undefined' ? _l('week') : 'Week') + ' ' + weekNum + ')';
         } else if (currentDateRange.type === 'month') {
             displayText += ' (' + (typeof _l !== 'undefined' ? _l('month') : 'Month') + ')';
+        } else if (currentDateRange.type === 'project_span') {
+            displayText += ' (' + (typeof _l !== 'undefined' ? _l('project_span') : 'Project Span') + ')';
         }
-        
+
         $('#date_display').text(displayText);
     }
 
@@ -903,8 +989,10 @@ var TimelogDatePicker = (function() {
             displayText = startStr;
         } else if (activeTab === 'month') {
             displayText += ' (' + (typeof _l !== 'undefined' ? _l('month') : 'Month') + ')';
+        } else if (activeTab === 'quick') {
+            displayText += ' (' + (typeof _l !== 'undefined' ? _l('project_span') : 'Project Span') + ')';
         }
-        
+
         $('#date_picker_selected_range').text(displayText);
     }
 
@@ -1126,24 +1214,53 @@ var TimelogDatePicker = (function() {
                 if (isWeekend) {
                     classes.push('weekend');
                 }
-                
-                // Only highlight today's date, and only in the calendar
-                // that represents the current month (to avoid showing
+
+                // Range selection highlight: the start and end days get
+                // 'selected' (solid) and the days in between get 'in-range'
+                // (light). The 0.2s CSS transition on .range-calendar-day
+                // animates the fill as the selection changes. Without these
+                // classes the range picker gave no visual feedback at all.
+                var inSelection = false;
+                if (selectedDates.start) {
+                    var cellDate = new Date(dateCopy);
+                    cellDate.setHours(0, 0, 0, 0);
+                    var rangeStart = new Date(selectedDates.start);
+                    rangeStart.setHours(0, 0, 0, 0);
+                    var rangeEnd = new Date(selectedDates.end || selectedDates.start);
+                    rangeEnd.setHours(0, 0, 0, 0);
+                    if (rangeStart > rangeEnd) {
+                        var tmpDate = rangeStart;
+                        rangeStart = rangeEnd;
+                        rangeEnd = tmpDate;
+                    }
+
+                    if (cellDate.getTime() === rangeStart.getTime() || cellDate.getTime() === rangeEnd.getTime()) {
+                        classes.push('selected');
+                        inSelection = true;
+                    } else if (cellDate > rangeStart && cellDate < rangeEnd) {
+                        classes.push('in-range');
+                        inSelection = true;
+                    }
+                }
+
+                // Only highlight today's date when it is not part of the current
+                // selection (so the range fill is visible), and only in the
+                // calendar that represents the current month (to avoid showing
                 // a dark highlight on the same day number in the next month)
                 var today = new Date();
                 today.setHours(0, 0, 0, 0);
                 var dateCopy2 = new Date(dateCopy);
                 dateCopy2.setHours(0, 0, 0, 0);
-                
+
                 var isToday =
                     dateCopy2.getTime() === today.getTime() &&
                     monthDate.getFullYear() === today.getFullYear() &&
                     monthDate.getMonth() === today.getMonth();
 
-                if (isToday) {
+                if (isToday && !inSelection) {
                     classes.push('today');
                 }
-                
+
                 html += '<div class="' + classes.join(' ') + '" data-date="' + formatDate(dateCopy) + '">' + dateCopy.getDate() + '</div>';
                 
                 currentDate.setDate(currentDate.getDate() + 1);
@@ -1244,6 +1361,46 @@ var TimelogDatePicker = (function() {
     }
 
     /**
+     * Preview the tentative range from the picked start date to the hovered
+     * date. Applied as lightweight CSS classes (no re-render) so the highlight
+     * animates smoothly as the pointer moves across the calendars.
+     */
+    function previewRangeTo(hoverDate) {
+        if (!hoverDate || !rangeSelectionState.startDate) return;
+
+        var start = new Date(rangeSelectionState.startDate);
+        start.setHours(0, 0, 0, 0);
+        var end = new Date(hoverDate);
+        end.setHours(0, 0, 0, 0);
+        if (start > end) {
+            var tmp = start;
+            start = end;
+            end = tmp;
+        }
+
+        $('.range-calendar-day').each(function() {
+            var $cell = $(this);
+            var dateStr = $cell.data('date');
+            $cell.removeClass('preview-in-range preview-end');
+            if (!dateStr) return;
+            var cell = parseDate(dateStr);
+            if (!cell) return;
+            if (cell.getTime() === start.getTime() || cell.getTime() === end.getTime()) {
+                $cell.addClass('preview-end');
+            } else if (cell > start && cell < end) {
+                $cell.addClass('preview-in-range');
+            }
+        });
+    }
+
+    /**
+     * Remove any range hover-preview highlight.
+     */
+    function clearRangePreview() {
+        $('.range-calendar-day').removeClass('preview-in-range preview-end');
+    }
+
+    /**
      * Parse date string (format: YYYY-MM-DD)
      */
     function parseDate(dateStr) {
@@ -1262,7 +1419,8 @@ var TimelogDatePicker = (function() {
         init: init,
         openDatePicker: openDatePicker,
         closeDatePicker: closeDatePicker,
-        navigateRange: navigateRange
+        navigateRange: navigateRange,
+        syncFromInputs: syncFromInputs
     };
 
 })();

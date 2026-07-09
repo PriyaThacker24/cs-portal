@@ -363,7 +363,7 @@ class Emails_model extends App_Model
         $fromname  = $template->fromname;
 
         if ($fromemail == '') {
-            $fromemail = get_option('smtp_email');
+            $fromemail = get_option('email_from_address') != '' ? get_option('email_from_address') : get_option('smtp_email');
         }
 
         if ($fromname == '') {
