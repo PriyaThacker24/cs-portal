@@ -45,6 +45,15 @@ foreach (($payment_modes ?? []) as $__mode) {
                         <?php echo _l('client_go_to_dashboard'); ?>
                     </a>
                     <?php } ?>
+                    <?php // Edit button: only for logged-in staff who are admins. Never shown to customers or guests. ?>
+                    <?php if (is_staff_logged_in() && is_admin()) { ?>
+                    <a href="<?php echo admin_url('invoices/invoice/' . $invoice->id); ?>"
+                        class="btn btn-default action-button" data-toggle="tooltip"
+                        title="<?php echo _l('edit_invoice_tooltip'); ?>">
+                        <i class="fa-regular fa-pen-to-square"></i>
+                        <?php echo _l('edit'); ?>
+                    </a>
+                    <?php } ?>
                     <?php echo form_open($this->uri->uri_string()); ?>
                     <button type="submit" name="invoicepdf" value="invoicepdf" class="btn btn-default action-button">
                         <i class='fa-regular fa-file-pdf'></i>

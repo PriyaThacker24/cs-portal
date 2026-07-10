@@ -293,6 +293,29 @@ class Clients_model extends App_Model
             }
         }
 
+        // Automatically propagate the customer billing address to the customer's
+        // open invoices only: Unpaid (1), Overdue (4) and Draft (6). Paid,
+        // partially paid and cancelled invoices keep the address they were
+        // issued with. Runs whenever the billing address is part of the
+        // submitted data, without requiring the "update all transactions" flag.
+        if (isset($data['billing_street'], $data['billing_city'], $data['billing_state'], $data['billing_zip'], $data['billing_country'])) {
+            $invoice_billing_update = [
+                'billing_street'  => $data['billing_street'],
+                'billing_city'    => $data['billing_city'],
+                'billing_state'   => $data['billing_state'],
+                'billing_zip'     => $data['billing_zip'],
+                'billing_country' => $data['billing_country'],
+            ];
+
+            $this->db->where('clientid', $id)
+                ->where_in('status', [1, 4, 6])
+                ->update(db_prefix() . 'invoices', $invoice_billing_update);
+
+            if ($this->db->affected_rows() > 0) {
+                $updated = true;
+            }
+        }
+
         if ($this->client_groups_model->sync_customer_groups($id, $groups_in)) {
             $updated = true;
         }
