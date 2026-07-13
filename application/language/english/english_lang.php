@@ -2308,6 +2308,8 @@ $lang['invoice_unmark_as']                                     = 'Unmark as %s';
 $lang['invoice_status_cancelled']                              = 'Cancelled';
 $lang['invoice_status_failed']                                 = 'Failed';
 $lang['invoice_marked_as_failed_successfully']                 = 'Invoice marked as failed successfully';
+$lang['invoice_failed_note']                                   = 'Failed Note';
+$lang['invoice_failed_notes']                                  = 'Failed Notes';
 $lang['tasks_reminder_notification_before_help']               = 'Notify task assignees about deadline before X days. The notification/email is sent only to the assignees. If the difference between task start date and task due date is smaller then the reminders day no notification will be sent.';
 
 # Version 1.1.0

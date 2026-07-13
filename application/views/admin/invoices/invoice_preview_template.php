@@ -191,8 +191,8 @@
                               && $invoice->status != Invoices_model::STATUS_PAID
                               && $invoice->status != Invoices_model::STATUS_PARTIALLY) { ?>
                                     <li>
-                                        <a
-                                            href="<?php echo admin_url('invoices/mark_as_failed/' . $invoice->id); ?>"><?php echo e(_l('invoice_mark_as', _l('invoice_status_failed'))); ?></a>
+                                        <a href="#" data-toggle="modal"
+                                            data-target="#invoice_mark_as_failed_modal"><?php echo e(_l('invoice_mark_as', _l('invoice_status_failed'))); ?></a>
                                     </li>
                                     <?php } ?>
                                     <?php if (!in_array($invoice->status, [Invoices_model::STATUS_PAID, Invoices_model::STATUS_CANCELLED, Invoices_model::STATUS_DRAFT])
@@ -437,6 +437,34 @@
 <?php $this->load->view('admin/invoices/invoice_send_to_client'); ?>
 <?php $this->load->view('admin/credit_notes/apply_invoice_credits'); ?>
 <?php $this->load->view('admin/credit_notes/invoice_create_credit_note_confirm'); ?>
+<div class="modal fade" tabindex="-1" id="invoice_mark_as_failed_modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <?php echo form_open(admin_url('invoices/mark_as_failed/' . $invoice->id), ['id' => 'invoice-mark-as-failed-form']); ?>
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">
+                    <?php echo e(_l('invoice_mark_as', _l('invoice_status_failed'))); ?>
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <?php echo render_textarea('failed_note', 'invoice_failed_note', (isset($invoice->failed_note) ? $invoice->failed_note : ''), ['rows' => 5]); ?>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                    data-dismiss="modal"><?php echo _l('close'); ?></button>
+                <button type="submit"
+                    class="btn btn-primary"><?php echo _l('submit'); ?></button>
+            </div>
+            <?php echo form_close(); ?>
+        </div>
+    </div>
+</div>
 <script>
 init_items_sortable(true);
 init_btn_with_tooltips();

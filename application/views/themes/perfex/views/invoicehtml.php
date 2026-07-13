@@ -427,6 +427,17 @@ foreach (($payment_modes ?? []) as $__mode) {
                     <hr />
                     <?php } ?>
                 </div>
+                <?php if ($invoice->status == Invoices_model::STATUS_FAILED && !empty($invoice->failed_note)) { ?>
+                <div class="col-md-12 invoice-html-failed-note">
+                    <p>
+                        <b><?php echo _l('invoice_failed_notes'); ?></b>
+                    </p>
+                    <div class="text-danger tw-font-medium tw-mt-2.5">
+                        <?php echo process_text_content_for_display($invoice->failed_note); ?>
+                    </div>
+                    <hr />
+                </div>
+                <?php } ?>
                 <?php
             // No payments for paid and cancelled
             if (($invoice->status != Invoices_model::STATUS_PAID

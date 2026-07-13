@@ -171,14 +171,15 @@ class Invoices_model extends App_Model
         return false;
     }
 
-    public function mark_as_failed($id)
+    public function mark_as_failed($id, $failed_note = '')
     {
         $isDraft = $this->is_draft($id);
 
         $this->db->where('id', $id);
         $this->db->update(db_prefix() . 'invoices', [
-            'status' => self::STATUS_FAILED,
-            'sent'   => 1,
+            'status'      => self::STATUS_FAILED,
+            'sent'        => 1,
+            'failed_note' => $failed_note !== '' ? $failed_note : null,
         ]);
 
         if ($this->db->affected_rows() > 0) {

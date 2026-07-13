@@ -226,7 +226,9 @@ class Invoices extends AdminController
             access_denied('invoices');
         }
 
-        $success = $this->invoices_model->mark_as_failed($id);
+        $failed_note = $this->input->post('failed_note', false);
+
+        $success = $this->invoices_model->mark_as_failed($id, $failed_note !== null ? trim($failed_note) : '');
 
         if ($success) {
             set_alert('success', _l('invoice_marked_as_failed_successfully'));
