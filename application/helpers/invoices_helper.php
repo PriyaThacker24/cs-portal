@@ -193,6 +193,8 @@ function format_invoice_status($status, $classes = '', $label = true)
         $status = _l('invoice_status_overdue');
     } elseif ($status == Invoices_model::STATUS_CANCELLED) {
         $status = _l('invoice_status_cancelled');
+    } elseif ($status == Invoices_model::STATUS_FAILED) {
+        $status = _l('invoice_status_failed');
     } else {
         // status 6
         $status = _l('invoice_status_draft');
@@ -226,6 +228,8 @@ function get_invoice_status_label($status)
         $label_class = 'warning';
     } elseif ($status == Invoices_model::STATUS_CANCELLED || $status == Invoices_model::STATUS_DRAFT) {
         $label_class = 'default';
+    } elseif ($status == Invoices_model::STATUS_FAILED) {
+        $label_class = 'danger';
     } else {
         if (!is_numeric($status)) {
             if ($status == 'not_sent') {
@@ -288,6 +292,8 @@ function invoice_status_color_pdf($status_id)
         $statusColor = '255, 111, 0';
     } elseif ($status_id == Invoices_model::STATUS_CANCELLED || $status_id == Invoices_model::STATUS_DRAFT) {
         $statusColor = '114, 123, 144';
+    } elseif ($status_id == Invoices_model::STATUS_FAILED) {
+        $statusColor = '252, 45, 66';
     }
 
     return hooks()->apply_filters('invoice_status_pdf_color', $statusColor, $status_id);
@@ -310,6 +316,7 @@ function update_invoice_status($id, $force_update = false, $prevent_logging = fa
 
     if (($original_status == Invoices_model::STATUS_DRAFT && $force_update == false)
         || ($original_status == Invoices_model::STATUS_CANCELLED && $force_update == false)
+        || ($original_status == Invoices_model::STATUS_FAILED && $force_update == false)
     ) {
         return false;
     }

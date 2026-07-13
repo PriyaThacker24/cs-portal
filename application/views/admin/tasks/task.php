@@ -268,12 +268,12 @@
                             </div>
                         </div>
                         <?php
-                        // When adding a plain task (not editing, and not launched from a
-                        // specific relation context such as a project/invoice), the
-                        // "Related To" selector is hidden and defaults to Project (see the
-                        // JS below). The select stays in the DOM so the existing rel_type
-                        // change logic keeps working.
-                        $hide_task_rel_type = !isset($task) && !$this->input->get('rel_type');
+                        // The "Related To" selector is hidden when editing a task, and when
+                        // adding a plain task (not launched from a specific relation context
+                        // such as a project/invoice) where it defaults to Project (see the JS
+                        // below). The select stays in the DOM so the existing rel_type change
+                        // logic keeps working and the task's relation is preserved on save.
+                        $hide_task_rel_type = isset($task) || !$this->input->get('rel_type');
                         ?>
                         <div class="row">
                             <div class="col-md-6"<?php if ($hide_task_rel_type) { echo ' style="display:none;"'; } ?>>
@@ -349,6 +349,10 @@
                             ?>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="col-md-6">
+                                <?php $value = (isset($task) ? $task->estimated_hours : ''); ?>
+                                <?php echo render_input('estimated_hours', 'estimated_hours', $value, 'number', ['min' => 0, 'step' => 'any']); ?>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group<?= $rel_id == '' ? ' hide' : ''; ?>" id="rel_id_wrapper">
@@ -557,10 +561,12 @@
         init_selectpicker();
         task_rel_select();
 
-        <?php if ($hide_task_rel_type) { ?>
+        <?php if (!isset($task) && !$this->input->get('rel_type')) { ?>
         // Default a plain new task to a Project relation and reveal the Project
         // dropdown by reusing the standard rel_type change flow. If no project is
         // ultimately selected, the server treats it as a standalone task as before.
+        // Only for a brand-new plain task — never when editing, so an existing
+        // task's relation is preserved.
         _rel_type.val('project').selectpicker('refresh').trigger('change');
         <?php } ?>
 

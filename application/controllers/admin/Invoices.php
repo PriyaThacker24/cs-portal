@@ -220,6 +220,21 @@ class Invoices extends AdminController
         redirect(admin_url('invoices/list_invoices/' . $id));
     }
 
+    public function mark_as_failed($id)
+    {
+        if (staff_cant('edit', 'invoices') && staff_cant('create', 'invoices')) {
+            access_denied('invoices');
+        }
+
+        $success = $this->invoices_model->mark_as_failed($id);
+
+        if ($success) {
+            set_alert('success', _l('invoice_marked_as_failed_successfully'));
+        }
+
+        redirect(admin_url('invoices/list_invoices/' . $id));
+    }
+
     public function unmark_as_cancelled($id)
     {
         if (staff_cant('edit', 'invoices') && staff_cant('create', 'invoices')) {
@@ -531,6 +546,23 @@ class Invoices extends AdminController
         $data['invoice']  = $this->invoices_model->get($id);
         $data['payments'] = $this->payments_model->get_invoice_payments($id);
         $this->load->view('admin/invoices/record_payment_template', $data);
+    }
+
+    /* Redirect admin to the invoice record payment screen (used from the invoice HTML view) */
+    public function record_payment_screen($id)
+    {
+        if (staff_cant('create', 'payments')) {
+            access_denied('Record Payment');
+        }
+
+        if (!$id || !$this->invoices_model->get($id)) {
+            redirect(admin_url('invoices'));
+        }
+
+        // Auto-open the record payment modal once the invoice preview loads
+        $this->session->set_userdata('record_payment', true);
+
+        redirect(admin_url('invoices/list_invoices/' . $id));
     }
 
     /* This is where invoice payment record $_POST data is send */

@@ -605,6 +605,10 @@ class Tasks_model extends App_Model
             $data['billable'] = 0;
         }
 
+        if (isset($data['estimated_hours']) && $data['estimated_hours'] === '') {
+            $data['estimated_hours'] = null;
+        }
+
         if ((!isset($data['milestone']) || $data['milestone'] == '') || (isset($data['milestone']) && $data['milestone'] == '')) {
             $data['milestone'] = 0;
         } else {
@@ -842,6 +846,10 @@ class Tasks_model extends App_Model
             if ($data['rel_type'] != 'project') {
                 $data['milestone'] = 0;
             }
+        }
+
+        if (isset($data['estimated_hours']) && $data['estimated_hours'] === '') {
+            $data['estimated_hours'] = null;
         }
 
 

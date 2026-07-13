@@ -16,6 +16,8 @@ class Invoices_model extends App_Model
 
     public const STATUS_DRAFT = 6;
 
+    public const STATUS_FAILED = 7;
+
     public const STATUS_DRAFT_NUMBER = 1000000000;
 
     private $statuses = [
@@ -25,6 +27,7 @@ class Invoices_model extends App_Model
         self::STATUS_OVERDUE,
         self::STATUS_CANCELLED,
         self::STATUS_DRAFT,
+        self::STATUS_FAILED,
     ];
 
     private $shipping_fields = [
@@ -161,6 +164,31 @@ class Invoices_model extends App_Model
             $this->log_invoice_activity($id, 'invoice_activity_marked_as_cancelled');
 
             hooks()->do_action('invoice_marked_as_cancelled', $id);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function mark_as_failed($id)
+    {
+        $isDraft = $this->is_draft($id);
+
+        $this->db->where('id', $id);
+        $this->db->update(db_prefix() . 'invoices', [
+            'status' => self::STATUS_FAILED,
+            'sent'   => 1,
+        ]);
+
+        if ($this->db->affected_rows() > 0) {
+            if ($isDraft) {
+                $this->change_invoice_number_when_status_draft($id);
+            }
+
+            $this->log_invoice_activity($id, 'invoice_activity_marked_as_failed');
+
+            hooks()->do_action('invoice_marked_as_failed', $id);
 
             return true;
         }

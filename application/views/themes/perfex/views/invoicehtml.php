@@ -53,6 +53,17 @@ foreach (($payment_modes ?? []) as $__mode) {
                         <i class="fa-regular fa-pen-to-square"></i>
                         <?php echo _l('edit'); ?>
                     </a>
+                    <?php // Record Payment button: only for logged-in admins, hidden once invoice is paid or cancelled. ?>
+                    <?php if ($invoice->status != Invoices_model::STATUS_PAID
+                        && $invoice->status != Invoices_model::STATUS_CANCELLED
+                        && abs($invoice->total) > 0) { ?>
+                    <a href="<?php echo admin_url('invoices/record_payment_screen/' . $invoice->id); ?>"
+                        class="btn btn-default action-button" data-toggle="tooltip"
+                        title="<?php echo _l('invoice_record_payment'); ?>">
+                        <i class="fa fa-plus-square"></i>
+                        <?php echo _l('invoice_record_payment'); ?>
+                    </a>
+                    <?php } ?>
                     <?php } ?>
                     <?php echo form_open($this->uri->uri_string()); ?>
                     <button type="submit" name="invoicepdf" value="invoicepdf" class="btn btn-default action-button">

@@ -382,7 +382,7 @@ $lang['settings_email_from_address']                               = 'From Email
 $lang['settings_email_from_address_help']                          = 'The email address recipients will see in the "From" field. If left empty, the SMTP Email above is used.';
 $lang['settings_email_from_name']                                  = 'From Name';
 $lang['settings_email_from_name_help']                             = 'The name recipients will see in the "From" field. If left empty, the company name is used.';
-$lang['settings_email_password']                                   = 'SMTP Password';
+$lang['settings_email_password']                                   = 'SMTP Password <span class="text-muted" style="font-size:11px;">(Used App Password for Sending Emails)</span>';
 $lang['settings_email_charset']                                    = 'Email Charset';
 $lang['settings_email_signature']                                  = 'Email Signature';
 $lang['settings_general_company_logo']                             = 'Company Logo';
@@ -2306,6 +2306,8 @@ $lang['invoice_merge_number_warning']                          = 'Merging invoic
 $lang['invoice_mark_as']                                       = 'Mark as %s';
 $lang['invoice_unmark_as']                                     = 'Unmark as %s';
 $lang['invoice_status_cancelled']                              = 'Cancelled';
+$lang['invoice_status_failed']                                 = 'Failed';
+$lang['invoice_marked_as_failed_successfully']                 = 'Invoice marked as failed successfully';
 $lang['tasks_reminder_notification_before_help']               = 'Notify task assignees about deadline before X days. The notification/email is sent only to the assignees. If the difference between task start date and task due date is smaller then the reminders day no notification will be sent.';
 
 # Version 1.1.0
@@ -2554,6 +2556,7 @@ $lang['leads_default_source']                   = 'Default source';
 $lang['clear_activity_log']                     = 'Clear log';
 $lang['default_contact_permissions']            = 'Default contact permissions';
 $lang['invoice_activity_marked_as_cancelled']   = 'marked invoice as cancelled';
+$lang['invoice_activity_marked_as_failed']      = 'marked invoice as failed';
 $lang['invoice_activity_unmarked_as_cancelled'] = 'unmarked invoice as cancelled';
 $lang['wait_text']                              = 'Please wait...';
 $lang['projects_summary']                       = 'Projects Summary';

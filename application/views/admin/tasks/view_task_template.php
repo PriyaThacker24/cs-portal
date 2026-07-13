@@ -976,20 +976,18 @@ echo $comments;
                 <?php } ?>
             </h5>
         </div>
-        <?php if ($task->current_user_is_creator || staff_can('edit', 'tasks')) { ?>
-        <div class="task-info task-info-hourly-rate">
+        <?php if ($task->estimated_hours !== null && $task->estimated_hours !== '') { ?>
+        <div class="task-info task-info-estimated-hours">
             <h5 class="tw-inline-flex tw-items-center tw-space-x-1.5">
-                <i class="fa-regular fa-clock fa-fw fa-lg task-info-icon pull-left"></i>
-                <?= _l('task_hourly_rate'); ?>:
+                <i class="fa-regular fa-hourglass fa-fw fa-lg task-info-icon pull-left"></i>
+                <?= _l('estimated_hours'); ?>:
                 <span class="tw-text-neutral-800">
-                    <?php if ($task->rel_type == 'project' && $task->project_data->billing_type == 2) {
-                        echo e(app_format_number($task->project_data->project_rate_per_hour));
-                    } else {
-                        echo e(app_format_number($task->hourly_rate));
-                    } ?>
+                    <?= e(app_format_number($task->estimated_hours)); ?>
                 </span>
             </h5>
         </div>
+        <?php } ?>
+        <?php if ($task->current_user_is_creator || staff_can('edit', 'tasks')) { ?>
         <div class="task-info task-info-billable">
             <h5 class="tw-inline-flex tw-items-center tw-space-x-1.5">
                 <i class="fa-solid fa-dollar-sign fa-fw fa-lg task-info-icon pull-left"></i>
