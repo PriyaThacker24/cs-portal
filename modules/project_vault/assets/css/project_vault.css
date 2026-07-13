@@ -1,0 +1,262 @@
+/* ---- Toolbar: search + category filter ---- */
+.vault-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.vault-search {
+    position: relative;
+    flex: 1 1 260px;
+    max-width: 360px;
+}
+
+.vault-search i {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    color: #90a0af;
+    pointer-events: none;
+}
+
+.vault-search .form-control {
+    padding-left: 34px;
+}
+
+.vault-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.vault-filter {
+    border-radius: 20px;
+    font-size: 13px;
+    padding: 5px 14px;
+}
+
+.vault-filter.active {
+    background: #253340;
+    border-color: #253340;
+    color: #fff;
+}
+
+/* ---- Vault card grid (Pinterest / masonry via CSS columns) ---- */
+.vault-grid {
+    column-width: 320px;
+    column-gap: 16px;
+}
+
+.vault-card {
+    display: inline-block;
+    width: 100%;
+    margin: 0 0 16px;
+    border: 1px solid #e6e9ec;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow 0.15s ease;
+    /* Keep a card from splitting across two columns. */
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.vault-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.vault-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f2f4;
+}
+
+.vault-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.vault-badge-web {
+    background: #3b82f6;
+}
+
+.vault-badge-file {
+    background: #f59e0b;
+}
+
+.vault-badge-note {
+    background: #8b5cf6;
+}
+
+.vault-shared-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #eef2f6;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.vault-card-title {
+    font-weight: 600;
+    color: #253340;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vault-card-cat {
+    font-size: 12px;
+    color: #90a0af;
+}
+
+.vault-card-body {
+    padding: 6px 16px 14px;
+    flex: 1;
+}
+
+.vault-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0f2f4;
+    font-size: 13px;
+}
+
+.vault-row:last-child {
+    border-bottom: none;
+}
+
+.vault-row-label {
+    flex: 0 0 84px;
+    color: #90a0af;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+}
+
+.vault-row-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    color: #253340;
+}
+
+/* Files: full-width list, each a clickable row with a download button. */
+.vault-files-list {
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0f2f4;
+}
+
+.vault-files-list:last-child {
+    border-bottom: none;
+}
+
+.vault-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    margin-bottom: 6px;
+    background: #f4f6f8;
+    border: 1px solid #e6e9ec;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #253340;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.vault-file-item:last-child {
+    margin-bottom: 0;
+}
+
+.vault-file-item:hover {
+    background: #eaf1fb;
+    border-color: #c9ddf7;
+    text-decoration: none;
+}
+
+.vault-file-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: #253340;
+}
+
+.vault-file-dl {
+    flex-shrink: 0;
+    color: #3b82f6;
+    font-size: 14px;
+}
+
+/* Notes: full-width stacked block so long text stays readable. */
+.vault-notes-block {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.vault-notes-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.vault-notes-value {
+    margin-top: 6px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    color: #253340;
+}
+
+.vault-notes-head .vault-icon-btn {
+    margin-left: 0;
+}
+
+.vault-secret-value {
+    font-family: monospace;
+    letter-spacing: 1px;
+    word-break: break-all;
+}
+
+.vault-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.vault-icon-btn {
+    color: #90a0af;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.vault-icon-btn:hover {
+    color: #3b82f6;
+}
+
+#vault-entry-modal .input-group-addon {
+    background-color: #fff;
+    cursor: pointer;
+}
