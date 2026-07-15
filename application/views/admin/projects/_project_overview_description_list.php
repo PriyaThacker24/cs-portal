@@ -166,14 +166,14 @@
     <?php } ?>
     <?php } ?>
 
-    <?php $tags = get_tags_in($project->id, 'project'); ?>
-    <?php if (count($tags) > 0) { ?>
-    <div class="sm:tw-col-span-1 project-overview-tags">
+    <?php if (isset($project->website_url) && ! empty($project->website_url)) { ?>
+    <div class="sm:tw-col-span-1 project-overview-website">
         <dt class="tw-text-sm tw-font-normal tw-text-neutral-500">
-            <?= _l('tags'); ?>
+            <?= _l('project_website'); ?>
         </dt>
         <dd class="tw-mt-1 tw-text-sm tw-text-neutral-700 tw-font-medium">
-            <?= render_tags($tags); ?>
+            <?php $website_href = (preg_match('/^https?:\/\//i', $project->website_url) ? $project->website_url : 'http://' . $project->website_url); ?>
+            <a href="<?= e($website_href); ?>" target="_blank" rel="noopener noreferrer"><?= e($project->website_url); ?></a>
         </dd>
     </div>
     <?php } ?>

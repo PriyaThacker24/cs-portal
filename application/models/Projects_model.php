@@ -883,6 +883,11 @@ class Projects_model extends App_Model
         // Ensure owner_id and manager_id columns exist (add if missing, e.g. if migration 342 not run)
         $this->ensure_project_owner_manager_columns();
 
+        // Normalize the website_url value
+        if (isset($data['website_url'])) {
+            $data['website_url'] = trim($data['website_url']) === '' ? null : trim($data['website_url']);
+        }
+
         // Check if owner_id and manager_id columns exist and normalize values before saving
         try {
             $fields = $this->db->list_fields(db_prefix() . 'projects');
@@ -1211,6 +1216,11 @@ class Projects_model extends App_Model
 
         // Ensure owner_id and manager_id columns exist (add if missing)
         $this->ensure_project_owner_manager_columns();
+
+        // Normalize the website_url value
+        if (isset($data['website_url'])) {
+            $data['website_url'] = trim($data['website_url']) === '' ? null : trim($data['website_url']);
+        }
 
         // Check if owner_id and manager_id columns exist before trying to save them
         // Also convert empty strings to NULL for proper database handling

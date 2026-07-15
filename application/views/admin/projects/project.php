@@ -52,6 +52,8 @@ if ($selected != '') {
                                     <?php } ?>
                                 </div>
                             </div>
+                            <?php $website_value = (isset($project) && isset($project->website_url) ? $project->website_url : ''); ?>
+                            <?= render_input('website_url', 'project_website', $website_value, 'url', ['placeholder' => 'https://example.com']); ?>
                             <div class="form-group">
                                 <div class="checkbox">
                                     <input type="checkbox" <?php if ((isset($project) && $project->progress_from_tasks == 1) || ! isset($project)) {

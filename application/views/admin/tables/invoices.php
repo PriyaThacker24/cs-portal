@@ -12,13 +12,9 @@ return App_table::find('invoices')
         $aColumns = [
             'number',
             'total',
-            'total_tax',
             'YEAR(date) as year',
             'date',
             get_sql_select_client_company(),
-            db_prefix() . 'projects.name as project_name',
-            '(SELECT GROUP_CONCAT(name SEPARATOR ",") FROM ' . db_prefix() . 'taggables JOIN ' . db_prefix() . 'tags ON ' . db_prefix() . 'taggables.tag_id = ' . db_prefix() . 'tags.id WHERE rel_id = ' . db_prefix() . 'invoices.id and rel_type="invoice" ORDER by tag_order ASC) as tags',
-            'duedate',
             db_prefix() . 'invoices.status',
         ];
 
@@ -70,6 +66,9 @@ return App_table::find('invoices')
         $result = data_tables_init($aColumns, $sIndexColumn, $sTable, $join, $where, [
             db_prefix() . 'invoices.id',
             db_prefix() . 'invoices.clientid',
+            db_prefix() . 'invoices.total_tax',
+            db_prefix() . 'invoices.duedate',
+            '(SELECT CONCAT(firstname, " ", lastname) FROM ' . db_prefix() . 'contacts WHERE userid = ' . db_prefix() . 'invoices.clientid AND is_primary = 1) as client_name',
             db_prefix() . 'currencies.name as currency_name',
             'formatted_number',
             'project_id',
@@ -112,25 +111,35 @@ return App_table::find('invoices')
 
             $row[] = $numberOutput;
 
-            $row[] = '<span class="tw-font-medium">' . e(app_format_money($aRow['total'], $aRow['currency_name'])) . '</span>';
+            $amountOutput = '<span class="tw-font-medium">' . e(app_format_money($aRow['total'], $aRow['currency_name'])) . '</span>';
 
-            $row[] = '<span class="tw-font-medium">' . e(app_format_money($aRow['total_tax'], $aRow['currency_name'])) . '</span>';
+            if ((float) $aRow['total_tax'] > 0) {
+                $amountOutput .= '<br /><span style="color:#6b7280;font-size:12.8px;">' . _l('tax') . ': ' . e(app_format_money($aRow['total_tax'], $aRow['currency_name'])) . '</span>';
+            }
+
+            $row[] = $amountOutput;
 
             $row[] = e($aRow['year']);
 
-            $row[] = e(_d_ddmmyyyy($aRow['date']));
+            $dateOutput = e(_d_ddmmyyyy($aRow['date']));
+
+            if (!empty($aRow['duedate'])) {
+                $dateOutput .= '<br /><span style="color:#6b7280;font-size:12.8px;">Due on ' . e(_d_ddmmyyyy($aRow['duedate'])) . '</span>';
+            }
+
+            $row[] = $dateOutput;
 
             if (empty($aRow['deleted_customer_name'])) {
-                $row[] = '<a href="' . admin_url('clients/client/' . $aRow['clientid']) . '">' . e($aRow['company']) . '</a>';
+                $customerOutput = '<a href="' . admin_url('clients/client/' . $aRow['clientid']) . '">' . e($aRow['company']) . '</a>';
+
+                if (!empty($aRow['client_name']) && trim($aRow['client_name']) !== trim($aRow['company'])) {
+                    $customerOutput .= '<br /><span style="color:#6b7280;font-size:12.8px;">' . e($aRow['client_name']) . '</span>';
+                }
+
+                $row[] = $customerOutput;
             } else {
                 $row[] = e($aRow['deleted_customer_name']);
             }
-
-            $row[] = '<a href="' . admin_url('projects/view/' . $aRow['project_id']) . '">' . e($aRow['project_name']) . '</a>';
-
-            $row[] = render_tags($aRow['tags']);
-
-            $row[] = e(_d_ddmmyyyy($aRow['duedate']));
 
             $row[] = format_invoice_status($aRow[db_prefix() . 'invoices.status']);
 

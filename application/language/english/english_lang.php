@@ -2086,6 +2086,7 @@ $lang['select_manager']                                       = 'Select manager'
 $lang['project_resources']                                   = 'Resources';
 $lang['project_description']                                 = 'Description';
 $lang['project_customer']                                    = 'Customer';
+$lang['project_website']                                     = 'Website';
 $lang['project_start_date']                                  = 'Start Date';
 $lang['project_datecreated']                                 = 'Date Created';
 $lang['project_deadline']                                    = 'Deadline';

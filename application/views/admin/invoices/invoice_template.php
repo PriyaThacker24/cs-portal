@@ -1,4 +1,11 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<style>
+/* Compact the invoice items toolbar after hiding the Add item / Bill tasks columns */
+.invoice .invoice-items-separator { margin-top: 12px; margin-bottom: 6px; }
+.invoice .invoice-items-body { padding-top: 5px; padding-bottom: 5px; }
+.invoice .show_quantity_as_wrapper { text-align: right; }
+.invoice .show_quantity_as_wrapper > div { margin-top: 0; margin-bottom: 10px; }
+</style>
 <div class="<?php if (!isset($invoice) || (isset($invoice) && count($invoices_to_merge) == 0 && (isset($invoice) && !isset($invoice_from_project) && count($expenses_to_bill) == 0 || $invoice->status == Invoices_model::STATUS_CANCELLED))) {
     echo ' hide';
 } ?>" id="invoice_top_info">
@@ -24,7 +31,7 @@
 </div>
 <div class="panel_s invoice accounting-template">
     <div class="additional"></div>
-    <div class="panel-body">
+    <div class="panel-body" style="padding-bottom: 0px;">
         <?php hooks()->do_action('before_render_invoice_template', $invoice ?? null); ?>
         <?php if (isset($invoice)) {
                 echo form_hidden('merge_current_invoice', $invoice->id);
@@ -79,7 +86,7 @@
                 <?php } ?>
                 <?php
             if (!isset($invoice_from_project)) { ?>
-                <div class="form-group select-placeholder projects-wrapper<?php if ((!isset($invoice)) || (isset($invoice) && !customer_has_projects($invoice->clientid))) {
+                <div class="form-group select-placeholder projects-wrapper hide<?php if ((!isset($invoice)) || (isset($invoice) && !customer_has_projects($invoice->clientid))) {
                 echo (isset($customer_id) && (!isset($project_id) || !$project_id)) ?  ' hide' : '';
             } ?>">
                     <label for="project_id"><?php echo _l('project'); ?></label>
@@ -101,66 +108,6 @@
                     </div>
                 </div>
                 <?php } ?>
-                <div class="row">
-                    <div class="col-md-12">
-                        <hr class="hr-10" />
-                        <a href="#" class="edit_shipping_billing_info" data-toggle="modal"
-                            data-target="#billing_and_shipping_details"><i class="fa-regular fa-pen-to-square"></i></a>
-                        <?php include_once(APPPATH . 'views/admin/invoices/billing_and_shipping_template.php'); ?>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="bold"><?php echo _l('invoice_bill_to'); ?></p>
-                        <address>
-                            <span class="billing_street">
-                                <?php $billing_street = (isset($invoice) ? $invoice->billing_street : '--'); ?>
-                                <?php $billing_street = ($billing_street == '' ? '--' :$billing_street); ?>
-                                <?php echo process_text_content_for_display($billing_street); ?></span><br>
-                            <span class="billing_city">
-                                <?php $billing_city = (isset($invoice) ? $invoice->billing_city : '--'); ?>
-                                <?php $billing_city = ($billing_city == '' ? '--' :$billing_city); ?>
-                                <?php echo e($billing_city); ?></span>,
-                            <span class="billing_state">
-                                <?php $billing_state = (isset($invoice) ? $invoice->billing_state : '--'); ?>
-                                <?php $billing_state = ($billing_state == '' ? '--' :$billing_state); ?>
-                                <?php echo e($billing_state); ?></span>
-                            <br />
-                            <span class="billing_country">
-                                <?php $billing_country = (isset($invoice) ? get_country_short_name($invoice->billing_country) : '--'); ?>
-                                <?php $billing_country = ($billing_country == '' ? '--' :$billing_country); ?>
-                                <?php echo e($billing_country); ?></span>,
-                            <span class="billing_zip">
-                                <?php $billing_zip = (isset($invoice) ? $invoice->billing_zip : '--'); ?>
-                                <?php $billing_zip = ($billing_zip == '' ? '--' :$billing_zip); ?>
-                                <?php echo e($billing_zip); ?></span>
-                        </address>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="bold"><?php echo _l('ship_to'); ?></p>
-                        <address>
-                            <span class="shipping_street">
-                                <?php $shipping_street = (isset($invoice) ? $invoice->shipping_street : '--'); ?>
-                                <?php $shipping_street = ($shipping_street == '' ? '--' :$shipping_street); ?>
-                                <?php echo process_text_content_for_display($shipping_street); ?></span><br>
-                            <span class="shipping_city">
-                                <?php $shipping_city = (isset($invoice) ? $invoice->shipping_city : '--'); ?>
-                                <?php $shipping_city = ($shipping_city == '' ? '--' :$shipping_city); ?>
-                                <?php echo e($shipping_city); ?></span>,
-                            <span class="shipping_state">
-                                <?php $shipping_state = (isset($invoice) ? $invoice->shipping_state : '--'); ?>
-                                <?php $shipping_state = ($shipping_state == '' ? '--' :$shipping_state); ?>
-                                <?php echo e($shipping_state); ?></span>
-                            <br />
-                            <span class="shipping_country">
-                                <?php $shipping_country = (isset($invoice) ? get_country_short_name($invoice->shipping_country) : '--'); ?>
-                                <?php $shipping_country = ($shipping_country == '' ? '--' :$shipping_country); ?>
-                                <?php echo e($shipping_country); ?></span>,
-                            <span class="shipping_zip">
-                                <?php $shipping_zip = (isset($invoice) ? $invoice->shipping_zip : '--'); ?>
-                                <?php $shipping_zip = ($shipping_zip == '' ? '--' :$shipping_zip); ?>
-                                <?php echo e($shipping_zip); ?></span>
-                        </address>
-                    </div>
-                </div>
                 <?php
                $next_invoice_number = get_option('next_invoice_number');
                $format              = get_option('invoice_number_format');
@@ -276,7 +223,7 @@
                     </div>
                 </div>
                 <?php if (is_invoices_overdue_reminders_enabled()) { ?>
-                <div class="form-group">
+                <div class="form-group hide">
                     <div class="checkbox checkbox-danger">
                         <input type="checkbox" <?php if (isset($invoice) && $invoice->cancel_overdue_reminders == 1) {
                        echo 'checked';
@@ -296,7 +243,7 @@
             </div>
             <div class="col-md-6">
                 <div class="tw-ml-3">
-                    <div class="form-group">
+                    <div class="form-group hide">
                         <label for="tags" class="control-label"><i class="fa fa-tag" aria-hidden="true"></i>
                             <?php echo _l('tags'); ?></label>
                         <input type="text" class="tagsinput" id="tags" name="tags"
@@ -395,7 +342,7 @@
                                 echo render_select('sale_agent', $staff, ['staffid', ['firstname', 'lastname']], 'sale_agent_string', $selected);
                             ?>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 hide">
                             <div class="form-group select-placeholder"
                                 <?php if (isset($invoice) && !empty($invoice->is_recurring_from)) { ?>
                                 data-toggle="tooltip"
@@ -438,7 +385,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="recurring_custom <?php if ((isset($invoice) && $invoice->custom_recurring != 1) || (!isset($invoice))) {
+                        <div class="recurring_custom hide <?php if ((isset($invoice) && $invoice->custom_recurring != 1) || (!isset($invoice))) {
                                   echo 'hide';
                               } ?>">
                             <div class="col-md-6">
@@ -464,7 +411,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div id="cycles_wrapper" class="<?php if (!isset($invoice) || (isset($invoice) && $invoice->recurring == 0)) {
+                        <div id="cycles_wrapper" class="hide <?php if (!isset($invoice) || (isset($invoice) && $invoice->recurring == 0)) {
                                   echo ' hide';
                               }?>">
                             <div class="col-md-12">
@@ -498,21 +445,81 @@
                     </div>
                     <?php $value = (isset($invoice) ? $invoice->adminnote : ''); ?>
                     <?php echo render_textarea('adminnote', 'invoice_add_edit_admin_note', $value); ?>
-                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <hr class="hr-10" />
+                            <a href="#" class="edit_shipping_billing_info" data-toggle="modal"
+                                data-target="#billing_and_shipping_details"><i class="fa-regular fa-pen-to-square"></i></a>
+                            <?php include_once(APPPATH . 'views/admin/invoices/billing_and_shipping_template.php'); ?>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="bold"><?php echo _l('invoice_bill_to'); ?></p>
+                            <address>
+                                <span class="billing_street">
+                                    <?php $billing_street = (isset($invoice) ? $invoice->billing_street : '--'); ?>
+                                    <?php $billing_street = ($billing_street == '' ? '--' :$billing_street); ?>
+                                    <?php echo process_text_content_for_display($billing_street); ?></span><br>
+                                <span class="billing_city">
+                                    <?php $billing_city = (isset($invoice) ? $invoice->billing_city : '--'); ?>
+                                    <?php $billing_city = ($billing_city == '' ? '--' :$billing_city); ?>
+                                    <?php echo e($billing_city); ?></span>,
+                                <span class="billing_state">
+                                    <?php $billing_state = (isset($invoice) ? $invoice->billing_state : '--'); ?>
+                                    <?php $billing_state = ($billing_state == '' ? '--' :$billing_state); ?>
+                                    <?php echo e($billing_state); ?></span>
+                                <br />
+                                <span class="billing_country">
+                                    <?php $billing_country = (isset($invoice) ? get_country_short_name($invoice->billing_country) : '--'); ?>
+                                    <?php $billing_country = ($billing_country == '' ? '--' :$billing_country); ?>
+                                    <?php echo e($billing_country); ?></span>,
+                                <span class="billing_zip">
+                                    <?php $billing_zip = (isset($invoice) ? $invoice->billing_zip : '--'); ?>
+                                    <?php $billing_zip = ($billing_zip == '' ? '--' :$billing_zip); ?>
+                                    <?php echo e($billing_zip); ?></span>
+                            </address>
+                        </div>
+                        <div class="col-md-6 hide">
+                            <p class="bold"><?php echo _l('ship_to'); ?></p>
+                            <address>
+                                <span class="shipping_street">
+                                    <?php $shipping_street = (isset($invoice) ? $invoice->shipping_street : '--'); ?>
+                                    <?php $shipping_street = ($shipping_street == '' ? '--' :$shipping_street); ?>
+                                    <?php echo process_text_content_for_display($shipping_street); ?></span><br>
+                                <span class="shipping_city">
+                                    <?php $shipping_city = (isset($invoice) ? $invoice->shipping_city : '--'); ?>
+                                    <?php $shipping_city = ($shipping_city == '' ? '--' :$shipping_city); ?>
+                                    <?php echo e($shipping_city); ?></span>,
+                                <span class="shipping_state">
+                                    <?php $shipping_state = (isset($invoice) ? $invoice->shipping_state : '--'); ?>
+                                    <?php $shipping_state = ($shipping_state == '' ? '--' :$shipping_state); ?>
+                                    <?php echo e($shipping_state); ?></span>
+                                <br />
+                                <span class="shipping_country">
+                                    <?php $shipping_country = (isset($invoice) ? get_country_short_name($invoice->shipping_country) : '--'); ?>
+                                    <?php $shipping_country = ($shipping_country == '' ? '--' :$shipping_country); ?>
+                                    <?php echo e($shipping_country); ?></span>,
+                                <span class="shipping_zip">
+                                    <?php $shipping_zip = (isset($invoice) ? $invoice->shipping_zip : '--'); ?>
+                                    <?php $shipping_zip = ($shipping_zip == '' ? '--' :$shipping_zip); ?>
+                                    <?php echo e($shipping_zip); ?></span>
+                            </address>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
-    <hr class="hr-panel-separator" />
+    <hr class="hr-panel-separator invoice-items-separator" />
 
-    <div class="panel-body">
+    <div class="panel-body invoice-items-body">
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-4 hide">
                 <?php $this->load->view('admin/invoice_items/item_select'); ?>
             </div>
             <?php if (!isset($invoice_from_project) && isset($billable_tasks)) { ?>
-            <div class="col-md-3">
+            <div class="col-md-3 hide">
                 <div class="form-group select-placeholder input-group-select form-group-select-task_select popover-250">
                     <div class="input-group input-group-select">
                         <select name="task_select" data-live-search="true" id="task_select"
@@ -545,12 +552,8 @@
             </div>
             <?php
                             } ?>
-            <div class="col-md-<?php if (!isset($invoice_from_project)) {
-                                echo 5;
-                            } else {
-                                echo 8;
-                            } ?> text-right show_quantity_as_wrapper">
-                <div class="mtop10">
+            <div class="col-md-12 show_quantity_as_wrapper">
+                <div>
                     <span><?php echo _l('show_quantity_as'); ?> </span>
                     <div class="radio radio-primary radio-inline">
                         <input type="radio" value="1" id="sq_1" name="show_quantity_as"
@@ -568,7 +571,7 @@
                             } ?>>
                         <label for="sq_2"><?php echo _l('quantity_as_hours'); ?></label>
                     </div>
-                    <div class="radio radio-primary radio-inline">
+                    <div class="radio radio-primary radio-inline hide">
                         <input type="radio" value="3" id="sq_3" name="show_quantity_as"
                             data-text="<?php echo _l('invoice_table_quantity_heading'); ?>/<?php echo _l('invoice_table_hours_heading'); ?>" <?php if (isset($invoice) && $invoice->show_quantity_as == 3 || isset($qty_hrs_quantity)) {
                                 echo 'checked';
